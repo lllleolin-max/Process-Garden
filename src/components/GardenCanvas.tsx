@@ -413,7 +413,7 @@ function drawCore(context: CanvasRenderingContext2D, x: number, y: number, radiu
       context.restore();
       return;
     }
-    if (eldritch && mouthOpen > 0.015 && !maw) {
+    if (eldritch && mouthOpen > 0.015) {
       const gap = size * mouthOpen * 0.72;
       context.save();
       const throat = context.createRadialGradient(x, y, size * 0.06, x, y, size * 0.9);
@@ -442,27 +442,6 @@ function drawCore(context: CanvasRenderingContext2D, x: number, y: number, radiu
       drawJawHalf(true);
       drawJawHalf(false);
 
-      context.save();
-      context.fillStyle = "rgba(248,225,190,.94)";
-      context.shadowColor = "rgba(244,166,112,.55)";
-      context.shadowBlur = 5;
-      for (let tooth = 0; tooth < 11; tooth += 1) {
-        const normalized = tooth / 10 * 2 - 1;
-        const toothX = x + normalized * size * 0.76;
-        const toothHeight = size * (0.16 + (tooth % 3) * 0.045) * mouthOpen;
-        const toothWidth = size * (0.045 + (tooth % 2) * 0.012);
-        context.beginPath();
-        context.moveTo(toothX - toothWidth, y - gap * 0.62);
-        context.lineTo(toothX + toothWidth, y - gap * 0.62);
-        context.lineTo(toothX + Math.sin(tooth) * 2, y - gap * 0.62 + toothHeight);
-        context.closePath(); context.fill();
-        context.beginPath();
-        context.moveTo(toothX - toothWidth * 0.9, y + gap * 0.62);
-        context.lineTo(toothX + toothWidth * 0.9, y + gap * 0.62);
-        context.lineTo(toothX + Math.cos(tooth) * 2, y + gap * 0.62 - toothHeight * 0.82);
-        context.closePath(); context.fill();
-      }
-      context.restore();
       return;
     }
     context.save();
@@ -835,7 +814,8 @@ export function GardenCanvas() {
         });
       }
 
-      if (layoutDirty || layoutProcesses !== live.processes) {
+      const layoutChanged = layoutDirty || layoutProcesses !== live.processes;
+      if (layoutChanged) {
         const targets = live.processes.map((process) => {
           const angle = stableProcessAngle(process.pid);
           const ring = Math.abs(process.pid) % 3;
@@ -901,7 +881,7 @@ export function GardenCanvas() {
 
       visualNodes.forEach((node, pid) => {
         if (!visiblePids.has(pid)) {
-          if (live.reducedMotion) { visualNodes.delete(pid); return; }
+          if (live.reducedMotion || (live.paused && layoutChanged)) { visualNodes.delete(pid); return; }
           if (!node.exiting) {
             node.exiting = true;
             node.transitionStartedAt = time;
@@ -916,13 +896,14 @@ export function GardenCanvas() {
           node.targetOpacity = isEldritch && !live.reducedMotion ? 1 : 1 - exitProgress;
         }
         const birthProgress = Math.min(1, (time - node.bornAt) / 1_450);
-        if (live.reducedMotion) {
+        if (live.reducedMotion || (live.paused && layoutChanged)) {
           node.x = node.targetX;
           node.y = node.targetY;
           node.radius = node.targetRadius;
           node.opacity = 1;
           node.displayCpu = node.process.cpuPercent;
           node.displayMemory = node.process.memoryBytes;
+          node.bornAt = Math.min(node.bornAt, time - 1_450);
         } else if (isEldritch && node.exiting) {
           const swallow = getEldritchSwallowMotion(time - node.transitionStartedAt);
           const mouthX = cx;
@@ -1139,6 +1120,7 @@ export function GardenCanvas() {
       occupied.push({ x: cx - coreRadius, y: cy - coreRadius * 0.85, width: coreRadius * 2, height: coreRadius * 1.7 });
       const labelNodes = renderNodes.filter((node) => !node.exiting && (live.labelsAlwaysVisible || live.selectedPid === node.pid || live.hoveredPid === node.pid || node.radius > 24))
         .sort((a, b) => Number(b.pid === live.selectedPid) - Number(a.pid === live.selectedPid) || Number(b.pid === live.hoveredPid) - Number(a.pid === live.hoveredPid) || b.targetRadius - a.targetRadius || a.pid - b.pid);
+      const placedLabels: { node: VisualNode; label: { text: string; width: number }; box: LabelBox; focused: boolean }[] = [];
       labelNodes.forEach((node) => {
         const focused = live.selectedPid === node.pid || live.hoveredPid === node.pid;
         let label = labelTextCache.get(node.process.name);
@@ -1152,6 +1134,10 @@ export function GardenCanvas() {
         const box = placeSceneLabel(node, label.width, { width, height, coreRadius }, occupied, focused || live.labelsAlwaysVisible);
         if (!box) return;
         occupied.push({ x: box.x - 4, y: box.y - 4, width: box.width + 8, height: box.height + 8 });
+        placedLabels.push({ node, label, box, focused });
+      });
+      // Reserve focus space first, then paint it last when a dense scene has unavoidable overlap.
+      placedLabels.reverse().forEach(({ node, label, box, focused }) => {
         const color = processColor(node.process, theme, isEldritch, organismVisualIndex(resolveOrganismStyle(node.process, live.processStyleOverrides)));
         context.save();
         context.globalAlpha = Math.max(0, Math.min(1, node.opacity)) * (focused ? 1 : 0.88);

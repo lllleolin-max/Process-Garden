@@ -31,6 +31,7 @@
 .studio-preview .preview-orbit > span { opacity: var(--preview-particles, 1); transition: opacity 200ms ease, border-color 200ms ease; }
 .topbar .search-clear { width: 22px; height: 22px; min-width: 22px; flex: 0 0 auto; border-radius: 5px; }
 .display-mode-error { color: var(--color-danger); font-size: 11px; line-height: 1.5; }
+.app-display-mode-error { position: absolute; z-index: 110; top: 72px; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); margin: 0; padding: 10px 14px; border: 1px solid var(--color-border-strong); border-radius: 9px; background: var(--color-background-elevated); }
 .topbar > .display-mode-error { position: absolute; right: 12px; top: calc(100% + 8px); max-width: min(360px, calc(100vw - 24px)); padding: 10px 12px; margin: 0; border: 1px solid var(--color-border-strong); border-radius: 9px; background: var(--color-background-elevated); box-shadow: 0 8px 28px rgba(0, 0, 0, .25); }
 
 @keyframes overlay-reveal { from { opacity: 0; } to { opacity: 1; } }

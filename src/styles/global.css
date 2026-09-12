@@ -441,11 +441,14 @@ button, a, input, select { touch-action: manipulation; }
 @keyframes status-breathe { 0% { transform: scale(.45); opacity: .65; } 75%, 100% { transform: scale(1.35); opacity: 0; } }
 
 @media (max-height: 800px) and (min-width: 941px) {
-  .metric-card { padding-block: 9px; }
-  .metric-value { margin-top: 5px; font-size: 19px; }
-  .metric-card .sparkline { height: 24px; }
-  .metric-detail { margin-top: 3px; font-size: 9px; }
-  .metric-icon { width: 23px; height: 23px; }
+  .metric-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 6px; padding-block: 7px; }
+  .metric-heading { gap: 6px; font-size: 9px; }
+  .metric-value { margin: 0; font-size: 19px; }
+  .metric-card .sparkline { grid-column: 1 / -1; height: 24px; width: 100%; margin: 0; }
+  .metric-card .progress-track { grid-column: 1 / -1; width: 100%; margin: 7px 0; }
+  .metric-detail { grid-column: 1 / -1; margin: 0; font-size: 9px; }
+  .metric-icon { width: 19px; height: 19px; }
+  .metric-icon svg { width: 13px; height: 13px; }
   .uptime-card { padding: 8px; }
 }
 @media (max-width: 940px) and (min-width: 721px) {

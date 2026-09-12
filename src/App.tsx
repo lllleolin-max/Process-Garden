@@ -1,5 +1,5 @@
 import { Leaf, MemoryStick, MonitorUp } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { GardenCanvas } from "./components/GardenCanvas";
@@ -14,8 +14,7 @@ import { useSystemFeed } from "./hooks/useSystemFeed";
 import { useProcessIcons } from "./hooks/useProcessIcons";
 import { formatBytes, formatPercent } from "./i18n/formatters";
 import { useAppStore } from "./stores/appStore";
-import { detachWallpaper } from "./platform/wallpaper";
-import { setFullscreen } from "./platform/display";
+import { syncBrowserFullscreenExit, useDisplayMode } from "./hooks/useDisplayMode";
 
 export default function App() {
   const { t } = useTranslation();
@@ -23,6 +22,12 @@ export default function App() {
   const themes = useMemo(() => [...builtInThemes, ...state.customThemes], [state.customThemes]);
   const activeTheme = themes.find((theme) => theme.id === state.themeId) ?? builtInThemes[0];
   const visualTheme = activeTheme.id === "eldritch" || activeTheme.basedOn === "eldritch" ? "eldritch" : "garden";
+  const setDisplayMode = useDisplayMode();
+  const [displayError, setDisplayError] = useState(false);
+  const restoreWindowed = useCallback(async () => {
+    setDisplayError(false);
+    setDisplayError(!(await setDisplayMode("windowed")));
+  }, [setDisplayMode]);
 
   useEffect(() => applyTheme(activeTheme, state.locale), [activeTheme, state.locale]);
   useLayoutEffect(() => {
@@ -42,26 +47,29 @@ export default function App() {
         if (state.themeStudioOpen) { state.setThemeStudioOpen(false); return; }
         if (state.settingsOpen) { state.setSettingsOpen(false); return; }
         if (state.themeMenuOpen) { state.setThemeMenuOpen(false); return; }
-        if (state.displayMode === "wallpaper") void detachWallpaper();
-        if (state.displayMode !== "windowed") {
-          void setFullscreen(false);
-          state.setDisplayMode("windowed");
-        }
+        // Also cancels an entering mode whose platform operation is still pending.
+        void restoreWindowed();
       }
     };
     window.addEventListener("keydown", keyHandler);
     return () => window.removeEventListener("keydown", keyHandler);
-  }, [state.displayMode, state.locale, state.settingsOpen, state.themeMenuOpen, state.themeStudioOpen, state.setDisplayMode, state.setSettingsOpen, state.setThemeMenuOpen, state.setThemeStudioOpen]);
+  }, [state.displayMode, state.locale, state.settingsOpen, state.themeMenuOpen, state.themeStudioOpen, state.setSettingsOpen, state.setThemeMenuOpen, state.setThemeStudioOpen, restoreWindowed]);
+  useEffect(() => {
+    if ("__TAURI_INTERNALS__" in window) return;
+    const syncFullscreen = () => { void syncBrowserFullscreenExit().then((ok) => { if (!ok) setDisplayError(true); }); };
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
   useEffect(() => {
     if (!("__TAURI_INTERNALS__" in window)) return;
     let disposed = false;
     let unlisten: (() => void) | undefined;
-    void import("@tauri-apps/api/event").then(({ listen }) => listen("process-garden://restore-windowed", () => state.setDisplayMode("windowed"))).then((dispose) => {
+    void import("@tauri-apps/api/event").then(({ listen }) => listen("process-garden://restore-windowed", () => { void restoreWindowed(); })).then((dispose) => {
       if (disposed) dispose();
       else unlisten = dispose;
     }).catch((error: unknown) => console.warn("Could not subscribe to window restore events", error));
     return () => { disposed = true; unlisten?.(); };
-  }, [state.setDisplayMode]);
+  }, [restoreWindowed]);
 
   return (
     <div className={`app-shell mode-${state.displayMode} theme-${visualTheme} theme-id-${state.themeId}`}>
@@ -78,6 +86,7 @@ export default function App() {
       {state.displayMode === "wallpaper" && <WallpaperHud />}
       <SettingsDrawer />
       <ThemeStudio />
+      {displayError && <p className="display-mode-error app-display-mode-error" role="alert">{t("modes.changeFailed")}</p>}
     </div>
   );
 }
