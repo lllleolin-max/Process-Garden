@@ -7,6 +7,7 @@ import { ELDRITCH_SWALLOW_DURATION_MS, getEldritchSwallowMotion } from "../anima
 import { decideAnimationFrame } from "../animation/frameRate";
 import { damp, stableProcessAngle } from "../animation/smoothing";
 import { SceneClock } from "../animation/sceneClock";
+import { ambientFaunaPose, ambientVisibility } from "../animation/ambientMotion";
 import { hitTestScene, placeSceneLabel, separateSceneNodes, type LabelBox } from "../animation/sceneLayout";
 import { selectPopulation } from "../ecology/population";
 import { agentEmbryoStage, isAgentProcess, organismVariantIndex, organismVisualIndex, resolveOrganismStyle } from "../ecology/organisms";
@@ -42,9 +43,7 @@ const GARDEN_ATLAS_PATHS = {
   primary: "/assets/generated/garden/creatures/garden-process-atlas-v1.png",
   secondary: "/assets/generated/garden/creatures/garden-process-atlas-v2.png",
   primaryVariant: "/assets/generated/garden/creatures/garden-process-atlas-v3.png",
-  secondaryVariant: "/assets/generated/garden/creatures/garden-process-atlas-v4.png",
-  habitats: "/assets/generated/garden/habitats/garden-habitat-atlas-v1.png",
-  pollinators: "/assets/generated/garden/pollinators/garden-pollinator-atlas-v1.png"
+  secondaryVariant: "/assets/generated/garden/creatures/garden-process-atlas-v4.png"
 } as const;
 const coreMaskCache = new Map<string, HTMLCanvasElement>();
 const spriteAtlasCache = new Map<string, HTMLCanvasElement[]>();
@@ -655,6 +654,9 @@ export function GardenCanvas() {
     const creatureVariants: HTMLCanvasElement[][] = Array.from({ length: 8 }, () => []);
     let habitatSprites: HTMLCanvasElement[] = [];
     let pollinatorSprites: HTMLCanvasElement[] = [];
+    let particleOpacity = 0;
+    let habitatOpacity = 0;
+    let pollinatorOpacity = 0;
     let agentSprites: HTMLCanvasElement[] = [];
     let celestialSprites: HTMLCanvasElement[] = [];
     const mawImage = isEldritchAsset ? new Image() : null;
@@ -704,10 +706,11 @@ export function GardenCanvas() {
       loadAtlas(GARDEN_ATLAS_PATHS.primaryVariant, (sprites) => registerVariants(sprites, 0));
       loadAtlas(GARDEN_ATLAS_PATHS.secondary, (sprites) => registerVariants(sprites, 4));
       loadAtlas(GARDEN_ATLAS_PATHS.secondaryVariant, (sprites) => registerVariants(sprites, 4));
-      loadAtlas(GARDEN_ATLAS_PATHS.habitats, (sprites) => { habitatSprites = sprites; });
-      loadAtlas(GARDEN_ATLAS_PATHS.pollinators, (sprites) => { pollinatorSprites = sprites; });
     }
-    loadAtlas(`/assets/generated/${isEldritchAsset ? "eldritch" : "garden"}/agents/${isEldritchAsset ? "eldritch" : "garden"}-agent-growth-atlas-v1.png`, (sprites) => { agentSprites = sprites; });
+    const assetFamily = isEldritchAsset ? "eldritch" : "garden";
+    loadAtlas(`/assets/generated/${assetFamily}/habitats/${assetFamily}-habitat-atlas-v1.png`, (sprites) => { habitatSprites = sprites; });
+    loadAtlas(`/assets/generated/${assetFamily}/pollinators/${assetFamily}-pollinator-atlas-v1.png`, (sprites) => { pollinatorSprites = sprites; });
+    loadAtlas(`/assets/generated/${assetFamily}/agents/${assetFamily}-agent-growth-atlas-v1.png`, (sprites) => { agentSprites = sprites; });
     let frame = 0;
     let lastRenderedAt = 0;
     let lastSceneFrameAt = clockRef.current.time;
@@ -779,20 +782,24 @@ export function GardenCanvas() {
         drawCelestialCycle(context, width, height, time, isEldritch, reduced, celestialSprites[offset] ?? null, celestialSprites[offset + 1] ?? null);
       }
 
-      if (live.particlesEnabled) {
+      const staticFrame = live.paused || live.reducedMotion;
+      particleOpacity = ambientVisibility(particleOpacity, live.particlesEnabled, deltaMs, staticFrame);
+      habitatOpacity = ambientVisibility(habitatOpacity, live.particlesEnabled && habitatSprites.length === 4, deltaMs, staticFrame);
+      pollinatorOpacity = ambientVisibility(pollinatorOpacity, live.particlesEnabled && pollinatorSprites.length === 4, deltaMs, staticFrame);
+      if (particleOpacity > 0) {
         const count = Math.round(65 * theme.effects.particles * live.nodeDensity * (live.displayMode === "wallpaper" ? 0.55 : 1));
         for (let index = 0; index < count; index += 1) {
           const seed = index * 97.17;
-          const x = (seed * 13.7 + time * 0.004 * reduced * ((index % 3) + 1)) % Math.max(width, 1);
-          const y = (seed * 4.2 + Math.sin(time * 0.0004 * reduced + index) * 22 + height) % Math.max(height, 1);
-          context.globalAlpha = 0.12 + (index % 5) * 0.025;
+          const x = (seed * 13.7 + time * 0.004 * ((index % 3) + 1)) % Math.max(width, 1);
+          const y = (seed * 4.2 + Math.sin(time * 0.0004 + index) * 22 + height) % Math.max(height, 1);
+          context.globalAlpha = (0.12 + (index % 5) * 0.025) * particleOpacity;
           context.fillStyle = index % 4 ? theme.colors.primary : theme.colors.secondary;
           context.beginPath(); context.arc(x, y, 0.7 + (index % 3) * 0.45, 0, Math.PI * 2); context.fill();
         }
         context.globalAlpha = 1;
       }
 
-      if (!isEldritch && habitatSprites.length === 4) {
+      if (habitatOpacity > 0 && habitatSprites.length === 4) {
         const habitatSize = Math.max(96, Math.min(178, Math.min(width, height) * 0.3));
         const habitats = [
           { x: width * 0.14, y: height * 0.27, rotation: -0.12, scale: 1.05 },
@@ -803,11 +810,11 @@ export function GardenCanvas() {
         habitats.forEach((placement, index) => {
           context.save();
           context.translate(placement.x, placement.y);
-          const habitatBreath = 1 + Math.sin(time * 0.00042 * reduced + index * 1.71) * 0.026;
-          context.rotate(placement.rotation + Math.sin(time * 0.00021 * reduced + index) * 0.018);
+          const habitatBreath = 1 + Math.sin(time * (isEldritch ? 0.00032 : 0.00042) + index * 1.71) * (isEldritch ? 0.018 : 0.026);
+          context.rotate(placement.rotation + Math.sin(time * 0.00021 + index) * 0.018);
           context.scale(habitatBreath, 2 - habitatBreath);
           context.globalCompositeOperation = "screen";
-          context.globalAlpha = 0.2 + (index % 2) * 0.045 + Math.sin(time * 0.00033 * reduced + index) * 0.018;
+          context.globalAlpha = ((isEldritch ? 0.29 : 0.2) + (index % 2) * 0.045 + Math.sin(time * 0.00033 + index) * 0.018) * habitatOpacity;
           const size = habitatSize * placement.scale;
           context.drawImage(habitatSprites[index], -size / 2, -size / 2, size, size);
           context.restore();
@@ -1099,18 +1106,17 @@ export function GardenCanvas() {
         }
       }
 
-      if (!isEldritch && pollinatorSprites.length === 4 && live.particlesEnabled) {
+      if (pollinatorOpacity > 0 && pollinatorSprites.length === 4) {
         const pollinatorCount = live.displayMode === "wallpaper" ? 3 : 4;
         for (let index = 0; index < pollinatorCount; index += 1) {
-          const phase = time * (0.00011 + index * 0.000018) * reduced + index * 1.73;
-          const flightX = cx + Math.cos(phase * 1.31) * width * (0.24 + index * 0.018) + Math.sin(phase * 2.7) * 32;
-          const flightY = cy + Math.sin(phase * 1.77) * height * (0.2 + index * 0.012) + Math.cos(phase * 3.2) * 18;
-          const size = Math.max(19, Math.min(34, Math.min(width, height) * (0.038 + index * 0.002)));
+          const pose = ambientFaunaPose(index, width, height, time, isEldritch);
+          const { size } = pose;
           context.save();
-          context.translate(flightX, flightY);
-          context.rotate(Math.atan2(Math.cos(phase * 1.77), -Math.sin(phase * 1.31)) + Math.PI * 0.5);
+          context.translate(pose.x, pose.y);
+          context.rotate(pose.rotation);
+          context.scale(pose.stretch, 2 - pose.stretch);
           context.globalCompositeOperation = "screen";
-          context.globalAlpha = 0.44 + (index % 2) * 0.12;
+          context.globalAlpha = pose.alpha * pollinatorOpacity;
           context.drawImage(pollinatorSprites[index], -size / 2, -size / 2, size, size);
           context.restore();
         }
