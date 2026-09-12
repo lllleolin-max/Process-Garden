@@ -19,7 +19,10 @@ export function formatDuration(seconds: number, locale: AppLocale) {
   return `${days ? `${days}d ` : ""}${hours}h ${minutes}m`;
 }
 
-export function formatDateTime(timestampSeconds: number, locale: AppLocale) {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(timestampSeconds * 1000));
+export function formatDateTime(timestamp: number, locale: AppLocale) {
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return "—";
+  const date = new Date(timestamp > 10_000_000_000 ? timestamp : timestamp * 1000);
+  if (!Number.isFinite(date.getTime())) return "—";
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "medium" }).format(date);
 }
 

@@ -13,4 +13,9 @@ describe("locale-aware formatters", () => {
     expect(formatDuration(90061, "en-US")).toBe("1d 1h 1m");
     expect(formatDateTime(1_754_000_000, "en-US")).not.toContain("Invalid");
   });
+
+  it("normalizes seconds and milliseconds, and safely displays unavailable start times", () => {
+    expect(formatDateTime(1_754_000_000_000, "zh-CN")).toBe(formatDateTime(1_754_000_000, "zh-CN"));
+    for (const timestamp of [0, -1, NaN, Infinity, 1e30]) expect(formatDateTime(timestamp, "en-US")).toBe("—");
+  });
 });
