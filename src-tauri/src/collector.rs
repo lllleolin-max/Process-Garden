@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::Mutex,
+    sync::{Arc, Mutex},
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -50,11 +50,12 @@ fn thread_counts() -> HashMap<u32, usize> {
     HashMap::new()
 }
 
-pub struct SystemCollector(pub Mutex<System>);
+#[derive(Clone)]
+pub struct SystemCollector(pub Arc<Mutex<System>>);
 
 impl Default for SystemCollector {
     fn default() -> Self {
-        Self(Mutex::new(System::new_all()))
+        Self(Arc::new(Mutex::new(System::new_all())))
     }
 }
 
@@ -119,6 +120,18 @@ mod tests {
         assert_eq!(process_status(0.0), "idle");
         assert_eq!(process_status(8.0), "active");
         assert_eq!(process_status(50.0), "stressed");
+    }
+
+    #[test]
+    fn cloned_collectors_share_the_same_sampling_state() {
+        let collector = SystemCollector(Arc::new(Mutex::new(System::new())));
+        let worker_collector = collector.clone();
+        assert!(Arc::ptr_eq(&collector.0, &worker_collector.0));
+
+        // A worker clone must synchronize against the same process history and
+        // CPU baseline, rather than refreshing an independent System instance.
+        let _sampling = collector.0.lock().expect("collector lock is available");
+        assert!(matches!(worker_collector.0.try_lock(), Err(std::sync::TryLockError::WouldBlock)));
     }
 
     #[test]

@@ -1,6 +1,7 @@
 # Performance model
 
 - One long-lived Rust `System` object is refreshed; the collector is not recreated per tick.
+- The sampling command uses Tauri's blocking worker pool. Cloned collectors share the same mutex, process history and CPU baseline; process enumeration cannot block the native UI event loop.
 - CPU/memory/process collection defaults to 1 Hz and is configurable from 0.5–5 seconds.
 - History is bounded to 120 snapshots and displayed process nodes are ranked and capped.
 - Canvas is capped at device pixel ratio 2 and redraws independently from React sampling. Its global 30/60/120 Hz target is paced on `requestAnimationFrame`, so it stays aligned with display vertical refresh and naturally falls back to the monitor's physical maximum.
