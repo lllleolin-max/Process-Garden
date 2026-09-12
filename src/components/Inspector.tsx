@@ -1,4 +1,4 @@
-import { Activity, Binary, BrainCircuit, Check, CircleDot, Clock3, Copy, Cpu, FolderCog, Network, Sprout, Workflow } from "lucide-react";
+import { Activity, Binary, BrainCircuit, Check, CircleDot, Clock3, Copy, Cpu, FolderCog, Network, Workflow } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatBytes, formatDateTime, formatPercent } from "../i18n/formatters";
@@ -22,7 +22,7 @@ export function Inspector() {
   }, [state.selectedPid]);
   if (!process) return <aside className="inspector panel-surface empty-inspector"><CircleDot size={28} /><p>{t("inspector.selectHint")}</p></aside>;
   const statusKey = process.status === "stressed" ? "stressed" : process.status === "idle" ? "idle" : "running";
-  const agentTasks = isAgentProcess(process) ? state.snapshot.processes.filter((item) => item.parentPid === process.pid) : [];
+  const agentTasks = isAgentProcess(process) ? state.snapshot.processes.filter((item) => item.parentPid === process.pid && item.status !== "dead") : [];
   const copyDetails = async () => {
     const request = ++copyRequest.current;
     clearTimeout(copyTimer.current);
@@ -59,7 +59,7 @@ export function Inspector() {
       {tab === "threads" && <section className="inspector-tab-summary"><Workflow size={24} /><strong>{process.threadCount ?? t("common.unavailable")}</strong><p>{t("inspector.threadSummary")}</p></section>}
       {tab === "connections" && <section className="inspector-tab-summary"><Network size={24} /><strong>{process.connections ?? t("common.unavailable")}</strong><p>{t("inspector.connectionPrivacy")}</p></section>}
       </div>
-      {isAgentProcess(process) && <section className="agent-lifecycle-card"><header><BrainCircuit size={16} /><div><strong>{t("inspector.agentCore")}</strong><small>{t("inspector.agentTasks", { count: agentTasks.length })}</small></div></header>{agentTasks.length ? agentTasks.map((task) => { const stage = agentEmbryoStage(task); return <div className={`agent-task-stage stage-${stage}`} key={task.pid}><Sprout size={13} /><span><strong>{task.name}</strong><small>{t(`inspector.embryoStage${stage}`)}</small></span><i>{stage + 1}/3</i></div>; }) : <p>{t("inspector.noAgentTasks")}</p>}</section>}
+      {isAgentProcess(process) && <section className="agent-lifecycle-card"><header><BrainCircuit size={16} /><div><strong>{t("inspector.agentCore")}</strong><small>{t("inspector.agentTasks", { count: agentTasks.length })}</small></div></header><p>{t("inspector.agentStageHint")}</p>{agentTasks.length ? agentTasks.map((task) => { const stage = agentEmbryoStage(task, state.snapshot.timestamp); return <button className={`agent-task-stage stage-${stage}`} key={`${task.pid}:${task.startedAt}`} onClick={() => state.setSelectedPid(task.pid)} aria-label={t("a11y.selectProcess", { name: task.name })}><ProcessIcon process={task} /><span><strong>{task.name}</strong><small>{t(`inspector.embryoStage${stage}`)}</small></span><i>{stage + 1}/3</i></button>; }) : <p>{t("inspector.noAgentTasks")}</p>}</section>}
       <div className="detail-grid">
         <Detail icon={Binary} label={t("inspector.pid")} value={String(process.pid)} />
         <Detail icon={Workflow} label={t("metrics.threads")} value={String(process.threadCount ?? "—")} />

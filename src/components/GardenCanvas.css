@@ -1,0 +1,34 @@
+.garden-panel::before { display: none; }
+.canvas-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+.canvas-asset-status {
+  position: absolute;
+  top: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 32px);
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background-elevated);
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.canvas-asset-status button {
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--color-text);
+  white-space: nowrap;
+}

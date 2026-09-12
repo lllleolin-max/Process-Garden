@@ -40,6 +40,10 @@ describe("organism ecology", () => {
     expect(agentEmbryoStage(sample("task", { startedAt: Math.floor((now - 400_000) / 1000) }), now)).toBe(2);
   });
 
+  it("does not invent a mature stage from an unavailable process start time", () => {
+    for (const startedAt of [0, NaN, Infinity]) expect(agentEmbryoStage(sample("task", { startedAt }), Date.now())).toBe(0);
+  });
+
   it("selects a deterministic atlas variant without relying on even Windows PIDs", () => {
     const process = sample("chrome", { pid: 5520 });
     expect(organismVariantIndex(process, 2)).toBe(organismVariantIndex(process, 2));

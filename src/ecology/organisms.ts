@@ -64,7 +64,8 @@ export function organismVariantIndex(process: Pick<ProcessSnapshot, "pid" | "nam
   return hash % variantCount;
 }
 
-export function agentEmbryoStage(process: ProcessSnapshot, now = Date.now()) {
+export function agentEmbryoStage(process: ProcessSnapshot, now: number): 0 | 1 | 2 {
+  if (!Number.isFinite(process.startedAt) || process.startedAt <= 0 || !Number.isFinite(now)) return 0;
   const startedAtMs = process.startedAt > 10_000_000_000 ? process.startedAt : process.startedAt * 1000;
   const ageSeconds = Math.max(0, (now - startedAtMs) / 1000);
   if (ageSeconds < 45) return 0;
