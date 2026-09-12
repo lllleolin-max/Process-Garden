@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { builtInThemes } from "../design-system/themes/builtIn";
 import { getCelestialCycle, type CelestialBodyState } from "../animation/celestialCycle";
+import { removeBlackMatte } from "../animation/spriteAlpha";
 import { ELDRITCH_SWALLOW_DURATION_MS, getEldritchSwallowMotion } from "../animation/eldritchLifecycle";
 import { decideAnimationFrame } from "../animation/frameRate";
 import { damp, stableProcessAngle } from "../animation/smoothing";
@@ -236,10 +237,7 @@ function prepareEldritchSprites(image: HTMLImageElement, preserveAlpha = false) 
     );
     if (preserveAlpha) return sprite;
     const pixels = spriteContext.getImageData(0, 0, cropWidth, cropHeight);
-    for (let offset = 0; offset < pixels.data.length; offset += 4) {
-      const brightness = Math.max(pixels.data[offset], pixels.data[offset + 1], pixels.data[offset + 2]);
-      pixels.data[offset + 3] = brightness < 7 ? 0 : Math.min(255, (brightness - 4) * 12);
-    }
+    removeBlackMatte(pixels.data);
     spriteContext.clearRect(0, 0, cropWidth, cropHeight);
     spriteContext.putImageData(pixels, 0, 0);
     return sprite;
@@ -373,7 +371,7 @@ function drawProcessIdentity(
   context.restore();
 }
 
-function drawCore(context: CanvasRenderingContext2D, x: number, y: number, radius: number, theme: ThemeManifest, time: number, eldritch: boolean, maskedCore: HTMLCanvasElement | null, mouthOpen = 0, coreKick = 0, maw: HTMLImageElement | null = null) {
+function drawCore(context: CanvasRenderingContext2D, x: number, y: number, radius: number, theme: ThemeManifest, time: number, eldritch: boolean, maskedCore: HTMLCanvasElement | null, mouthOpen = 0, coreKick = 0, maw: HTMLCanvasElement | null = null) {
   if (eldritch && coreKick > 0) {
     x += Math.sin(time * 0.045) * coreKick * 9;
     y -= coreKick * 7;
@@ -392,7 +390,7 @@ function drawCore(context: CanvasRenderingContext2D, x: number, y: number, radiu
   }
   if (maskedCore) {
     const imageSize = size * 3.15;
-    if (eldritch && mouthOpen > 0.001 && maw?.complete && maw.naturalWidth) {
+    if (eldritch && mouthOpen > 0.001 && maw?.width) {
       const openness = Math.min(1, mouthOpen);
       context.save();
       context.globalCompositeOperation = "screen";
@@ -657,10 +655,25 @@ export function GardenCanvas() {
     let pollinatorSprites: HTMLCanvasElement[] = [];
     let agentSprites: HTMLCanvasElement[] = [];
     let celestialSprites: HTMLCanvasElement[] = [];
-    const mawImage = isEldritchAsset ? new Image() : null;
-    if (mawImage) {
-      mawImage.onload = () => requestRender();
-      mawImage.src = "/assets/generated/eldritch/cores/eldritch-core-maw-v3.png";
+    const mawPath = "/assets/generated/eldritch/cores/eldritch-core-maw-v3.png";
+    let maskedMaw: HTMLCanvasElement | null = isEldritchAsset ? coreMaskCache.get(mawPath) ?? null : null;
+    if (isEldritchAsset && !maskedMaw) {
+      const mawImage = new Image();
+      mawImage.onload = () => {
+        const mask = document.createElement("canvas");
+        mask.width = mawImage.naturalWidth;
+        mask.height = mawImage.naturalHeight;
+        const maskContext = mask.getContext("2d", { willReadFrequently: true });
+        if (!maskContext) return;
+        maskContext.drawImage(mawImage, 0, 0);
+        const pixels = maskContext.getImageData(0, 0, mask.width, mask.height);
+        removeBlackMatte(pixels.data);
+        maskContext.putImageData(pixels, 0, 0);
+        maskedMaw = mask;
+        coreMaskCache.set(mawPath, mask);
+        requestRender();
+      };
+      mawImage.src = mawPath;
     }
     if (!maskedCore) coreImage.addEventListener("load", () => {
       const mask = document.createElement("canvas");
@@ -1080,7 +1093,7 @@ export function GardenCanvas() {
       });
 
       if (isEldritch) {
-        drawCore(context, cx, cy, coreRadius, theme, time * reduced, true, maskedCore, eldritchCoreMotion.mouthOpen, eldritchCoreMotion.coreKick, mawImage);
+        drawCore(context, cx, cy, coreRadius, theme, time * reduced, true, maskedCore, eldritchCoreMotion.mouthOpen, eldritchCoreMotion.coreKick, maskedMaw);
         if (eldritchCoreMotion.shockwave > 0.01) {
           context.save();
           context.globalCompositeOperation = "screen";
