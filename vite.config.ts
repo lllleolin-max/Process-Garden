@@ -1,6 +1,6 @@
 import react from "@vitejs/plugin-react";
 import process from "node:process";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
@@ -17,6 +17,7 @@ export default defineConfig({
     sourcemap: Boolean(process.env.TAURI_ENV_DEBUG),
   },
   test: {
+    exclude: [...configDefaults.exclude, ".coordination-local/**"],
     environment: "jsdom",
     setupFiles: ["./src/tests/setup.ts"],
     css: true,
