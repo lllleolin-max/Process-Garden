@@ -31,6 +31,8 @@ const initial = useAppStore.getState();
 const tags = new WeakMap<HTMLCanvasElement, string>();
 let callbacks: Map<number, FrameRequestCallback>, nextId: number, now: number;
 let paint: { tag: string; alpha: number }[], copies: HTMLCanvasElement[];
+let viewportWidth: number;
+let resizeCanvas: () => void;
 function tick(ms = 20) {
   now += ms; paint = [];
   act(() => { const pending = [...callbacks.values()]; callbacks.clear(); pending.forEach((callback) => callback(now)); });
@@ -58,12 +60,13 @@ async function mount() {
 beforeEach(() => {
   loader.cache.clear(); loader.pending.clear();
   callbacks = new Map(); nextId = 0; now = 1_000; paint = []; copies = [];
+  viewportWidth = 740;
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { callbacks.set(++nextId, callback); return nextId; });
   vi.stubGlobal("cancelAnimationFrame", (id: number) => callbacks.delete(id));
-  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+  vi.stubGlobal("ResizeObserver", class { constructor(callback: () => void) { resizeCanvas = callback; } observe() {} disconnect() {} });
   vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   vi.spyOn(document, "hidden", "get").mockReturnValue(false);
-  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({ x: 0, y: 0, left: 0, top: 0, right: 740, bottom: 422, width: 740, height: 422, toJSON: () => ({}) });
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(() => ({ x: 0, y: 0, left: 0, top: 0, right: viewportWidth, bottom: 422, width: viewportWidth, height: 422, toJSON: () => ({}) }));
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(function (this: HTMLCanvasElement) {
     const canvas = this, stack: number[] = [];
     const context = {
@@ -168,6 +171,42 @@ describe("ready-to-ready Canvas theme transitions", () => {
     act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, timestamp: initial.snapshot.timestamp + 1_000, processes: [] } })); tick(40);
     expect(paint.some((draw) => draw.tag === "snapshot")).toBe(false);
     expect(copies[0].width).toBe(0);
+    expect(callbacks.size).toBe(0);
+  });
+
+  it.each([
+    ["paused", "search"], ["reducedMotion", "search"],
+    ["paused", "selection"], ["reducedMotion", "selection"],
+    ["paused", "resize"], ["reducedMotion", "resize"]
+  ] as const)("finishes the frozen theme snapshot on %s %s without restarting animation", async (setting, action) => {
+    const view = await mount();
+    await request("eldritch"); await ready("eldritch"); tick(); advance(200);
+    const opacity = paint.find((draw) => draw.tag === "snapshot")!.alpha;
+    act(() => useAppStore.setState({ [setting]: true })); tick(40);
+    expect(paint.find((draw) => draw.tag === "snapshot")!.alpha).toBe(opacity);
+    expect(callbacks.size).toBe(0);
+    const timestamp = useAppStore.getState().snapshot.timestamp;
+    act(() => {
+      if (action === "search") useAppStore.setState({ searchQuery: "no-process-matches-this-filter" });
+      else if (action === "selection") useAppStore.setState({ selectedPid: initial.snapshot.processes[0].pid });
+      else { viewportWidth = 480; resizeCanvas(); }
+    });
+    tick(40);
+    expect(useAppStore.getState().snapshot.timestamp).toBe(timestamp);
+    expect(paint.some((draw) => draw.tag === "snapshot")).toBe(false);
+    expect(copies[0].width).toBe(0);
+    expect(callbacks.size).toBe(0);
+    const backdropOpacity = [...view.container.querySelectorAll<HTMLDivElement>(".canvas-backdrop")].map((layer) => Number(layer.style.opacity));
+    expect(backdropOpacity).toEqual([0, 0.46]);
+  });
+
+  it("finishes a frozen blend when the search changes but the matching population stays the same", async () => {
+    await mount(); await request("eldritch"); await ready("eldritch"); tick(); advance(200);
+    act(() => useAppStore.setState({ paused: true })); tick(40);
+    expect(paint.some((draw) => draw.tag === "snapshot")).toBe(true);
+    act(() => useAppStore.setState({ searchQuery: String(initial.snapshot.processes[0].pid) })); tick(40);
+    expect(paint.some((draw) => draw.tag === "snapshot")).toBe(false);
+    expect(paint.some((draw) => draw.tag === "eldritch")).toBe(true);
     expect(callbacks.size).toBe(0);
   });
 });

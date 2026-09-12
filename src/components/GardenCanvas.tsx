@@ -636,8 +636,9 @@ export function GardenCanvas() {
     paused: state.paused,
     processStyleOverrides: state.processStyleOverrides,
     reducedMotion,
+    searchQuery: state.searchQuery,
     selectedPid: state.selectedPid
-  }), [processes, state.snapshot.processes, state.snapshot.timestamp, embryoFocusPid, state.animationFps, state.displayMode, hoveredPid, state.labelsAlwaysVisible, state.nodeDensity, state.particlesEnabled, state.celestialCycleEnabled, state.paused, state.processStyleOverrides, reducedMotion, state.selectedPid]);
+  }), [processes, state.snapshot.processes, state.snapshot.timestamp, embryoFocusPid, state.animationFps, state.displayMode, hoveredPid, state.labelsAlwaysVisible, state.nodeDensity, state.particlesEnabled, state.celestialCycleEnabled, state.paused, state.processStyleOverrides, reducedMotion, state.searchQuery, state.selectedPid]);
   const renderStateRef = useRef(renderState);
   renderStateRef.current = renderState;
   useEffect(() => { requestRenderRef.current(); }, [renderState, assetState]);
@@ -658,6 +659,7 @@ export function GardenCanvas() {
     let lastSnapshotAt: number | null = null;
     let lastAmbientTargets = "";
     let lastLive: typeof renderStateRef.current | null = null;
+    let lastPaintedState: typeof renderStateRef.current | null = null;
     let dirty = true;
     let width = 0;
     let height = 0;
@@ -717,6 +719,16 @@ export function GardenCanvas() {
       lastSceneFrameAt = time;
       const sampleChanged = lastSnapshotAt !== live.snapshotAt;
       lastSnapshotAt = live.snapshotAt;
+      // Compare accepted paints, so a rate-limited frame cannot consume an interaction.
+      const hadPaintedState = lastPaintedState !== null;
+      const focusOrSearchChanged = lastPaintedState !== null && (
+        lastPaintedState.searchQuery !== live.searchQuery ||
+        lastPaintedState.selectedPid !== live.selectedPid ||
+        lastPaintedState.hoveredPid !== live.hoveredPid ||
+        lastPaintedState.embryoFocusPid !== live.embryoFocusPid ||
+        lastPaintedState.labelsAlwaysVisible !== live.labelsAlwaysVisible
+      );
+      lastPaintedState = live;
       dirty = false;
       assets ??= getCachedSceneAssets(theme);
       const maskedCore = assets?.core ?? null;
@@ -1177,9 +1189,10 @@ export function GardenCanvas() {
       let blend = 1;
       if (transition) {
         transition.startedAt ??= time;
-        // A later reduced-motion data sample must not remain hidden beneath a
-        // stale half-blended snapshot of processes that may already be gone.
-        const progress = live.reducedMotion && sampleChanged ? 1 : Math.min(1, Math.max(0, (time - transition.startedAt) / 500));
+        // Pausing alone preserves the composite. A later static data, layout or
+        // focus change must replace the old picture so it cannot show stale actors.
+        const settleTransition = staticFrame && hadPaintedState && (sampleChanged || layoutChanged || focusOrSearchChanged);
+        const progress = settleTransition ? 1 : Math.min(1, Math.max(0, (time - transition.startedAt) / 500));
         blend = progress;
         if (progress < 1) {
           // Premultiplied crossfade: fade the new foreground, then add the
