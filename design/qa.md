@@ -1,5 +1,6 @@
 # Current QA index
 
+- Current scene continuity: [2026-09-12 phase and theme QA](qa-scene-continuity-2026-09-12.md). PR #6 now passes 143 frontend tests; cold switching has zero observed empty generated frames, with first-decode frame cost explicitly still open.
 - Agent lifecycle successor: [2026-09-12 embryo motion QA](qa-agent-embryos-2026-09-12.md). Separate branch stacked on the ambient runtime; 120 frontend tests, no new native release.
 - Independent rendering fix: [2026-09-12 maw transparency QA](qa-maw-transparency-2026-09-12.md). Includes clean three-way backport checks against both native integration baselines.
 - Next-version ambient runtime: [2026-09-12 ambient motion QA](qa-ambient-2026-09-12.md). READY for draft frontend review; new installers are not built or approved by this result.

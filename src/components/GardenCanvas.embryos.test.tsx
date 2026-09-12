@@ -25,9 +25,9 @@ function tick(ms = 20) {
   act(() => { const pending = [...frames.values()]; frames.clear(); pending.forEach((callback) => callback(now)); });
 }
 function advance(ms: number) { for (let elapsed = 0; elapsed < ms; elapsed += 20) tick(20); }
-function mount() {
+async function mount() {
   const view = render(<GardenCanvas />);
-  act(() => images.forEach((image) => { image.dispatchEvent(new Event("load")); image.onload?.(); }));
+  await act(async () => images.forEach((image) => { image.dispatchEvent(new Event("load")); image.onload?.(); }));
   tick();
   return view;
 }
@@ -69,8 +69,8 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial); });
 
 describe("embryos in the real Canvas render path", () => {
-  it("blends both generated growth cells instead of swapping the sprite at a sample", () => {
-    mount();
+  it("blends both generated growth cells instead of swapping the sprite at a sample", async () => {
+    await mount();
     expect(embryos().map((item) => item.cell)).toEqual([1]);
     act(() => useAppStore.setState({ reducedMotion: false })); tick();
     act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, timestamp: timestamp + 50_000 } }));
@@ -79,8 +79,8 @@ describe("embryos in the real Canvas render path", () => {
     expect(embryos().every((item) => item.alpha > 0 && item.alpha < 0.9)).toBe(true);
   });
 
-  it("keeps a removed child visible and drives the generated central maw", () => {
-    mount();
+  it("keeps a removed child visible and drives the generated central maw", async () => {
+    await mount();
     act(() => useAppStore.setState({ reducedMotion: false })); tick();
     act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, processes: [parent] } }));
     advance(400);
@@ -90,8 +90,8 @@ describe("embryos in the real Canvas render path", () => {
     expect(embryos()).toHaveLength(0);
   });
 
-  it("lets keyboard users select a child and retains its agent in the visible population", () => {
-    const view = mount();
+  it("lets keyboard users select a child and retains its agent in the visible population", async () => {
+    const view = await mount();
     const canvas = view.container.querySelector("canvas")!;
     fireEvent.keyDown(canvas, { key: "ArrowRight" });
     expect(useAppStore.getState().selectedPid).toBe(parent.pid);
@@ -102,10 +102,10 @@ describe("embryos in the real Canvas render path", () => {
     expect(embryos()).toHaveLength(1);
   });
 
-  it("finds a fourth child through search while keeping its parent and the three-sprite cap", () => {
+  it("finds a fourth child through search while keeping its parent and the three-sprite cap", async () => {
     const siblings = [child, { ...child, pid: 3 }, { ...child, pid: 4 }, { ...child, pid: 5, name: "needle-child" }];
     useAppStore.setState({ searchQuery: "needle-child", snapshot: { ...useAppStore.getState().snapshot, processes: [parent, ...siblings] } });
-    const view = mount();
+    const view = await mount();
     expect(paint.some((item) => item.path.includes("/agents/") && item.cell === 0)).toBe(true);
     expect(embryos()).toHaveLength(3);
     const canvas = view.container.querySelector("canvas")!;

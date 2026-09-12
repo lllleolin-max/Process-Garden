@@ -17,6 +17,8 @@ The existing generated Garden and Eldritch agent-growth atlases remain the visua
 
 ## Evidence
 
+This section records commit `e20be77`. The later [scene continuity QA](qa-scene-continuity-2026-09-12.md) covers the current phase/theme changes and expanded 143-test verification.
+
 `npm run verify`: TypeScript, 120 tests in 24 files, and production Vite build passed. New coverage includes identity/reordering, rapid churn, interrupted exits, pause, reduced-motion changes, wallpaper limits, preferred fourth children, tether origin, timestamp normalization and alpha removal. Canvas-path tests verify simultaneous drawing of both growth cells, continued drawing after removal, central-maw activation and child keyboard/search access.
 
 Local browser QA used the actual Vite renderer with reversible same-origin demo fixtures; no native processes were started or killed for this test.

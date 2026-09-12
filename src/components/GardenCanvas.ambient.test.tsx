@@ -30,8 +30,8 @@ function frameAt(time: number) {
   });
 }
 
-function loadAmbient() {
-  act(() => images.filter((image) => /\/(habitats|pollinators)\//.test(image.src)).forEach((image) => image.dispatchEvent(new Event("load"))));
+async function loadAmbient() {
+  await act(async () => images.forEach((image) => image.dispatchEvent(new Event("load"))));
 }
 
 beforeEach(() => {
@@ -81,11 +81,11 @@ afterEach(() => {
 });
 
 describe("theme-specific ambient layers", () => {
-  it.each(["garden", "eldritch", "custom-abyss"])("loads the correct %s atlas family in all display modes", (themeId) => {
+  it.each(["garden", "eldritch", "custom-abyss"])("loads the correct %s atlas family in all display modes", async (themeId) => {
     const customThemes = [{ ...builtInThemes[1], id: "custom-abyss", basedOn: "eldritch" as const }];
     useAppStore.setState({ themeId, customThemes, reducedMotion: true });
     render(<GardenCanvas />);
-    loadAmbient();
+    await loadAmbient();
     frameAt(1_000);
     expect(draws).toHaveLength(8);
     expect(draws.every((draw) => draw.path.includes(`/generated/${themeId === "garden" ? "garden" : "eldritch"}/`))).toBe(true);
@@ -102,10 +102,10 @@ describe("theme-specific ambient layers", () => {
     expect(callbacks.size).toBe(0);
   });
 
-  it("fades both layers on toggle and reuses decoded sprites across resource samples", () => {
+  it("fades both layers on toggle and reuses decoded sprites across resource samples", async () => {
     useAppStore.setState({ themeId: "eldritch" });
     render(<GardenCanvas />);
-    loadAmbient();
+    await loadAmbient();
     for (let time = 1_000; time <= 2_500; time += 50) frameAt(time);
     const previousAlpha = draws[0].alpha;
     const imageCount = images.length;
@@ -126,10 +126,10 @@ describe("theme-specific ambient layers", () => {
     expect(draws).toHaveLength(0);
   });
 
-  it.each(["paused", "reducedMotion"] as const)("holds the current fauna pose when %s changes and excludes the frozen duration", (setting) => {
+  it.each(["paused", "reducedMotion"] as const)("holds the current fauna pose when %s changes and excludes the frozen duration", async (setting) => {
     useAppStore.setState({ themeId: "eldritch" });
     render(<GardenCanvas />);
-    loadAmbient();
+    await loadAmbient();
     for (let time = 1_000; time <= 2_000; time += 50) frameAt(time);
     const poses = () => draws.map(({ path, x, y, rotation }) => ({ path, x, y, rotation }));
     const movingPoses = poses();
@@ -142,5 +142,20 @@ describe("theme-specific ambient layers", () => {
     expect(poses()).toEqual(movingPoses);
     frameAt(22_050);
     expect(poses()).not.toEqual(movingPoses);
+  });
+
+  it.each(["paused", "reducedMotion"] as const)("preserves an interrupted ambient fade while %s, but applies explicit toggles", async (setting) => {
+    render(<GardenCanvas />); await loadAmbient();
+    for (let time = 1_000; time <= 2_500; time += 50) frameAt(time);
+    act(() => useAppStore.setState({ particlesEnabled: false })); frameAt(2_600);
+    const fading = [...draws];
+    expect(fading).toHaveLength(8);
+    act(() => useAppStore.setState({ [setting]: true })); frameAt(12_600);
+    expect(draws).toEqual(fading);
+    expect(callbacks.size).toBe(0);
+    act(() => useAppStore.setState({ particlesEnabled: true })); frameAt(12_700);
+    expect(draws[0].alpha).toBeGreaterThan(fading[0].alpha);
+    act(() => useAppStore.setState({ particlesEnabled: false })); frameAt(12_800);
+    expect(draws).toHaveLength(0);
   });
 });
