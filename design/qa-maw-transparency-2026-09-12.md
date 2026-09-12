@@ -1,6 +1,6 @@
 # Generated maw transparency — 2026-09-12
 
-Scope: a frontend-only rendering fix. The original ImageGen PNG and installers are unchanged.
+Scope: a frontend-only rendering fix. The original ImageGen PNG is unchanged. Installer verification after the backport is recorded in `release/README.md`.
 
 ## Reproduction and cause
 
