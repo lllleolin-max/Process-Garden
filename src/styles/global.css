@@ -434,6 +434,8 @@ button, a, input, select { touch-action: manipulation; }
 .mode-wallpaper .topbar, .mode-wallpaper .sidebar, .mode-wallpaper .inspector, .mode-wallpaper .timeline,
 .mode-wallpaper .canvas-heading, .mode-wallpaper .organism-dock { visibility: hidden; }
 .mode-wallpaper .topbar { position: absolute; }
+.mode-fullscreen .canvas-heading { top: 70px; left: auto; right: 10px; background: none; }
+.mode-fullscreen .canvas-heading > div:first-child { display: none; }
 
 @keyframes panel-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes detail-arrive { from { opacity: .25; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -471,6 +473,7 @@ button, a, input, select { touch-action: manipulation; }
   .canvas-heading strong { max-width: 26ch; font-size: 11px; }
   .organism-dock { justify-content: flex-start; }
   .mode-fullscreen .topbar { height: 90px; }
+  .mode-fullscreen .canvas-heading { top: 110px; }
   .mode-fullscreen .workspace, .mode-wallpaper .workspace { grid-template-columns: 0 minmax(0, 1fr) 0; grid-template-rows: minmax(0, 1fr) 0; }
   .mode-fullscreen .garden-panel, .mode-wallpaper .garden-panel { grid-column: 2; }
 }

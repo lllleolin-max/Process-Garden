@@ -1199,6 +1199,7 @@ export function GardenCanvas() {
         </div>
       </div>
       <canvas ref={canvasRef} tabIndex={0} role="group" onPointerMove={(event) => setHoveredPid(locate(event))} onPointerLeave={() => setHoveredPid(null)} onClick={(event) => state.setSelectedPid(locate(event))} onKeyDown={(event) => {
+        if (event.key === "Escape" && state.displayMode !== "windowed") return;
         if (event.key === "Escape" || event.key === "Home") { event.preventDefault(); state.setSelectedPid(null); return; }
         if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key) || !processes.length) return;
         event.preventDefault();

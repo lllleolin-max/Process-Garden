@@ -113,6 +113,14 @@ describe("garden render scheduling", () => {
     expect(callbacks.size).toBe(0);
   });
 
+  it.each(["fullscreen", "wallpaper"] as const)("lets Escape reach the app exit handler in %s", (displayMode) => {
+    useAppStore.setState({ displayMode });
+    const { container } = render(<GardenCanvas />);
+    const event = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    fireEvent(container.querySelector("canvas")!, event);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it("moves paused organisms into the resized viewport without resuming animation", () => {
     useAppStore.setState({ paused: true, snapshot: { ...initialState.snapshot, processes: [initialState.snapshot.processes[0]] } });
     render(<GardenCanvas />);
