@@ -1,0 +1,86 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useAppStore } from "./appStore";
+
+beforeEach(() => useAppStore.setState(useAppStore.getInitialState(), true));
+afterEach(() => {
+  localStorage.clear();
+  vi.restoreAllMocks();
+});
+
+describe("snapshot continuity", () => {
+  it("starts with a chronological demo history ending at the displayed snapshot", () => {
+    const { history, snapshot, samplingMs } = useAppStore.getState();
+    expect(history.at(-1)).toBe(snapshot);
+    expect(history.slice(1).every((item, index) => item.timestamp - history[index].timestamp === samplingMs)).toBe(true);
+  });
+
+  it("starts a clean history and event log when switching collectors", () => {
+    const demo = useAppStore.getState().snapshot;
+    const native = { ...demo, timestamp: demo.timestamp + 1_000, cpuPercent: 80 };
+    useAppStore.getState().ingestSnapshot(native, "native");
+    expect(useAppStore.getState().history).toEqual([native]);
+    expect(useAppStore.getState().events).toEqual([]);
+    const nextDemo = { ...demo, timestamp: native.timestamp + 4_000 };
+    useAppStore.getState().ingestSnapshot(nextDemo, "demo");
+    expect(useAppStore.getState().history).toEqual([nextDemo]);
+    expect(useAppStore.getState().events).toEqual([]);
+  });
+
+  it("ignores late, duplicate, and paused samples without notifying subscribers", () => {
+    const before = useAppStore.getState();
+    const listener = vi.fn();
+    const unsubscribe = useAppStore.subscribe(listener);
+    before.ingestSnapshot({ ...before.snapshot, timestamp: before.snapshot.timestamp - 1 }, "demo");
+    before.ingestSnapshot({ ...before.snapshot }, "demo");
+    expect(useAppStore.getState()).toBe(before);
+    expect(listener).not.toHaveBeenCalled();
+    before.setPaused(true);
+    const paused = useAppStore.getState();
+    paused.ingestSnapshot({ ...paused.snapshot, timestamp: paused.snapshot.timestamp + 1_000 }, "demo");
+    expect(useAppStore.getState()).toBe(paused);
+    unsubscribe();
+  });
+
+  it("preserves explicit deselection and the event array when no event occurred", () => {
+    const timestamp = 8_001;
+    const snapshot = { ...useAppStore.getState().snapshot, timestamp };
+    useAppStore.setState({ snapshot, collector: "demo", selectedPid: null });
+    const events = useAppStore.getState().events;
+    useAppStore.getState().ingestSnapshot({ ...snapshot, timestamp: timestamp + 500 }, "demo");
+    expect(useAppStore.getState().selectedPid).toBeNull();
+    expect(useAppStore.getState().events).toBe(events);
+  });
+
+  it("keeps at most 120 samples", () => {
+    const snapshot = useAppStore.getState().snapshot;
+    for (let index = 1; index <= 150; index++) {
+      useAppStore.getState().ingestSnapshot({ ...snapshot, timestamp: snapshot.timestamp + index * 1_000 }, "demo");
+    }
+    expect(useAppStore.getState().history).toHaveLength(120);
+    expect(useAppStore.getState().history.at(-1)).toBe(useAppStore.getState().snapshot);
+  });
+});
+
+describe("saved preferences", () => {
+  it("validates stored values before they can affect rendering or polling", async () => {
+    localStorage.setItem("process-garden-preferences", JSON.stringify({
+      locale: "invalid", nodeDensity: 20, samplingMs: -1, reducedMotion: "false", animationFps: 500,
+      setPaused: "not-an-action"
+    }));
+    vi.resetModules();
+    const { useAppStore: restored } = await import("./appStore");
+    expect(restored.getState().locale).toMatch(/^(zh-CN|en-US)$/);
+    expect(restored.getState().nodeDensity).toBe(1);
+    expect(restored.getState().samplingMs).toBe(500);
+    expect(typeof restored.getState().reducedMotion).toBe("boolean");
+    expect(restored.getState().animationFps).toBe(60);
+    expect(typeof restored.getState().setPaused).toBe("function");
+  });
+
+  it("keeps changed preferences usable when browser storage is unavailable", async () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new DOMException("Quota exceeded", "QuotaExceededError"); });
+    useAppStore.getState().setPreference("particlesEnabled", false);
+    await Promise.resolve();
+    expect(useAppStore.getState().particlesEnabled).toBe(false);
+  });
+});

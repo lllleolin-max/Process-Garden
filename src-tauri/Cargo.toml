@@ -1,0 +1,31 @@
+[package]
+name = "process-garden"
+version = "0.1.0"
+description = "A living visualization of local system processes"
+authors = ["Process Garden contributors"]
+edition = "2021"
+
+[lib]
+name = "process_garden_lib"
+crate-type = ["rlib"]
+
+[[bin]]
+name = "process-garden"
+path = "src/main.rs"
+test = false
+bench = false
+
+[build-dependencies]
+tauri-build = { version = "=2.6.3", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sysinfo = "=0.36.1"
+tauri = { version = "=2.11.5", features = ["tray-icon"] }
+tauri-plugin-wallpaper = "=3.0.0"
+
+[target.'cfg(windows)'.dependencies]
+base64 = "0.22"
+png = "0.17"
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Storage_FileSystem", "Win32_System_Diagnostics_ToolHelp", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }

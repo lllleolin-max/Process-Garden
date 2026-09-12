@@ -1,0 +1,117 @@
+import { act, cleanup, renderHook } from "@testing-library/react";
+import { StrictMode } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useAppStore } from "../stores/appStore";
+import type { SystemSnapshot } from "../types/system";
+import { useSystemFeed } from "./useSystemFeed";
+
+const invoke = vi.hoisted(() => vi.fn());
+vi.mock("@tauri-apps/api/core", () => ({ invoke }));
+
+function deferred() {
+  let resolve!: (snapshot: SystemSnapshot) => void;
+  const promise = new Promise<SystemSnapshot>((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
+let hidden = false;
+beforeEach(() => {
+  vi.useFakeTimers();
+  invoke.mockReset();
+  hidden = false;
+  vi.spyOn(document, "hidden", "get").mockImplementation(() => hidden);
+  Object.defineProperty(window, "__TAURI_INTERNALS__", { configurable: true, value: {} });
+  const initial = useAppStore.getInitialState();
+  useAppStore.setState({ ...initial, demoMode: false, collector: "native", snapshot: { ...initial.snapshot, timestamp: Date.now() - 1_000 } }, true);
+});
+afterEach(() => {
+  cleanup();
+  vi.clearAllTimers();
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  Reflect.deleteProperty(window, "__TAURI_INTERNALS__");
+});
+
+describe("system sampling lifecycle", () => {
+  it("keeps at most one native request in flight even when the sample is slow", async () => {
+    const request = deferred();
+    invoke.mockReturnValue(request.promise);
+    renderHook(() => useSystemFeed(), { wrapper: StrictMode });
+    await act(() => vi.dynamicImportSettled());
+    expect(invoke).toHaveBeenCalledTimes(1);
+    await act(() => vi.advanceTimersByTimeAsync(3_000));
+    expect(invoke).toHaveBeenCalledTimes(1);
+    const snapshot = { ...useAppStore.getState().snapshot, timestamp: Date.now() };
+    await act(async () => { request.resolve(snapshot); });
+    expect(useAppStore.getState().snapshot).toBe(snapshot);
+  });
+
+  it("waits for an old request after a sampling preference changes and discards its result", async () => {
+    const request = deferred();
+    const next = deferred();
+    invoke.mockReturnValueOnce(request.promise).mockReturnValue(next.promise);
+    renderHook(() => useSystemFeed());
+    await act(() => vi.dynamicImportSettled());
+    const before = useAppStore.getState().snapshot;
+    act(() => useAppStore.getState().setPreference("samplingMs", 500));
+    expect(invoke).toHaveBeenCalledTimes(1);
+    await act(async () => { request.resolve({ ...before, timestamp: before.timestamp + 1_000, cpuPercent: 99 }); });
+    await act(() => vi.dynamicImportSettled());
+    expect(invoke).toHaveBeenCalledTimes(2);
+    expect(useAppStore.getState().snapshot).toBe(before);
+    const snapshot = { ...before, timestamp: before.timestamp + 2_000, cpuPercent: 42 };
+    await act(async () => { next.resolve(snapshot); });
+    expect(useAppStore.getState().snapshot).toBe(snapshot);
+  });
+
+  it("discards paused requests and resumes with a fresh sample", async () => {
+    const request = deferred();
+    const next = deferred();
+    invoke.mockReturnValueOnce(request.promise).mockReturnValue(next.promise);
+    renderHook(() => useSystemFeed());
+    await act(() => vi.dynamicImportSettled());
+    const before = useAppStore.getState().snapshot;
+    act(() => useAppStore.getState().setPaused(true));
+    await act(async () => { request.resolve({ ...before, timestamp: before.timestamp + 1_000 }); });
+    await act(() => vi.advanceTimersByTimeAsync(5_000));
+    expect(useAppStore.getState().snapshot).toBe(before);
+    expect(invoke).toHaveBeenCalledTimes(1);
+    act(() => useAppStore.getState().setPaused(false));
+    await act(() => vi.dynamicImportSettled());
+    expect(invoke).toHaveBeenCalledTimes(2);
+    await act(async () => { next.resolve({ ...before, timestamp: Date.now() }); });
+  });
+
+  it("stops polling while hidden and discards results from before the visibility change", async () => {
+    const request = deferred();
+    const next = deferred();
+    invoke.mockReturnValueOnce(request.promise).mockReturnValue(next.promise);
+    renderHook(() => useSystemFeed());
+    await act(() => vi.dynamicImportSettled());
+    const before = useAppStore.getState().snapshot;
+    hidden = true;
+    act(() => document.dispatchEvent(new Event("visibilitychange")));
+    await act(async () => { request.resolve({ ...before, timestamp: Date.now() }); });
+    await act(() => vi.advanceTimersByTimeAsync(10_000));
+    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().snapshot).toBe(before);
+    hidden = false;
+    act(() => document.dispatchEvent(new Event("visibilitychange")));
+    await act(() => vi.dynamicImportSettled());
+    expect(invoke).toHaveBeenCalledTimes(2);
+    await act(async () => { next.resolve({ ...before, timestamp: Date.now() }); });
+  });
+
+  it("does not publish or restart polling after unmount", async () => {
+    const request = deferred();
+    invoke.mockReturnValue(request.promise);
+    const hook = renderHook(() => useSystemFeed());
+    await act(() => vi.dynamicImportSettled());
+    const before = useAppStore.getState().snapshot;
+    hook.unmount();
+    await act(async () => { request.resolve({ ...before, timestamp: Date.now() }); });
+    await act(() => vi.advanceTimersByTimeAsync(5_000));
+    expect(useAppStore.getState().snapshot).toBe(before);
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
+});

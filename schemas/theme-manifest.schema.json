@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://process.garden/schemas/theme-manifest.schema.json",
+  "title": "Process Garden Theme Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "name", "version", "colors", "typography", "effects", "motion"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{1,48}$" },
+    "name": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en-US", "zh-CN"],
+      "properties": {
+        "en-US": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "zh-CN": { "type": "string", "minLength": 1, "maxLength": 64 }
+      }
+    },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$" },
+    "author": { "type": "string", "maxLength": 96 },
+    "basedOn": { "enum": ["garden", "eldritch"] },
+    "colors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["background", "backgroundElevated", "panel", "panelStrong", "border", "borderStrong", "text", "textMuted", "primary", "secondary", "tertiary", "warning", "danger", "success"],
+      "properties": {
+        "background": { "$ref": "#/$defs/color" },
+        "backgroundElevated": { "$ref": "#/$defs/color" },
+        "panel": { "$ref": "#/$defs/color" },
+        "panelStrong": { "$ref": "#/$defs/color" },
+        "border": { "$ref": "#/$defs/color" },
+        "borderStrong": { "$ref": "#/$defs/color" },
+        "text": { "$ref": "#/$defs/color" },
+        "textMuted": { "$ref": "#/$defs/color" },
+        "primary": { "$ref": "#/$defs/color" },
+        "secondary": { "$ref": "#/$defs/color" },
+        "tertiary": { "$ref": "#/$defs/color" },
+        "warning": { "$ref": "#/$defs/color" },
+        "danger": { "$ref": "#/$defs/color" },
+        "success": { "$ref": "#/$defs/color" }
+      }
+    },
+    "typography": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["display", "body", "editorial", "mono", "cjkDisplay", "cjkBody"],
+      "properties": {
+        "display": { "$ref": "#/$defs/font" },
+        "body": { "$ref": "#/$defs/font" },
+        "editorial": { "$ref": "#/$defs/font" },
+        "mono": { "$ref": "#/$defs/font" },
+        "cjkDisplay": { "$ref": "#/$defs/font" },
+        "cjkBody": { "$ref": "#/$defs/font" }
+      }
+    },
+    "effects": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["glow", "particles", "vignette", "grain"],
+      "properties": {
+        "glow": { "$ref": "#/$defs/unit" },
+        "particles": { "$ref": "#/$defs/unit" },
+        "vignette": { "$ref": "#/$defs/unit" },
+        "grain": { "$ref": "#/$defs/unit" }
+      }
+    },
+    "motion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["drift", "pulse", "tendril"],
+      "properties": {
+        "drift": { "$ref": "#/$defs/motion" },
+        "pulse": { "$ref": "#/$defs/motion" },
+        "tendril": { "$ref": "#/$defs/motion" }
+      }
+    }
+  },
+  "$defs": {
+    "color": {
+      "type": "string",
+      "pattern": "^(#[0-9A-Fa-f]{3,8}|rgba?\\([^()]{1,96}\\)|hsla?\\([^()]{1,96}\\))$"
+    },
+    "font": {
+      "enum": ["Space Grotesk Variable", "Inter Variable", "JetBrains Mono Variable", "Grenze Gotisch", "Spectral", "Noto Sans SC", "Noto Serif SC"]
+    },
+    "unit": { "type": "number", "minimum": 0, "maximum": 1 },
+    "motion": { "type": "number", "minimum": 0, "maximum": 2 }
+  }
+}

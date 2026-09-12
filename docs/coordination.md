@@ -1,0 +1,25 @@
+# Coordination — 2026-09-12
+
+The project was an unversioned shared directory when this round started. The initial Git commit captures the existing application and both tasks' in-progress improvements; it is not a pristine pre-change baseline.
+
+## Ownership
+
+- Integration task `01a09449-4661-7ca1-8ffa-0b8c94ddb736`: React shell, Canvas integration, interaction and motion QA, Git/GitHub, final builds and releases.
+- Asset/lifecycle task `019fe686-f462-7e11-8d6e-6d851752b6cc`: generated celestial atlas and Eldritch maw v3, frame pacing, scene clock, population stability, swallow timing. Implementation writing stopped after handoff. Details are in `coordination-peer.md` and `../design/motion-assets-2026-09-12.md`.
+- The integration task's three agents completed disjoint Canvas, overlay, and data-feed assignments. Only the integration task operates Git and generates release artifacts.
+
+## Working agreement
+
+1. One task owns a working directory. After this round, create a separate Git worktree and branch for each active task.
+2. Agree on ownership before changing a shared contract or generated asset. Do not replace another task's uncommitted work.
+3. Commit bounded changes and open a PR with the behavior change, tests and remaining limitations. No force pushes or automatic main-branch merges.
+4. Run `npm run verify` before integration. Native changes additionally require the Rust checks documented in CONTRIBUTING.md.
+5. Installers, portable binaries, dependency trees, local logs and environment files stay out of source commits. Publish binaries as release assets only after final verification.
+6. Retain generated asset provenance. The rejected `eldritch-core-maw-v2.png` intermediate is excluded from Git and is not a deliverable.
+
+## Current handoff checklist
+
+- Preserve `SceneClock`, early-vsync correction and population ranking hysteresis.
+- Keep alpha in the celestial atlas and consume the generated maw v3.
+- Aggregate swallowing across all visual nodes so recoil continues after the swallowed organism disappears.
+- Verify steady pause/resume, reduced motion, resize, both themes and keyboard navigation.
