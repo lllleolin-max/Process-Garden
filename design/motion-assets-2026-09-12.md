@@ -1,6 +1,6 @@
 # Motion and image-generation work — 2026-09-12
 
-Status: integration in progress. Concurrent edits were observed in GardenCanvas, Sparkline, the sampling hook and settings. Do not treat previous release binaries as containing these changes. Full visual QA and packaging are pending.
+Status: implementation handed off to the integration task. Concurrent editing has been coordinated through explicit ownership and separate Git branches/worktrees. See [the handoff record](../docs/coordination-peer.md). Do not treat previous release binaries as containing these changes. Full visual QA and packaging belong to the integration task.
 
 ## Generated production assets
 
@@ -32,4 +32,4 @@ Corrective edit: Preserve the exact creature, teeth, mouth and composition. Repl
 
 ## Outstanding verification
 
-The most recent typecheck reported SettingsDrawer.tsx and TopBar.tsx testing a void display-mode result for truthiness. These files were being edited concurrently; no overwrite or release packaging was attempted after detecting this conflict. Re-run typecheck and tests after coordinating the writer, then verify the generated maw, both wallpaper themes, pause/resume, reduced motion and all frame-rate settings in the browser before packaging.
+At approximately 14:32 on 2026-09-12, typecheck reported SettingsDrawer.tsx and TopBar.tsx testing a void display-mode result for truthiness while the integration task was updating the display-mode contract. This is a historical observation, not a claim about subsequent commits. Coordination is complete; the integration owner will re-run typecheck and tests, then verify the generated maw, both wallpaper themes, pause/resume, reduced motion and all frame-rate settings before packaging.
