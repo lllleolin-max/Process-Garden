@@ -11,8 +11,11 @@ use icons::{IconRequest, IconResult, ProcessIconCache};
 
 #[cfg(not(test))]
 #[tauri::command]
-fn sample_system(collector: tauri::State<'_, SystemCollector>) -> Result<SystemSnapshot, String> {
-    collector::sample(&collector)
+async fn sample_system(collector: tauri::State<'_, SystemCollector>) -> Result<SystemSnapshot, String> {
+    let collector = collector.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || collector::sample(&collector))
+        .await
+        .map_err(|error| format!("system sampling worker failed: {error}"))?
 }
 
 #[cfg(not(test))]
