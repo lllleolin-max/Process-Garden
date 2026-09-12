@@ -1,6 +1,7 @@
 mod collector;
 mod icons;
 mod models;
+mod power;
 
 #[cfg(not(test))]
 use collector::SystemCollector;

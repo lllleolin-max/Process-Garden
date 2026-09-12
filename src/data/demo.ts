@@ -51,6 +51,7 @@ export function makeDemoSnapshot(tick: number): SystemSnapshot {
     threadCount: 1024 + Math.round(Math.sin(tick / 6) * 24),
     logicalCpuCount: 12,
     uptimeSeconds: 7 * 86400 + 14 * 3600 + 22 * 60 + tick,
+    power: { watts: 54 + Math.sin(tick / 4) * 9 + Math.sin(tick / 13) * 5, source: "demo" },
     processes
   };
 }

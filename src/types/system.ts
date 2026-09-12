@@ -15,6 +15,12 @@ export interface ProcessSnapshot {
   command?: string;
 }
 
+export interface PowerSnapshot {
+  watts: number | null;
+  /** Battery discharge is system draw; Intel is a driver-reported package domain. Demo is never native telemetry. */
+  source: "battery" | "intel" | "unavailable" | "demo";
+}
+
 export interface SystemSnapshot {
   timestamp: number;
   cpuPercent: number;
@@ -24,6 +30,7 @@ export interface SystemSnapshot {
   threadCount: number;
   logicalCpuCount: number;
   uptimeSeconds: number;
+  power: PowerSnapshot;
   processes: ProcessSnapshot[];
 }
 

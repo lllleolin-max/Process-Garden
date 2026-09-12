@@ -11,6 +11,11 @@ export function formatPercent(value: number, locale: AppLocale, precision = 0) {
   return new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: precision }).format(Math.max(0, value) / 100);
 }
 
+export function formatWatts(watts: number | null | undefined, locale: AppLocale) {
+  if (watts == null || !Number.isFinite(watts) || watts < 0) return "—";
+  return `${new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(watts)} W`;
+}
+
 export function formatDuration(seconds: number, locale: AppLocale) {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
@@ -22,4 +27,3 @@ export function formatDuration(seconds: number, locale: AppLocale) {
 export function formatDateTime(timestampSeconds: number, locale: AppLocale) {
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(timestampSeconds * 1000));
 }
-

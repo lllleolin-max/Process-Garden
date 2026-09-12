@@ -13,6 +13,7 @@ For a ready-to-run Windows x64 build, use the [NSIS installer](release/Process-G
 ## Why it is different
 
 - **Real organisms, real processes** — size follows memory, motion follows CPU, branches follow parent PID, and births/exits become visible lifecycle events.
+- **Local power readings** — live watts and a recent trend appear in the sidebar and wallpaper HUD. On supported Windows hardware, the app reads battery discharge or the Intel driver's package energy counter. Each reading names its scope; package power is not total computer or wall-socket consumption. See [power sources and limitations](docs/power.md).
 - **Two complete visual languages** — Garden and Eldritch have separate imagery, silhouettes, motion, display typography and atmosphere; data semantics stay identical. The Garden renderer includes 16 stable process specimens, four habitat types and four animated pollinators.
 - **Application-aware ecology** — browsers, editors, runtimes, databases, containers, media, system work and heavy compute resolve to stable organism families. Any application can be pinned to a user-selected family in Settings.
 - **True application identity** — every desktop process uses the icon embedded in its own executable across the Canvas, process dock and Inspector. A bundled offline catalog covers common demo applications; initials are the final fallback.

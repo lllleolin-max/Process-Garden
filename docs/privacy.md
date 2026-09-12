@@ -2,6 +2,8 @@
 
 Process Garden is local-only. It contains no telemetry, analytics, crash upload, account, cloud sync or remote monitoring code.
 
+The optional power reading uses the Windows battery information API or the installed Intel Level Zero driver in the Windows system directory. Only watts and the measurement source enter the snapshot; no device serial number is collected. These calls read status/energy counters only: the app does not install a driver, alter power limits, require administrator privileges, or send readings elsewhere. See [power sources](power.md).
+
 The collector reads only operating-system metadata required for the visualization: aggregate CPU/memory/uptime, process PID/name/parent PID/start time/resource usage/executable path, and Windows thread counts. For visual identity, the Windows Shell reads the icon resource embedded in the executable and converts it to a small in-memory PNG. It does **not** read executable code, process memory, document contents, command contents, keystrokes, browser history, packet payloads or per-process network connections.
 
 Agent visuals are inferred from executable names and parent/child process relationships. A child process may appear as a growing "task embryo", but Process Garden never reads the prompt, response, project file or task content behind that process. Growth stages are derived only from the child process age.
