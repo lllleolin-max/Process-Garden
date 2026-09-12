@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { formatBytes, formatDuration, formatPercent } from "../i18n/formatters";
 import { useAppStore } from "../stores/appStore";
 import { MetricCard } from "./MetricCard";
+import { PowerMetric } from "./PowerMetric";
 
 export function Sidebar() {
   const { t } = useTranslation();
@@ -30,6 +31,7 @@ export function Sidebar() {
         progress={memoryPercent}
         color="linear-gradient(90deg, var(--color-tertiary), var(--color-secondary))"
       />
+      <PowerMetric />
       <MetricCard
         label={t("metrics.processes")}
         value={new Intl.NumberFormat(locale).format(snapshot.processCount)}

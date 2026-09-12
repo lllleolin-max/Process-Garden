@@ -28,4 +28,4 @@ tauri-plugin-wallpaper = "=3.0.0"
 [target.'cfg(windows)'.dependencies]
 base64 = "0.22"
 png = "0.17"
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Storage_FileSystem", "Win32_System_Diagnostics_ToolHelp", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Storage_FileSystem", "Win32_System_Diagnostics_ToolHelp", "Win32_System_LibraryLoader", "Win32_System_Power", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }

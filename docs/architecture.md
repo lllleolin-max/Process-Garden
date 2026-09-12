@@ -8,6 +8,8 @@ The native layer is a small Tauri 2 / Rust process collector. It owns OS access 
 
 ## Data flow
 
+`SystemSnapshot.power` carries `{ watts: number | null, source: "battery" | "intel" | "unavailable" }`. The Windows power collector reads battery discharge first, then supported Intel Level Zero Sysman package energy deltas. It keeps separate shared sampling state; power failures never fail the process snapshot. The frontend uses a separate `"demo"` source only for explicitly selected demo data, clears unavailable/stale readings, and charts only the uninterrupted tail of the current source. See [power.md](power.md) for measurement boundaries.
+
 1. `useSystemFeed` samples at the user-selected cadence.
 2. Tauri invokes `sample_system`; browser builds use deterministic demo snapshots.
 3. The store appends at most 120 snapshots and derives native birth, spawn, exit and CPU-spike events from consecutive process maps.
@@ -33,4 +35,4 @@ The Garden visual base adds two deterministic sprite variants per non-Agent sema
 
 ## Privacy boundary
 
-Only local CPU, memory, PID, parent PID, process name, executable path, start time, uptime and thread counts cross the Rust/JS boundary. Windows Shell extracts the executable's own icon once per unique path and returns an in-memory PNG data URL; it never reads executable code or arbitrary file content. There is no HTTP client, analytics SDK, account system, remote font, packet inspection or process-content access.
+Only local CPU, memory, PID, parent PID, process name, executable path, start time, uptime, thread counts and scoped power readings cross the Rust/JS boundary. Windows Shell extracts the executable's own icon once per unique path and returns an in-memory PNG data URL; it never reads executable code or arbitrary file content. There is no HTTP client, analytics SDK, account system, remote font, packet inspection or process-content access.

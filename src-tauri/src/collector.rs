@@ -7,6 +7,7 @@ use std::{
 use sysinfo::{ProcessesToUpdate, System};
 
 use crate::models::{ProcessSnapshot, SystemSnapshot};
+use crate::power::PowerSampler;
 
 fn process_status(cpu_percent: f32) -> &'static str {
     if cpu_percent > 35.0 {
@@ -51,17 +52,23 @@ fn thread_counts() -> HashMap<u32, usize> {
 }
 
 #[derive(Clone)]
-pub struct SystemCollector(pub Arc<Mutex<System>>);
+pub struct SystemCollector {
+    system: Arc<Mutex<System>>,
+    power: Arc<Mutex<PowerSampler>>,
+}
 
 impl Default for SystemCollector {
     fn default() -> Self {
-        Self(Arc::new(Mutex::new(System::new_all())))
+        Self {
+            system: Arc::new(Mutex::new(System::new_all())),
+            power: Arc::new(Mutex::new(PowerSampler::default())),
+        }
     }
 }
 
 pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
     let mut system = collector
-        .0
+        .system
         .lock()
         .map_err(|_| "system collector lock poisoned".to_string())?;
 
@@ -95,6 +102,8 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
     });
     processes.truncate(500);
 
+    let power = collector.power.lock().map(|mut sampler| sampler.sample()).unwrap_or_default();
+
     Ok(SystemSnapshot {
         timestamp: SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -107,6 +116,7 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
         thread_count: threads.values().sum(),
         logical_cpu_count: system.cpus().len(),
         uptime_seconds: System::uptime(),
+        power,
         processes,
     })
 }
@@ -124,14 +134,18 @@ mod tests {
 
     #[test]
     fn cloned_collectors_share_the_same_sampling_state() {
-        let collector = SystemCollector(Arc::new(Mutex::new(System::new())));
+        let collector = SystemCollector {
+            system: Arc::new(Mutex::new(System::new())),
+            power: Arc::new(Mutex::new(PowerSampler::default())),
+        };
         let worker_collector = collector.clone();
-        assert!(Arc::ptr_eq(&collector.0, &worker_collector.0));
+        assert!(Arc::ptr_eq(&collector.system, &worker_collector.system));
+        assert!(Arc::ptr_eq(&collector.power, &worker_collector.power));
 
         // A worker clone must synchronize against the same process history and
         // CPU baseline, rather than refreshing an independent System instance.
-        let _sampling = collector.0.lock().expect("collector lock is available");
-        assert!(matches!(worker_collector.0.try_lock(), Err(std::sync::TryLockError::WouldBlock)));
+        let _sampling = collector.system.lock().expect("collector lock is available");
+        assert!(matches!(worker_collector.system.try_lock(), Err(std::sync::TryLockError::WouldBlock)));
     }
 
     #[test]

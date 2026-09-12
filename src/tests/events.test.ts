@@ -7,7 +7,7 @@ function process(pid: number, cpuPercent = 1, parentPid?: number): ProcessSnapsh
 }
 
 function snapshot(timestamp: number, processes: ProcessSnapshot[]): SystemSnapshot {
-  return { timestamp, processes, cpuPercent: 1, memoryUsedBytes: 1, memoryTotalBytes: 2, processCount: processes.length, threadCount: 1, logicalCpuCount: 1, uptimeSeconds: 1 };
+  return { timestamp, processes, cpuPercent: 1, memoryUsedBytes: 1, memoryTotalBytes: 2, processCount: processes.length, threadCount: 1, logicalCpuCount: 1, uptimeSeconds: 1, power: { watts: null, source: "unavailable" } };
 }
 
 describe("native process delta events", () => {

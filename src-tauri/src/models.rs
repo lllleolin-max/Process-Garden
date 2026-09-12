@@ -1,5 +1,20 @@
 use serde::Serialize;
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PowerSource {
+    Battery,
+    Intel,
+    #[default]
+    Unavailable,
+}
+
+#[derive(Debug, Clone, Copy, Default, Serialize)]
+pub struct PowerReading {
+    pub watts: Option<f64>,
+    pub source: PowerSource,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProcessSnapshot {
@@ -25,6 +40,7 @@ pub struct SystemSnapshot {
     pub thread_count: usize,
     pub logical_cpu_count: usize,
     pub uptime_seconds: u64,
+    pub power: PowerReading,
     pub processes: Vec<ProcessSnapshot>,
 }
 
@@ -43,10 +59,23 @@ mod tests {
             thread_count: 6,
             logical_cpu_count: 8,
             uptime_seconds: 7,
+            power: PowerReading::default(),
             processes: Vec::new(),
         })
         .expect("snapshot serializes");
         assert_eq!(value["logicalCpuCount"], 8);
         assert_eq!(value["memoryUsedBytes"], 3);
+        assert!(value["power"]["watts"].is_null());
+        assert_eq!(value["power"]["source"], "unavailable");
+    }
+
+    #[test]
+    fn serializes_power_source_without_changing_its_scope() {
+        let reading = serde_json::to_value(PowerReading {
+            watts: Some(3.25),
+            source: PowerSource::Intel,
+        }).expect("power reading serializes");
+        assert_eq!(reading["watts"], 3.25);
+        assert_eq!(reading["source"], "intel");
     }
 }

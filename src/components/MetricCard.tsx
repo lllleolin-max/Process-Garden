@@ -9,11 +9,12 @@ interface MetricCardProps {
   values: number[];
   color?: string;
   progress?: number;
+  hint?: string;
 }
 
-export function MetricCard({ label, value, detail, icon: Icon, values, color, progress }: MetricCardProps) {
+export function MetricCard({ label, value, detail, icon: Icon, values, color, progress, hint }: MetricCardProps) {
   return (
-    <section className="metric-card">
+    <section className="metric-card" aria-label={label} title={hint}>
       <div className="metric-heading">
         <span className="metric-icon"><Icon size={17} strokeWidth={1.8} /></span>
         <span>{label}</span>

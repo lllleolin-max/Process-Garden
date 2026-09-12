@@ -3,6 +3,30 @@
   "common": { "live": "实时", "demo": "演示", "on": "开启", "off": "关闭", "close": "关闭", "cancel": "取消", "save": "保存", "delete": "删除", "import": "导入", "export": "导出", "back": "返回", "now": "现在", "system": "系统", "unavailable": "未采集" },
   "nav": { "overview": "概览", "threads": "线程", "connections": "连接", "search": "搜索进程", "settings": "设置", "fullscreen": "全屏", "windowed": "窗口", "wallpaper": "氛围壁纸", "pause": "暂停", "resume": "继续" },
   "metrics": { "cpu": "处理器", "memory": "内存", "processes": "进程", "threads": "线程", "uptime": "系统运行时间", "network": "网络", "used": "已使用", "cores": "逻辑核心" },
+  "power": {
+    "labels": {
+      "battery": "本机功耗",
+      "intel": "封装功耗",
+      "demo": "功耗 · 演示",
+      "unavailable": "功耗"
+    },
+    "details": {
+      "battery": "电池放电功率",
+      "intel": "Intel 封装传感器",
+      "demo": "模拟读数",
+      "unavailable": "无可用功耗传感器",
+      "waiting": "暂未取得本机读数",
+      "stale": "读数已过期"
+    },
+    "hints": {
+      "battery": "断开外接电源、使用电池时的放电功率，随采样间隔更新。这不是插座侧的耗电功率。",
+      "intel": "根据 Intel 驱动的封装能耗计数计算功率，随采样间隔更新。测量范围由硬件决定，不代表整机或插座侧功耗。",
+      "demo": "演示生成的数据，不是当前电脑的实测功耗。请在桌面版关闭演示数据，查看本机传感器读数。",
+      "unavailable": "当前没有支持的功耗读数。电池放电需要使用电池供电；Intel 封装读数需要受支持的硬件及驱动，首次读数需要两个样本。缺失数据以横线显示。",
+      "waiting": "尚未取得本机功耗数据。请在桌面版关闭演示数据，以读取支持的传感器。",
+      "stale": "采集器尚未返回新的功耗样本，收到新数据后会自动恢复显示。"
+    }
+  },
   "garden": { "title": "进程生态图", "subtitle": "资源占用化为运动、体积与光芒", "empty": "当前视图没有匹配的进程", "exact": "精确", "ecological": "生态聚合", "selected": "已选生命体", "focusCore": "清除选择并聚焦生态核心", "loadingTheme": "正在准备主题素材…", "assetError": "主题素材未能载入，已保留当前场景。", "retryTheme": "重试载入" },
   "inspector": {"title":"进程观察器","running":"运行中","idle":"休眠","stressed":"高负载","pid":"进程号","parent":"父进程","started":"启动时间","cpuUsage":"处理器占用","memoryUsage":"内存占用","openFiles":"打开文件","activity":"活动摘要","path":"可执行文件","selectHint":"选择一个生命体以查看对应的真实进程数据。","copyDetails":"复制进程摘要","threadSummary":"来自本地进程快照的原生 Windows 线程计数。","connectionPrivacy":"隐私优先版本默认不检查单个进程的网络连接。","agentCore":"Agent 神经核心","agentTasks":"{{count}} 个子任务进程","agentStageHint":"根据子进程运行时长呈现生长阶段，不代表 Agent 的实际任务进度。","embryoStage0":"胚种阶段","embryoStage1":"神经成形","embryoStage2":"成熟胚胎","noAgentTasks":"当前没有活跃的子任务进程。","copied":"进程摘要已复制","copyFailed":"复制失败，请重试。"},
   "timeline": {"title":"进程时间线","recent":"最近事件","all":"全部事件","birth":"诞生","exit":"消亡","spawn":"派生","network":"网络","spike":"峰值","io":"读写","ago":"{{count}} 秒前","empty":"最近一分钟暂无事件。","noEvents":"进程事件将在这里显示。"},

@@ -6,6 +6,7 @@ import { GardenCanvas } from "./components/GardenCanvas";
 import { Inspector } from "./components/Inspector";
 import { SettingsDrawer } from "./components/SettingsDrawer";
 import { Sidebar } from "./components/Sidebar";
+import { PowerMetric } from "./components/PowerMetric";
 import { ThemeStudio } from "./components/ThemeStudio";
 import { Timeline } from "./components/Timeline";
 import { TopBar } from "./components/TopBar";
@@ -105,7 +106,7 @@ function WallpaperHud() {
   return (
     <div className="wallpaper-hud">
       <div className="wallpaper-brand"><Leaf size={16} /><span>{t("app.name")}</span><i /></div>
-      <div className="wallpaper-metrics"><span><MonitorUp size={14} />{formatPercent(snapshot.cpuPercent, locale)}</span><span><MemoryStick size={14} />{formatBytes(snapshot.memoryUsedBytes, locale)}</span><span>{snapshot.processCount} {t("metrics.processes")}</span></div>
+      <div className="wallpaper-metrics"><span><MonitorUp size={14} />{formatPercent(snapshot.cpuPercent, locale)}</span><span><MemoryStick size={14} />{formatBytes(snapshot.memoryUsedBytes, locale)}</span><PowerMetric compact /><span>{snapshot.processCount} {t("metrics.processes")}</span></div>
       <small>{t("modes.ambientHint")}</small>
     </div>
   );
