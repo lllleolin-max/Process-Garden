@@ -2,34 +2,36 @@
 
 Build date: 2026-09-12
 
-Implementation source: `9e87679` on `feat/motion-integration` (maw transparency `1b2db8b`, native sampling `1621914`). [Integration PR #2](https://github.com/lllleolin-max/Process-Garden/pull/2).
+Implementation source: `7ee8209` on `feat/motion-integration`. Includes frozen ambient/embryo motion `a4608e4`, native power `4c4b166`, and the final static-theme rendering fix. [Integration PR #2](https://github.com/lllleolin-max/Process-Garden/pull/2).
 
 ## Recommended installer
 
 `Process-Garden_0.1.0_x64-setup.exe` — NSIS installer, SHA-256:
 
-`0055D28E6AD69972B33E2CA3DB403F97696F3A1B463EC14A2B1E350C7D879696`
+`E149D8AE521403CEFF21FA993294F1B150394475872A446E60EB4DE518E8856E`
 
 ## Alternative installer
 
 `Process-Garden_0.1.0_x64_en-US.msi` — MSI installer, SHA-256:
 
-`ECAD3BE98655CA1256C4C7992D651A662F239966A92ABA1F2C33B77481221BDD`
+`CAB116B7289AC5507EC990BD61C63E4DC62227C98FF09D861E7393EF00080A33`
 
 ## Portable executable
 
 `Process-Garden.exe` — unpackaged executable. Keep `WebView2Loader.dll` beside it. SHA-256:
 
-`5D06C7824C6AD7A563FC5830EFAE6A95CF7FFE6983053927EA2D91296C727E6F`
+`DDD10EA1820571C4E8A1B7191BE2FF21788982DD1B8C468C6A9170DE4CBF8BA7`
 
 `WebView2Loader.dll` SHA-256:
 
 `8427B1FC58EC707813E5C0A51EB5D69397BB333250A7B891BE4D3B123F1E0F1C`
 
-This build includes stable Canvas motion, generated celestial/maw artwork, interpolated resource charts, overlay transitions, keyboard focus management, reliable presentation-mode exit and pause/reduced-motion scheduling. Native system sampling now runs on the blocking worker pool while sharing its CPU baseline; process enumeration no longer occupies the UI thread.
+This unified build includes theme-aware ambient life, continuous Agent child-process birth/growth/swallowing, celestial phase continuity, and theme crossfades after the complete scene asset bundle is ready. Paused or reduced-motion search, selection and resize release stale theme snapshots so the current static result stays visible. Existing interpolated resource charts, overlay transitions, keyboard focus management and reliable presentation-mode exit are retained.
 
-The central maw's black rectangle is removed by converting its matte to alpha once at load and caching the result. The original PNG is preserved. This patch was backported separately from subsequent ambient and embryo features.
+Scene assets share cached preparation; the central maw's black matte is converted to alpha without changing the original artwork. Agent growth describes child-process age, not actual task completion. First-time asset preparation can still cause a noticeable frame; stable 120 FPS is not established.
 
-Validation: 90 frontend tests, TypeScript and the production frontend build passed after the backport. The unchanged Rust implementation previously passed 5 tests and cargo check. The final rebuilt portable executable was launched from this directory and remained alive and responsive at all five observations over 40 seconds. The checker then stopped its own process. MSI and NSIS bundles were generated successfully; installation on a clean Windows machine was not exercised. See [the QA record](../design/qa-2026-09-12.md).
+The sidebar and wallpaper HUD show supported battery-discharge or Intel package power, with explicit source, demo, unavailable and stale states. Package power is not whole-computer or wall-socket consumption. Native sampling stays on a blocking worker with shared collector state and CPU baseline. See [measurement details](../docs/power.md).
 
-The GNU release linker reports a multiple-manifest resource warning; it completed successfully and the resulting executable passed the responsiveness smoke. Windows WebView2 is required. New ambient artwork and the concurrent power-metrics feature are separate follow-up work and are excluded from these frozen binaries. Binary artifacts are kept locally, outside Git source history.
+Validation: **156 frontend tests across 28 files**, TypeScript, production frontend build, **13 Rust tests** and cargo check passed for the unified source. The final portable executable was launched from this directory and remained alive and responsive at 8/16/24/32/40 seconds; the checker then stopped only its own process. MSI and NSIS bundles were generated successfully. See [the unified QA record](../design/qa-unified-2026-09-12.md).
+
+The GNU release linker reports a multiple-manifest resource warning; the build completed successfully. Clean-machine installation and Windows WorkerW desktop attachment were not exercised in this integration pass. Browser checks use demo data; hardware power evidence is recorded separately in the power feature's QA. Windows WebView2 is required. Binary artifacts stay locally outside Git source history. The root `一键启动 Process Garden.bat` launches this portable build.

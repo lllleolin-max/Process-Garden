@@ -23,3 +23,14 @@ The project was an unversioned shared directory when this round started. The ini
 - Keep alpha in the celestial atlas and consume the generated maw v3.
 - Aggregate swallowing across all visual nodes so recoil continues after the swallowed organism disappears.
 - Verify steady pause/resume, reduced motion, resize, both themes and keyboard navigation.
+
+## Unified release handoff
+
+The integration working directory remains owned by task `01a09449-4661-7ca1-8ffa-0b8c94ddb736`. Asset/lifecycle task `019fe686-f462-7e11-8d6e-6d851752b6cc` works in `Process Garden.worktrees/asset-motion`; power task `01a09466-1fa1-79d1-bfce-513d14ed22fe` works in `Process Garden.worktrees/power-metrics`. Their feature branches were frozen before this integration and their histories are preserved by merge commits.
+
+- `1283ff8` integrates the ambient and embryo branch through `a4608e4` (PRs #4 and #6). The new scene-asset cache retains the earlier maw alpha fix; the existing transparency QA record remains intact.
+- `3c2959c` integrates native power through `4c4b166` (PR #5). Both locale catalogs retain scene-loading, Agent-growth and power source/state strings.
+- `7ee8209` fixes stale theme snapshots after paused/reduced-motion search, selection and resize. Seven targeted regression tests were added.
+- The combined source passed 156 frontend tests, TypeScript, production build, 13 Rust tests and cargo check. Portable, MSI and NSIS builds were regenerated; the final portable app passed five native responsiveness observations over 40 seconds. [QA](../design/qa-unified-2026-09-12.md) and [artifact hashes](../release/README.md) identify the exact implementation source.
+
+All combined changes are delivered through [PR #2](https://github.com/lllleolin-max/Process-Garden/pull/2). Main is not automatically merged. Feature PRs can be marked integrated after their commits are confirmed reachable from this branch; retain their source branches and review evidence. Future changes start from the current integration head in separate worktrees. The power release cache was temporarily reserved by integration for this build and is released once the completed artifacts are copied.

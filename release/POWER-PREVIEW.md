@@ -1,5 +1,7 @@
 # Process Garden — local power preview
 
+Historical feature-preview record. Its binary remains in the independent `Process Garden.worktrees/power-metrics/release` directory. The original project now ships the combined motion and power build described in [release/README.md](README.md).
+
 Built on 2026-09-12 from source commit `3ad1d3b` on `feat/power-metrics`.
 
 Open [Process-Garden-Power.exe](Process-Garden-Power.exe), keeping `WebView2Loader.dll` beside it. This optimized Windows x64 portable preview is built in the independent power worktree. The executable and DLL are local build artifacts and are not committed to Git.
