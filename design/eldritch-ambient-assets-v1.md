@@ -1,10 +1,10 @@
 # Eldritch ambient assets v1
 
 Date: 2026-09-12
-Status: next-version asset handoff; not integrated into the frozen release build.
-Branch: `feat/eldritch-ambient-assets`.
+Status: integrated and browser-tested on the next-version branch; not included in the frozen release installers.
+Asset handoff branch: `feat/eldritch-ambient-assets`. Runtime branch: `feat/eldritch-ambient-motion`.
 
-The user requested that peripheral elements have corresponding Eldritch skins. The current renderer only loads Garden habitat and pollinator atlases. These two new generated atlases provide the missing theme-specific subjects while retaining the existing four-cell loader and bounded ambient-motion model.
+The user requested that peripheral elements have corresponding Eldritch skins. At the asset-handoff baseline the renderer only loaded Garden habitat and pollinator atlases. These two new generated atlases provide the missing theme-specific subjects while retaining the existing four-cell loader and bounded ambient-motion model.
 
 ## Files and provenance
 
@@ -34,7 +34,7 @@ Combined PNG size: 2,908,622 bytes (about 2.77 MiB). Decoded full-resolution bit
 
 ## Integration contract for the next version
 
-The integration task owns Canvas changes after the current release build:
+The following contract was implemented in the isolated runtime branch with the integration task's agreement:
 
 1. In the Eldritch asset branch, load the habitat and pollinator paths above through the existing four-cell black-to-alpha loader. Keep the Garden paths unchanged.
 2. Remove the Garden-only gate from habitat/pollinator rendering once theme-specific sprites are loaded. Derived Eldritch themes inherit the same mapping through `basedOn`.
@@ -43,7 +43,7 @@ The integration task owns Canvas changes after the current release build:
 5. Preserve wallpaper population reduction and the selected global frame-rate target; no new timers, render loops or sample-driven image decoding.
 6. Verify both themes, all three display modes, pause/resume, reduced motion and ambient-toggle-off in the integrated browser build. Check the tiny specimens at actual 24–36 px size and confirm labels stay readable.
 
-These are integration requirements, not a claim they already pass. This PR does not change source code, root `dist`, installers or the frozen release.
+Runtime verification and its limits are recorded in [ambient motion QA](qa-ambient-2026-09-12.md). The original asset-only PR remains a provenance handoff; the runtime successor includes these same assets. Neither workstream changes the original workspace's `dist`, installers or frozen release.
 
 ## Generation prompts
 

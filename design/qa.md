@@ -1,4 +1,11 @@
-# Design QA — Process Garden v0.1.0
+# Current QA index
+
+- Next-version ambient runtime: [2026-09-12 ambient motion QA](qa-ambient-2026-09-12.md). READY for draft frontend review; new installers are not built or approved by this result.
+- Frozen motion/native release: [2026-09-12 release QA](qa-2026-09-12.md). Keep its installer hashes separate from the next-version branch.
+
+The older record below is historical. In particular, its claim that Eldritch peripheral atlases were integrated was not true of the later source baseline; the ambient runtime work above supplies and verifies that missing layer.
+
+# Historical Design QA — Process Garden v0.1.0
 
 Date: 2026-08-10
 
