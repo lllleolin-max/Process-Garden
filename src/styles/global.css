@@ -174,8 +174,11 @@ kbd { font: 10px var(--font-mono); color: var(--color-text-muted); background: r
 .agent-lifecycle-card > header div { display: flex; flex-direction: column; gap: 2px; }
 .agent-lifecycle-card > header strong { color: var(--color-text); font-size: 10px; }
 .agent-lifecycle-card > header small, .agent-lifecycle-card > p { color: var(--color-text-muted); font-size: 8px; }
-.agent-task-stage { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 5px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--color-border); color: var(--color-secondary); }
-.agent-task-stage > span { display: flex; flex-direction: column; min-width: 0; }
+.agent-lifecycle-card > p { font-size: 10px; line-height: 1.5; margin: 8px 0; }
+.agent-task-stage { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 5px; width: 100%; min-height: 44px; margin-top: 8px; padding: 8px 4px; border: 0; border-top: 1px solid var(--color-border); border-radius: 5px; background: transparent; text-align: left; color: var(--color-secondary); transition: background 180ms ease, color 240ms ease; }
+.agent-task-stage:hover { background: rgba(255,255,255,.045); }
+.agent-task-stage .process-icon { width: 18px; height: 18px; border-radius: 5px; }
+.agent-task-stage > span:not(.process-icon) { display: flex; flex-direction: column; min-width: 0; }
 .agent-task-stage strong { overflow: hidden; text-overflow: ellipsis; font-size: 9px; font-weight: 550; color: var(--color-text); }
 .agent-task-stage small { margin-top: 2px; color: var(--color-text-muted); font-size: 8px; }
 .agent-task-stage i { width: 30px; padding: 3px 0; border-radius: 999px; text-align: center; color: var(--color-text-muted); background: rgba(255,255,255,.035); font: normal 8px var(--font-mono); }

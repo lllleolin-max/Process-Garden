@@ -21,6 +21,23 @@ afterEach(() => {
 });
 
 describe("monitoring motion and feedback", () => {
+  it("keeps embryo stage tied to the accepted snapshot and exposes child inspection", () => {
+    vi.useFakeTimers();
+    const now = Date.now();
+    const parent = { ...initial.snapshot.processes[0], pid: 12010, name: "codex" };
+    const child = { ...parent, pid: 12011, parentPid: parent.pid, name: "task-runner", startedAt: now - 10_000 };
+    useAppStore.setState({ paused: true, selectedPid: parent.pid, snapshot: { ...initial.snapshot, timestamp: now, processes: [parent, child] } });
+    render(<Inspector />);
+    expect(screen.getByText("Seeded embryo")).toBeInTheDocument();
+    expect(screen.getByText(/not the Agent's actual task progress/)).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(300_000));
+    fireEvent.click(screen.getByRole("tab", { name: "Threads" }));
+    expect(screen.getByText("Seeded embryo")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Select task-runner process" }));
+    expect(useAppStore.getState().selectedPid).toBe(child.pid);
+    expect(screen.getByRole("heading", { name: "task-runner" })).toBeInTheDocument();
+  });
+
   it("interpolates a sample, then continues from the visible curve when interrupted", () => {
     vi.spyOn(document, "hidden", "get").mockReturnValue(false);
     let nextId = 0;

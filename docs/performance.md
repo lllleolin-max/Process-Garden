@@ -15,5 +15,7 @@
 - Small resource charts interpolate within 420 ms after a sample without per-frame React renders. They stop on pause, reduced motion, hidden tabs and presentation modes. Memory bars animate with a transform.
 - Native sampling is serialized, including while settings change. Hidden or paused collectors discard late results. Icon results are cached independently of component cleanup so a resource sample cannot invalidate a pending icon request.
 - Chart/history/event clocks follow accepted snapshots. Paused timelines keep their event positions even when settings or selection changes rerender the UI.
+- Agent child actors are persistent and limited to three per parent (two in wallpaper mode), including retiring actors. Reconciliation happens on accepted process/parent/layout/focus changes; pose interpolation uses the existing Canvas clock. Retiring slots finish before pending children enter, bounding rapid churn. Stage crossfades use the existing generated atlas without per-sample image decoding.
+- The generated central maw's black matte is converted to alpha once at load and cached with the other core bitmaps. Its 1254×1254 RGBA backing store is approximately 6 MiB before browser overhead; no per-frame pixel readback or processing is used in production.
 
 Release QA watches the app's own CPU/memory footprint in live and wallpaper modes. The monitor must not become a dominant process; future features that require packet capture, GPU vendor SDKs or per-process I/O remain outside v1 until measured.

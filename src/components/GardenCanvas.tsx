@@ -9,9 +9,10 @@ import { decideAnimationFrame } from "../animation/frameRate";
 import { damp, stableProcessAngle } from "../animation/smoothing";
 import { SceneClock } from "../animation/sceneClock";
 import { ambientFaunaPose, ambientVisibility } from "../animation/ambientMotion";
+import { AgentEmbryoScene, EMBRYO_BIRTH_MS } from "../animation/agentEmbryos";
 import { hitTestScene, placeSceneLabel, separateSceneNodes, type LabelBox } from "../animation/sceneLayout";
 import { selectPopulation } from "../ecology/population";
-import { agentEmbryoStage, isAgentProcess, organismVariantIndex, organismVisualIndex, resolveOrganismStyle } from "../ecology/organisms";
+import { isAgentProcess, organismVariantIndex, organismVisualIndex, resolveOrganismStyle } from "../ecology/organisms";
 import { formatBytes, formatPercent } from "../i18n/formatters";
 import { useAppStore } from "../stores/appStore";
 import { processIconKey, useProcessIconStore } from "../stores/processIconStore";
@@ -38,6 +39,7 @@ interface VisualNode extends NodePosition {
   exiting: boolean;
   emphasis: number;
 }
+type SceneLabelNode = Pick<VisualNode, "pid" | "x" | "y" | "radius" | "targetRadius" | "process" | "opacity" | "exiting" | "displayCpu">;
 
 const ELDRITCH_ATLAS_PATH = "/assets/generated/eldritch/creatures/eldritch-process-atlas-v1.png";
 const GARDEN_ATLAS_PATHS = {
@@ -579,6 +581,7 @@ export function GardenCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const nodePositions = useRef<NodePosition[]>([]);
   const visualNodesRef = useRef(new Map<number, VisualNode>());
+  const embryosRef = useRef(new AgentEmbryoScene());
   const clockRef = useRef(new SceneClock());
   const requestRenderRef = useRef<() => void>(() => {});
   const populationRef = useRef<number[]>([]);
@@ -589,14 +592,22 @@ export function GardenCanvas() {
   const processIcons = useProcessIconStore((iconState) => iconState.icons);
   const themes = useMemo(() => [...builtInThemes, ...state.customThemes], [state.customThemes]);
   const theme = themes.find((item) => item.id === state.themeId) ?? builtInThemes[0];
-  const processes = useMemo(() => {
+  const { processes, embryoFocusPid } = useMemo(() => {
     const query = state.searchQuery.trim().toLowerCase();
     const agentPids = new Set(state.snapshot.processes.filter(isAgentProcess).map((process) => process.pid));
     const visibleProcesses = state.snapshot.processes.filter((process) => !agentPids.has(process.parentPid ?? -1));
-    const filtered = query ? visibleProcesses.filter((process) => process.name.toLowerCase().includes(query) || String(process.pid).includes(query)) : visibleProcesses;
+    const matches = (process: ProcessSnapshot) => process.name.toLowerCase().includes(query) || String(process.pid).includes(query);
+    const matchingParents = new Set(query ? state.snapshot.processes.filter((process) => agentPids.has(process.parentPid ?? -1) && matches(process)).map((process) => process.parentPid) : []);
+    const filtered = query ? visibleProcesses.filter((process) => matches(process) || matchingParents.has(process.pid)) : visibleProcesses;
     const baseLimit = state.displayMode === "wallpaper" ? 10 : (state.populationMode === "exact" ? 32 : 12);
     const limit = Math.max(6, Math.round(baseLimit * state.nodeDensity));
-    return selectPopulation(filtered, populationRef.current, limit, state.selectedPid);
+    const selected = state.snapshot.processes.find((process) => process.pid === state.selectedPid);
+    const focusPid = selected && agentPids.has(selected.parentPid ?? -1) ? selected.parentPid! : state.selectedPid;
+    const matchingChild = query ? state.snapshot.processes.find((process) => agentPids.has(process.parentPid ?? -1) && matches(process)) : undefined;
+    return {
+      processes: selectPopulation(filtered, populationRef.current, limit, focusPid),
+      embryoFocusPid: query ? matchingChild?.pid ?? null : selected && agentPids.has(selected.parentPid ?? -1) ? selected.pid : null
+    };
   }, [state.displayMode, state.nodeDensity, state.populationMode, state.searchQuery, state.snapshot.processes, state.selectedPid]);
   useEffect(() => { populationRef.current = processes.map((process) => process.pid); }, [processes]);
 
@@ -621,6 +632,8 @@ export function GardenCanvas() {
   const renderState = useMemo(() => ({
     processes,
     allProcesses: state.snapshot.processes,
+    snapshotAt: state.snapshot.timestamp,
+    embryoFocusPid,
     animationFps: state.animationFps,
     displayMode: state.displayMode,
     hoveredPid,
@@ -632,7 +645,7 @@ export function GardenCanvas() {
     processStyleOverrides: state.processStyleOverrides,
     reducedMotion,
     selectedPid: state.selectedPid
-  }), [processes, state.snapshot.processes, state.animationFps, state.displayMode, hoveredPid, state.labelsAlwaysVisible, state.nodeDensity, state.particlesEnabled, state.celestialCycleEnabled, state.paused, state.processStyleOverrides, reducedMotion, state.selectedPid]);
+  }), [processes, state.snapshot.processes, state.snapshot.timestamp, embryoFocusPid, state.animationFps, state.displayMode, hoveredPid, state.labelsAlwaysVisible, state.nodeDensity, state.particlesEnabled, state.celestialCycleEnabled, state.paused, state.processStyleOverrides, reducedMotion, state.selectedPid]);
   const renderStateRef = useRef(renderState);
   renderStateRef.current = renderState;
   useEffect(() => { requestRenderRef.current(); }, [renderState]);
@@ -961,7 +974,15 @@ export function GardenCanvas() {
       });
 
       const renderNodes = [...visualNodes.values()].filter((node) => node.opacity > 0.008);
-      nodePositions.current = renderNodes.filter((node) => !node.exiting && node.opacity > 0.2).map(({ pid, x, y, radius }) => ({ pid, x, y, radius }));
+      const embryoNodes = agentSprites.length === 4 ? embryosRef.current.update({
+        processes: live.allProcesses, snapshotAt: live.snapshotAt,
+        parents: new Map([...visualNodes.values()].filter((node) => isAgentProcess(node.process)).map((node) => [node.pid, node])),
+        time, deltaMs, width, height, core: { x: cx, y: cy + coreRadius * 0.12 },
+        eldritch: isEldritch, frozen: staticFrame, limit: live.displayMode === "wallpaper" ? 2 : 3,
+        preferredPid: live.embryoFocusPid
+      }) : [];
+      const renderEmbryos = embryoNodes.filter((node) => node.opacity > 0.008);
+      nodePositions.current = [...renderNodes, ...renderEmbryos].filter((node) => !node.exiting && node.opacity > 0.2).map(({ pid, x, y, radius }) => ({ pid, x, y, radius: Math.max(10, radius) }));
 
       renderNodes.forEach((position) => {
         const process = { ...position.process, cpuPercent: position.displayCpu, memoryBytes: Math.round(position.displayMemory) };
@@ -995,7 +1016,7 @@ export function GardenCanvas() {
       });
 
       // Consumed nodes own the recoil until their lifecycle has fully settled.
-      const eldritchCoreMotion = isEldritch && !live.reducedMotion ? [...visualNodes.values()].reduce((motion, node) => {
+      const eldritchCoreMotion = isEldritch && !live.reducedMotion ? [...visualNodes.values(), ...embryoNodes].reduce((motion, node) => {
         if (node.exiting) {
           const swallow = getEldritchSwallowMotion(time - node.transitionStartedAt);
           return {
@@ -1064,24 +1085,6 @@ export function GardenCanvas() {
         const identityRadius = Math.max(7.5, position.radius * (style === "agent" ? 0.28 : 0.34));
         drawProcessIdentity(context, process, processIconImageCache.get(processIconKey(process)), position.x, position.y, identityRadius, color, selected, isEldritch, time * reduced);
         context.restore();
-        if (isAgentProcess(process) && agentSprites.length === 4) {
-          live.allProcesses.filter((task) => task.parentPid === process.pid).slice(0, 3).forEach((task, taskIndex) => {
-            const stage = agentEmbryoStage(task);
-            const angle = taskIndex / 3 * Math.PI * 2 + time * 0.00018 * reduced + process.pid;
-            const distance = position.radius * (2.2 + taskIndex * 0.18);
-            const taskX = position.x + Math.cos(angle) * distance;
-            const taskY = position.y + Math.sin(angle) * distance * 0.72;
-            context.save();
-            context.strokeStyle = withAlpha(stage === 2 ? theme.colors.warning : theme.colors.secondary, 0.42);
-            context.lineWidth = 0.8;
-            context.beginPath();
-            context.moveTo(position.x, position.y);
-            context.quadraticCurveTo((position.x + taskX) / 2 + Math.sin(angle) * 12, (position.y + taskY) / 2 - Math.cos(angle) * 12, taskX, taskY);
-            context.stroke();
-            context.restore();
-            drawRasterCreature(context, agentSprites[stage + 1], task, taskX, taskY, Math.max(8, position.radius * (0.38 + stage * 0.055)), stage === 2 ? theme.colors.warning : theme.colors.secondary, time * reduced, false);
-          });
-        }
         if (position.exiting && !isEldritch) {
           context.save();
           context.globalCompositeOperation = "screen";
@@ -1096,6 +1099,46 @@ export function GardenCanvas() {
           }
           context.restore();
         }
+        context.restore();
+      });
+
+      renderEmbryos.forEach((node) => {
+        const parent = visualNodes.get(node.parentPid);
+        const withdrawal = node.exiting && isEldritch ? getEldritchSwallowMotion(time - node.transitionStartedAt).suction : 0;
+        const anchor = node.exiting ? {
+          x: node.tetherOrigin.x + (cx - node.tetherOrigin.x) * withdrawal,
+          y: node.tetherOrigin.y + (cy + coreRadius * 0.12 - node.tetherOrigin.y) * withdrawal
+        } : parent;
+        const color = theme.colors.secondary;
+        const selected = live.selectedPid === node.pid || live.hoveredPid === node.pid;
+        context.save();
+        context.globalAlpha = node.opacity;
+        if (anchor) {
+          const bend = Math.sin(node.pid * 4.3) * 18;
+          if (isEldritch) drawUmbilicalCord(context, anchor.x, anchor.y, node.x, node.y, bend, color, time, node.pid, 0.48, false);
+          else {
+            context.strokeStyle = withAlpha(color, 0.42);
+            context.lineWidth = 0.8;
+            context.beginPath();
+            context.moveTo(anchor.x, anchor.y);
+            context.quadraticCurveTo((anchor.x + node.x) / 2 + bend, (anchor.y + node.y) / 2 - 12, node.x, node.y);
+            context.stroke();
+          }
+        }
+        if (isEldritch && !live.reducedMotion) {
+          const progress = node.exiting ? getEldritchSwallowMotion(time - node.transitionStartedAt).progress : Math.min(1, (time - node.bornAt) / EMBRYO_BIRTH_MS);
+          if (progress < 1) drawEldritchSlime(context, cx, cy, node.x, node.y, node.radius, progress, node.pid, node.exiting);
+        }
+        node.weights.forEach((weight, stage) => {
+          if (weight < 0.002) return;
+          context.save();
+          context.globalAlpha *= weight;
+          drawRasterCreature(context, agentSprites[stage + 1], node.process, node.x, node.y, node.radius, color, time, selected);
+          context.restore();
+        });
+        // A small identity badge leaves the generated embryo silhouette readable.
+        context.globalAlpha *= Math.max(0, Math.min(1, (node.radius - 2) / 6));
+        drawProcessIdentity(context, node.process, processIconImageCache.get(processIconKey(node.process)), node.x, node.y + node.radius * 0.95, Math.max(6.5, node.radius * 0.34), color, selected, isEldritch, time);
         context.restore();
       });
 
@@ -1135,11 +1178,12 @@ export function GardenCanvas() {
         }
       }
 
-      const occupied: LabelBox[] = renderNodes.filter((node) => !node.exiting).map((node) => ({ x: node.x - node.radius * 0.9, y: node.y - node.radius * 0.9, width: node.radius * 1.8, height: node.radius * 1.8 }));
+      const allLabelNodes: SceneLabelNode[] = [...renderNodes, ...renderEmbryos];
+      const occupied: LabelBox[] = allLabelNodes.filter((node) => !node.exiting).map((node) => ({ x: node.x - node.radius * 0.9, y: node.y - node.radius * 0.9, width: node.radius * 1.8, height: node.radius * 1.8 }));
       occupied.push({ x: cx - coreRadius, y: cy - coreRadius * 0.85, width: coreRadius * 2, height: coreRadius * 1.7 });
-      const labelNodes = renderNodes.filter((node) => !node.exiting && (live.labelsAlwaysVisible || live.selectedPid === node.pid || live.hoveredPid === node.pid || node.radius > 24))
+      const labelNodes = allLabelNodes.filter((node) => !node.exiting && (live.labelsAlwaysVisible || live.selectedPid === node.pid || live.hoveredPid === node.pid || node.radius > 24))
         .sort((a, b) => Number(b.pid === live.selectedPid) - Number(a.pid === live.selectedPid) || Number(b.pid === live.hoveredPid) - Number(a.pid === live.hoveredPid) || b.targetRadius - a.targetRadius || a.pid - b.pid);
-      const placedLabels: { node: VisualNode; label: { text: string; width: number }; box: LabelBox; focused: boolean }[] = [];
+      const placedLabels: { node: SceneLabelNode; label: { text: string; width: number }; box: LabelBox; focused: boolean }[] = [];
       labelNodes.forEach((node) => {
         const focused = live.selectedPid === node.pid || live.hoveredPid === node.pid;
         let label = labelTextCache.get(node.process.name);
@@ -1223,9 +1267,10 @@ export function GardenCanvas() {
         if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key) || !processes.length) return;
         event.preventDefault();
         const step = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
-        const index = processes.findIndex((process) => process.pid === state.selectedPid);
-        const next = index < 0 ? (step > 0 ? 0 : processes.length - 1) : (index + step + processes.length) % processes.length;
-        state.setSelectedPid(processes[next].pid);
+        const selectable = nodePositions.current.length ? nodePositions.current : processes;
+        const index = selectable.findIndex((process) => process.pid === state.selectedPid);
+        const next = index < 0 ? (step > 0 ? 0 : selectable.length - 1) : (index + step + selectable.length) % selectable.length;
+        state.setSelectedPid(selectable[next].pid);
       }} aria-label={t("garden.title")} />
       {processes.length === 0 && <div className="canvas-empty"><ScanSearch size={32} /><span>{t("garden.empty")}</span></div>}
       {hoveredProcess && <div className="canvas-tooltip"><strong>{hoveredProcess.name}</strong><span>PID {hoveredProcess.pid}</span><span>{formatPercent(hoveredProcess.cpuPercent, state.locale)} CPU · {formatBytes(hoveredProcess.memoryBytes, state.locale)}</span></div>}
