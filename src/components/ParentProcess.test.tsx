@@ -10,10 +10,11 @@ it("selects the observed parent and rejects a later reused parent PID", () => {
   const child = { ...parent, pid: 8, parentPid: 4, startedAt: parent.startedAt + 10 };
   const processes = [parent, child];
   useAppStore.setState({ snapshot: { ...initial.snapshot, processes }, selectedPid: child.pid });
-  render(<ParentProcess process={child} processes={processes} locale="en-US" />);
+  render(<aside className="inspector" tabIndex={-1} aria-label="Inspector"><ParentProcess process={child} processes={processes} locale="en-US" /></aside>);
   const button = screen.getByRole("button");
   fireEvent.click(button);
   expect(useAppStore.getState().selectedPid).toBe(4);
+  expect(screen.getByRole("complementary", { name: "Inspector" })).toHaveFocus();
   useAppStore.setState({ selectedPid: 8, snapshot: { ...initial.snapshot, processes: [{ ...parent, startedAt: child.startedAt + 1 }, child] } });
   fireEvent.click(button);
   expect(useAppStore.getState().selectedPid).toBe(8);

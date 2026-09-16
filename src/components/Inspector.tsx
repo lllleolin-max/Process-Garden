@@ -45,7 +45,7 @@ export function Inspector() {
   };
 
   return (
-    <aside className="inspector panel-surface">
+    <aside className="inspector panel-surface" tabIndex={-1} aria-label={t("inspector.title")}>
       <header className="inspector-header"><div className="inspector-identity" key={process.pid}><ProcessIcon process={process} /><div><small>{t("inspector.title")}</small><h2>{process.name}</h2><span className={`status-chip ${process.status}`}><span />{t(`inspector.${statusKey}`)}</span></div></div><button className="icon-button" onClick={() => void copyDetails()} aria-label={t("inspector.copyDetails")} title={t("inspector.copyDetails")}>{copyStatus === "copied" ? <Check size={15} /> : <Copy size={15} />}</button></header>
       <div className={`copy-feedback ${copyStatus === "copyFailed" ? "error" : ""}`} role="status">{copyStatus !== "idle" && t(`inspector.${copyStatus}`)}</div>
       <div className="inspector-tabs" role="tablist" aria-label={t("inspector.title")}>

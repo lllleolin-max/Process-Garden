@@ -2,18 +2,22 @@ import { processIdentity } from "../animation/processIdentity";
 import { observedParent } from "../data/processRelations";
 import { useAppStore } from "../stores/appStore";
 import type { ProcessSnapshot } from "../types/system";
+import type { MouseEvent } from "react";
 
 export function ParentProcess({ process, processes, locale }: {
   process: ProcessSnapshot; processes: ProcessSnapshot[]; locale: "zh-CN" | "en-US";
 }) {
   const parent = observedParent(process, processes);
   const zh = locale === "zh-CN";
-  const selectParent = () => {
+  const selectParent = (event: MouseEvent<HTMLButtonElement>) => {
     const current = useAppStore.getState();
     const child = current.snapshot.processes.find(item => item.pid === process.pid);
     if (!parent || !child || processIdentity(child) !== processIdentity(process)) return;
     const latestParent = observedParent(child, current.snapshot.processes);
-    if (latestParent && processIdentity(latestParent) === processIdentity(parent)) current.setSelectedPid(parent.pid);
+    if (latestParent && processIdentity(latestParent) === processIdentity(parent)) {
+      event.currentTarget.closest<HTMLElement>(".inspector")?.focus({ preventScroll: true });
+      current.setSelectedPid(parent.pid);
+    }
   };
   return <section className="path-card">
     <span>{zh ? "父进程 · 当前快照" : "Parent process · current snapshot"}</span>
