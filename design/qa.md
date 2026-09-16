@@ -1,9 +1,10 @@
 # Current QA index
 
 - Release manifest defect confirmed: [2026-09-16 diagnosis](qa-manifest-conflict-2026-09-16.md).
-  Artifact inspection found two RT_MANIFEST entries with the same ID 1. The new
-  read-only guard rejects it with IDs=2. Project-scoped repair and a passing
-  rebuilt artifact remain required; no global compiler files were changed.
+  Original artifact had duplicate ID 1 entries. Project-scoped GCC-spec and
+  application-manifest repair now rebuilds without the warning; actual artifact
+  passes uniqueness and XML/settings checks. No global compiler files changed.
+  This does not close the separate installer, signing or native runtime gates.
 
 - Windows executable preflight: [2026-09-16 release build](qa-release-preflight-2026-09-16.md).
   326 frontend tests and isolated Tauri release executable build passed. NOT READY:

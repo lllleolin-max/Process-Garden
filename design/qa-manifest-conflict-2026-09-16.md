@@ -1,7 +1,8 @@
 # Release manifest conflict diagnosis
 
 Artifact: the 66fd519 Windows executable recorded in qa-release-preflight-2026-09-16.md.
-Status: confirmed defect, not repaired or release-approved.
+Status: original defect confirmed; project-scoped repair and rebuilt artifact
+check now pass (follow-up below). Still not release-approved.
 
 Read-only `objdump -x` found RT_MANIFEST (0x18) with two name entries, both ID 1,
 both language 0x409. The resource leaves have sizes 334 and 387 bytes.
@@ -28,3 +29,26 @@ missing/duplicate EXE application-manifest entries. It is only a resource-table
 check, not XML-semantic validation or a substitute for native runtime acceptance.
 Next: choose and verify a project-scoped linker/build solution that produces one
 manifest retaining required settings, then rebuild and inspect the result.
+
+## Verified repair
+
+build.rs now uses a single project-owned manifest containing Common Controls v6,
+longPathAware=true and requestedExecutionLevel=asInvoker/uiAccess=false. On Windows
+GNU, a detected known GCC insertion is removed from an OUT_DIR-only endfile spec
+override for the Process Garden executable. All other endfile/CRT objects remain;
+MSVC and compilers without the insertion are unchanged. Unknown insertion syntax
+is rejected rather than guessed. The approach uses GCC's documented
+[spec-file override](https://gcc.gnu.org/onlinedocs/gccint/Spec-Files.html), not a
+global compiler modification. Two Rust integration tests validate rule handling.
+
+The first repaired build removed duplication but artifact XML parsing caught an
+XML declaration preceded by whitespace added during resource compilation. Removed
+that unnecessary declaration from the source manifest, without weakening validation.
+
+Second release rebuild completed in 59.52s without the manifest merge warning.
+`check-windows-manifest.ps1` passed on the actual EXE: exactly one ID 1 manifest,
+well-formed XML, asInvoker/uiAccess=false, longPathAware and Common Controls v6.
+Size: 79,337,786 bytes. SHA256:
+`D729206B5CF28D6045D74A4F5BDD6D534E04819709F752B1441A86D3FFE1F26A`.
+This supersedes the earlier executable/hash, not the remaining signing, installer,
+runtime, visual and full Task Manager capability gates. No app was launched.

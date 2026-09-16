@@ -61,6 +61,17 @@ files also belong to that task and must not be deleted or silently replaced.
 
 ## Acceptance after integration
 
+Windows GNU manifest repair adds build_support.rs, windows-app-manifest.xml and
+two integration tests under src-tauri/tests. Keep these with the build.rs changes.
+For a GCC spec containing the known automatic default-manifest.o insertion, the
+build script writes an OUT_DIR-only endfile override for this executable, retaining
+all other CRT/link entries; global compiler files are untouched. The application
+manifest preserves Common Controls v6, longPathAware and asInvoker. Never drop
+the common-controls dependency or raise privileges to hide a linker warning.
+Run scripts/check-windows-manifest.ps1 on the rebuilt EXE: it checks resource
+uniqueness and parses the actual embedded XML, not only the source manifest.
+See design/qa-manifest-conflict-2026-09-16.md for original duplicate evidence.
+
 I/O foundation adds only `pub mod process_io` to lib.rs and a standalone Rust
 rate tracker; preserve the integration task's command registrations and process
 operations. Windows querying now uses limited query rights, one RAII handle,
