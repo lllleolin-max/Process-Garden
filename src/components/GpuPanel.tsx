@@ -32,11 +32,15 @@ function GpuReadings() {
     || !engine || engine.observedPercentSum === null || adapter?.dedicated.bytes === null || adapter?.shared.bytes === null);
   return <div className="disk-readings">
     <p role="status">{message}</p>
-    <p>{zh ? "实验性引擎观测，不是总 GPU 占用率。设备名称映射尚未接入。" : "Experimental engine observations, not total GPU utilization. Device-name mapping is not yet connected."}</p>
+    <p>{zh ? "实验性引擎观测，不是总 GPU 占用率。" : "Experimental engine observations, not total GPU utilization."}</p>
     {adapter && <>
-      <label>{zh ? "GPU 计数器实例" : "GPU counter instance"}<select value={adapter.id} onChange={event => setAdapter(event.target.value)}>
-        {state.reading!.adapters.map(row => <option key={row.id} value={row.id}>{row.id}</option>)}
+      <label>{zh ? "GPU 计数器实例" : "GPU counter instance"}<select title={adapter.device?.name ?? adapter.id} value={adapter.id} onChange={event => setAdapter(event.target.value)}>
+        {state.reading!.adapters.map(row => <option key={row.id} value={row.id}>
+          {row.device ? `${row.device.name}${row.device.software ? (zh ? " · 软件适配器" : " · Software adapter") : ""} · ${row.id.split("_phys_")[1]}` : row.id}
+        </option>)}
       </select></label>
+      <p>{adapter.device ? (zh ? "已按适配器身份匹配；末尾数字为物理索引，不是任务管理器的 GPU 序号。" : "Matched by adapter identity; trailing number is the physical index, not Task Manager GPU numbering.")
+        : (zh ? "设备名称暂不可用，保留系统计数器标识。" : "Device name unavailable; showing the system counter identity.")}</p>
       {engine && <>
         <label>{zh ? "引擎" : "Engine"}<select value={engine.id} onChange={event => setEngine(Number(event.target.value))}>
           {adapter.engines.map(row => <option key={row.id} value={row.id}>{row.id} · {row.engineType ?? (zh ? "类型未知" : "Unknown type")}</option>)}

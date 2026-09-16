@@ -1,4 +1,5 @@
 //! Provider-scoped observations, not a validated Task Manager utilization total.
+use super::devices::{DeviceInfo, DeviceMap};
 use super::{parse_adapter_identity, parse_engine_identity, AdapterIdentity, GpuCounterSnapshot};
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet};
@@ -25,6 +26,7 @@ pub struct GroupedSnapshot {
 #[serde(rename_all = "camelCase")]
 pub struct AdapterObservation {
     pub id: String,
+    pub device: Option<DeviceInfo>,
     pub engines: Vec<EngineObservation>,
     pub dedicated: MemoryObservation,
     pub shared: MemoryObservation,
@@ -111,6 +113,10 @@ fn memory_rows(
 
 impl GpuCounterSnapshot {
     pub fn grouped(&self) -> GroupedSnapshot {
+        self.grouped_with_devices(&DeviceMap::new())
+    }
+
+    pub fn grouped_with_devices(&self, devices: &DeviceMap) -> GroupedSnapshot {
         let mut adapters: BTreeMap<AdapterIdentity, AdapterBuilder> = BTreeMap::new();
         let mut engine_coverage = CounterCoverage {
             available: self.engine_utilization.is_some(),
@@ -175,6 +181,9 @@ impl GpuCounterSnapshot {
                     })
                     .collect();
                 AdapterObservation {
+                    device: devices
+                        .get(&(identity.luid_high, identity.luid_low))
+                        .cloned(),
                     id: format!(
                         "luid_{:08x}_{:08x}_phys_{}",
                         identity.luid_high, identity.luid_low, identity.physical_index
@@ -209,6 +218,32 @@ mod tests {
             shared_bytes: None,
         }
     }
+    #[test]
+    fn names_match_both_luid_halves_without_merging_physical_indices() {
+        let key = engine(1, 0, 0, "3D");
+        let raw = snapshot(vec![
+            (key.clone(), Some(1.0)),
+            (key.replace("phys_0", "phys_1"), Some(2.0)),
+            (key.replace("0x0_0x1", "0x80000000_0x1"), Some(3.0)),
+        ]);
+        let devices = DeviceMap::from([(
+            (0, 1),
+            DeviceInfo {
+                name: "Logical adapter".into(),
+                software: false,
+            },
+        )]);
+        let grouped = raw.grouped_with_devices(&devices);
+        assert_eq!(grouped.adapters.len(), 3);
+        assert_eq!(
+            grouped.adapters[0].device.as_ref().unwrap().name,
+            "Logical adapter"
+        );
+        assert_eq!(grouped.adapters[1].device, grouped.adapters[0].device);
+        assert_ne!(grouped.adapters[0].id, grouped.adapters[1].id);
+        assert!(grouped.adapters[2].device.is_none());
+    }
+
     #[test]
     fn baseline_suppresses_rates_without_erasing_instantaneous_memory() {
         let mut raw = snapshot(vec![(engine(1, 0, 0, "3D"), Some(0.0))]);

@@ -1,5 +1,17 @@
 # Current QA index
 
+- GPU device labels (2026-09-17), source: factual identity and continuity criteria
+  in design/context.md plus docs/gpu-collection.md. PASS (automated): 475 frontend
+  tests/typecheck/build; new validation and label-enrichment tests keep selection,
+  focus and chart nodes while showing hardware/software/unknown labels in both
+  languages. Native: 55 tests plus explicit DXGI/worker probes; 2/3 counter adapter
+  identities matched, unmatched identity remains raw instead of guessed.
+  Limited browser screenshot: updated Eldritch English unavailable copy in tab 18,
+  isolated 1437 preview; focus outline remains visible. Named live state was NOT
+  shown in this web-only environment. NOT READY for complete GPU acceptance:
+  actual named desktop UI, unmatched identity investigation, hotplug, numerical
+  workload parity, hardware FPS and manual assistive-technology checks remain.
+
 - GPU frontend integration (2026-09-16), source: design/context.md GPU brief,
   docs/gpu-collection.md contract and the user's smooth sampling requirement.
   PASS (automated): 25 new data/hook/component cases, 473 total tests; typecheck

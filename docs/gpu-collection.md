@@ -6,6 +6,44 @@ Tauri command and demand-driven frontend are connected in code and tested, but
 actual desktop IPC/live GPU curves are not exercised yet. No validated overall GPU percentage;
 GPU monitoring and Task Manager replacement are not done.
 
+## Device labels — 2026-09-17
+
+`gpu/devices.rs` uses DXGI 1.1 read-only adapter descriptions. It reuses the
+already-locked windows 0.61.3 dependency with the Dxgi feature; no package version
+upgrade, driver installation, elevation or new network dependency was needed.
+Descriptions match BOTH LUID components, not enumeration order or a partial ID.
+The optional `device: { name, software }` enriches each counter adapter; unmatched
+identities remain null and retain their original ID. Physical indices stay separate
+even when several belong to the same logical DXGI adapter. No logical-adapter
+capacity is incorrectly assigned as per-physical-node capacity.
+
+Factory creation/enumeration stays on the existing GPU worker. Cached factories
+are checked with IsCurrent and recreated after adapter-set changes; a factory
+that changes during enumeration is rejected. Errors, expired deadlines, malformed
+UTF-16 names, duplicate LUIDs and lists over 256 adapters do not produce partial
+or stale name maps. Failed discovery backs off five seconds; names become unknown
+while numeric observations remain usable. Idle release drops the factory too.
+COM wrappers release native references automatically; no unsafe Send was added.
+
+The selector displays the native name, a software-adapter label when appropriate,
+and physical index (explicitly not Task Manager GPU numbering). Stable IDs remain
+selection/chart keys, so name enrichment does not remount charts or lose focus.
+Frontend validation accepts omitted enrichment from older builds and rejects
+invalid name/flag fields. Unmatched devices are explicitly labelled unavailable.
+
+Evidence: 55 Rust tests passed / 12 manual probes ignored; locked/offline cargo
+check passed. Explicit DXGI probe found 2 logical descriptions (1 software): first
+enumeration 21.888ms, cached lookup 0.003ms. GPU worker matched 2 of 3 counter
+adapter identities; the remaining identity is intentionally unnamed. Four debug
+responses including grouping/lookup: median 3.624ms, max 3.879ms. No device names
+or LUIDs logged. These counts are not physical GPU inventory or workload parity.
+475 frontend tests, typecheck and build passed. Named-state focus/key continuity
+is component-tested; actual named-state desktop rendering/hotplug remains unverified.
+
+Primary sources: [DXGI adapter descriptions](https://learn.microsoft.com/en-us/windows/win32/api/dxgi/ns-dxgi-dxgi_adapter_desc1),
+[enumeration and factory lifetime](https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgifactory1-enumadapters1),
+[adapter-change detection](https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgifactory1-iscurrent).
+
 ## Independent worker and bridge
 
 `gpu/worker.rs` owns one GPU provider thread, separate from CPU/process and disk
@@ -46,8 +84,8 @@ Real packaged IPC remains an integration gate.
 `GpuPanel` is initially collapsed in the sidebar. Native adapter and engine
 selectors keep all received choices reachable while mounting at most three
 curves: one engine observed sum (fixed 0–100 scale), dedicated memory and shared
-memory (usage bytes, not capacity). Counter identities are shown honestly until
-device-name mapping is implemented. UI copy labels these values experimental,
+memory (usage bytes, not capacity). Matched native descriptions enrich labels;
+unmatched adapters retain counter identities. UI copy labels these values experimental,
 not total GPU utilization; it does not fabricate demo GPU data.
 
 `gpuReadings.ts` validates and projects the native contract, with bounded lists,

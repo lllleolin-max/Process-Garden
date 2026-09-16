@@ -2,6 +2,18 @@ import { expect, it } from "vitest";
 import { gpuFixture } from "../tests/gpuFixture";
 import { gpuHistory, parseGpuReading } from "./gpuReadings";
 
+it("accepts optional device enrichment without retaining unknown metadata", () => {
+  const raw = gpuFixture();
+  raw.adapters[0].device = { name: "Vendor GPU ®", software: true };
+  expect(parseGpuReading(raw).adapters[0].device).toEqual(raw.adapters[0].device);
+  const { device: _device, ...legacy } = raw.adapters[0];
+  expect(parseGpuReading({ ...raw, adapters: [legacy] }).adapters[0].device).toBeNull();
+  for (const device of [{ name: "", software: false }, { name: "A".repeat(128), software: false },
+    { name: "GPU\nwrong", software: false }, { name: "GPU\u202ewrong", software: false }, { name: "GPU", software: "false" }]) {
+    expect(() => parseGpuReading({ ...raw, adapters: [{ ...raw.adapters[0], device }] })).toThrow();
+  }
+});
+
 it("copies known fields only and keeps zero, unknown types and missing values distinct", () => {
   const raw = gpuFixture();
   raw.adapters[0].shared = { bytes: null, sampleCount: 1, invalidSamples: 1 };

@@ -1,5 +1,21 @@
 # PR #7 integration handoff — 2026-09-16
 
+## Latest: optional DXGI device enrichment — 2026-09-17
+
+GPU descriptors match full LUIDs, with software flag and raw-identity fallback.
+Native worker caches/rebuilds DXGI factories, bounded/timeout/backoff protected;
+query failure does not erase numeric GPU observations. Include new gpu/devices.rs,
+grouping/worker changes, Windows target dependency and the one-line lockfile root
+dependency addition together. Windows crate version 0.61.3 was already locked;
+no dependency upgrades. Preserve the other task's Cargo.toml/Cargo.lock additions.
+
+Frontend device enrichment is optional for older native responses; names never
+become React/chart/selection keys. 475 frontend tests/build, 55 Rust tests/check
+pass; explicit native probes match 2/3 counter identities to names. One stays
+unknown intentionally. Software adapters are distinguished; physical index is
+not labelled as Task Manager's GPU index. No physical memory-capacity claim.
+Named desktop UI, remaining identity, hotplug and workload/FPS acceptance remain.
+
 ## Latest: GPU frontend with bounded shared motion
 
 Sidebar adds GpuPanel after DiskPanel; preserve any other task's Sidebar edits.

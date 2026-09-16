@@ -28,6 +28,7 @@ impl GpuReader {
 #[derive(Default)]
 struct NativeSource {
     query: Option<super::GpuQuery>,
+    devices: super::devices::DeviceCatalog,
     session: String,
     retry_after: Option<Instant>,
 }
@@ -59,15 +60,17 @@ impl Source for NativeSource {
         if Instant::now() >= deadline {
             return Err("gpu request expired during initialization".into());
         }
-        self.query
+        let raw = self
+            .query
             .as_mut()
             .expect("query initialized")
             .sample()
-            .map(|raw| raw.grouped())
-            .map_err(|status| format!("gpu reading unavailable (0x{status:08x})"))
+            .map_err(|status| format!("gpu reading unavailable (0x{status:08x})"))?;
+        Ok(raw.grouped_with_devices(self.devices.devices(deadline)))
     }
     fn reset(&mut self) {
         self.query = None;
+        self.devices = Default::default();
         self.session.clear();
         self.retry_after = None;
     }
@@ -194,6 +197,8 @@ mod tests {
             .all(|engine| engine.observed_percent_sum.is_none()));
         let first_ms = started.elapsed().as_secs_f64() * 1000.0;
         let mut times = Vec::new();
+        let mut matched = 0;
+        let mut observed = 0;
         for _ in 0..4 {
             std::thread::sleep(Duration::from_millis(1100));
             let started = Instant::now();
@@ -202,6 +207,16 @@ mod tests {
                 .expect("native grouped GPU response");
             times.push(started.elapsed().as_secs_f64() * 1000.0);
             assert!(!result.adapters.is_empty());
+            matched = result
+                .adapters
+                .iter()
+                .filter(|adapter| adapter.device.is_some())
+                .count();
+            observed = result.adapters.len();
+            assert!(
+                matched > 0,
+                "host GPU counters must match at least one DXGI LUID"
+            );
             assert!(!result.rate_baseline);
             assert!(result.engine_coverage.available);
             assert_eq!(result.engine_coverage.unmapped_instances, 0);
@@ -232,6 +247,7 @@ mod tests {
             .flat_map(|adapter| &adapter.engines)
             .any(|engine| engine.observed_percent_sum.is_some()));
         times.sort_by(f64::total_cmp);
+        eprintln!("GPU device join: {matched}/{observed} counter adapter identities named; no names or identities logged");
         eprintln!("GPU worker probe: first {:.3}ms; four responses median {:.3}ms/max {:.3}ms including grouping; renewed-session baseline checked; short debug probe, not workload parity",
             first_ms, (times[1]+times[2])/2.0, times[3]);
     }

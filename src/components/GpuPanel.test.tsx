@@ -67,6 +67,25 @@ it("shows both-language baseline, unknown types, unavailable and empty states ho
   expect(screen.getByRole("status")).toHaveTextContent("桌面应用");
 });
 
+it("enriches device labels without replacing selected identities or chart nodes", () => {
+  const view = setup(); view.toggle(true);
+  const select = screen.getByRole("combobox", { name: "GPU counter instance" }); select.focus();
+  const id = mock.state.reading!.adapters[0].id;
+  const line = screen.getByRole("region", { name: "Engine observed sum" }).querySelector("polyline");
+  expect(screen.getByText(/Device name unavailable/)).toBeInTheDocument();
+  mock.state.reading!.adapters[0].device = { name: "Vendor GPU", software: false };
+  view.rerender(<GpuPanel />);
+  expect(screen.getByRole("option", { name: "Vendor GPU · 0" })).toBeInTheDocument();
+  expect(select).toHaveValue(id); expect(select).toHaveFocus(); expect(select).toHaveAttribute("title", "Vendor GPU");
+  expect(screen.getByRole("region", { name: "Engine observed sum" }).querySelector("polyline")).toBe(line);
+  mock.state.reading!.adapters[0].device = { name: "Software renderer", software: true };
+  view.rerender(<GpuPanel />); expect(screen.getByRole("option", { name: /Software adapter/ })).toBeInTheDocument();
+  act(() => useAppStore.setState({ locale: "zh-CN" }));
+  expect(screen.getByRole("option", { name: /软件适配器/ })).toBeInTheDocument();
+  mock.state.reading!.adapters[0].device = null; view.rerender(<GpuPanel />);
+  expect(select).toHaveValue(id); expect(screen.getByText(/设备名称暂不可用/)).toBeInTheDocument();
+});
+
 it.each([30, 60, 120] as const)("shares one animation frame at %i Hz and cancels on collapse", fps => {
   let id = 0;
   const frames = new Map<number, FrameRequestCallback>();

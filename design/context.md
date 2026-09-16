@@ -8,10 +8,10 @@ and engines reachable through native selectors, only one engine and two memory
 curves animate at a time. Reuse theme tokens and shared metric animation; no new
 artwork. Show baseline/unknown/partial states honestly, distinguish experimental
 per-engine observed sums from validated overall GPU utilization, and disclose the
-missing device-name mapping. Pause demand when hidden/collapsed/non-windowed.
+unmatched device names. Pause demand when hidden/collapsed/non-windowed.
 Success includes stable selection/focus/DOM nodes during valid sampling, bounded
 history, independent disk/GPU requests, bilingual and reduced-motion behavior.
-Device mapping, controlled workload parity, actual desktop IPC and hardware frame
+Complete device mapping/hotplug, controlled workload parity, actual desktop IPC and hardware frame
 pacing remain required before complete GPU/Task Manager replacement acceptance.
 
 The user now requires a complete Task Manager alternative, including safe process

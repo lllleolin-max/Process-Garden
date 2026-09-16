@@ -4,6 +4,7 @@ use serde::Serialize;
 use std::collections::BTreeMap;
 
 pub mod grouping;
+pub mod devices;
 pub mod worker;
 
 /// Session-local provider identity, not a durable hardware identifier.

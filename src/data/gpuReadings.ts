@@ -6,7 +6,8 @@ export interface GpuEngine {
   id: number; engineType: string | null; typeConflict: boolean; sampleCount: number;
   invalidSamples: number; duplicateSamples: number; sumOutOfRange: boolean; observedPercentSum: number | null;
 }
-export interface GpuAdapter { id: string; engines: GpuEngine[]; dedicated: GpuMemory; shared: GpuMemory }
+export interface GpuDevice { name: string; software: boolean }
+export interface GpuAdapter { id: string; device: GpuDevice | null; engines: GpuEngine[]; dedicated: GpuMemory; shared: GpuMemory }
 export interface GpuReading {
   rateBaseline: boolean; adapters: GpuAdapter[];
   engineCoverage: CounterCoverage; dedicatedCoverage: CounterCoverage; sharedCoverage: CounterCoverage;
@@ -29,6 +30,15 @@ function memory(value: unknown, available: boolean): GpuMemory {
   if (result.invalidSamples > result.sampleCount || (!available && result.sampleCount)
     || (result.bytes !== null && (!available || result.sampleCount !== 1 || result.invalidSamples))) fail();
   return result;
+}
+
+function device(value: unknown): GpuDevice | null {
+  // Older native builds omit this optional enrichment; readings stay usable.
+  if (value === undefined || value === null) return null;
+  const row = object(value);
+  if (typeof row.name !== "string" || !row.name.trim() || row.name.length > 127
+    || /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/.test(row.name)) return fail();
+  return { name: row.name, software: bool(row.software) };
 }
 
 /** Explicit projection: native metadata/PIDs not in this contract are not retained. */
@@ -66,7 +76,7 @@ export function parseGpuReading(value: unknown): GpuReading {
           || engine.invalidSamples || engine.duplicateSamples || engineCoverage.unmappedInstances))) return fail();
       return engine;
     });
-    return { id: row.id, engines, dedicated: memory(row.dedicated, dedicatedCoverage.available), shared: memory(row.shared, sharedCoverage.available) };
+    return { id: row.id, device: device(row.device), engines, dedicated: memory(row.dedicated, dedicatedCoverage.available), shared: memory(row.shared, sharedCoverage.available) };
   });
   return { rateBaseline, adapters, engineCoverage, dedicatedCoverage, sharedCoverage };
 }
