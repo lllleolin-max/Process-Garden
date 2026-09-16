@@ -8,7 +8,7 @@ Scope: user requirement for gradual state changes and natural frontend motion. S
 - Prefer the candidate nearest the previous target when collision scores tie. A blocked existing side still yields to a better placement. Focused labels continue reserving space first and drawing last.
 - Existing visible labels interpolate position on the scene clock with a 95 ms exponential response. Actor identities include PID and start time. No additional animation loop, timer or per-frame React update is introduced. Disappearing labels are pruned from the motion map every paint.
 - First appearance starts at its valid placement. Viewport changes and static data/focus changes settle immediately. Pause alone preserves the current intermediate position with zero elapsed time; reduced motion settles without animation. Text width/height use current metrics rather than scaling/stretching glyphs.
-- No generated artwork, fonts, icon assets, process lifecycle or density limits were changed. Labels can still overlap temporarily while moving or in forced-all-label dense layouts; this change is not a complete dense-label readability solution or a new fade-out lifecycle.
+- No generated artwork, fonts, icon assets, process lifecycle or density limits were changed. Labels can still overlap temporarily while moving or in forced-all-label dense layouts; this is not a complete dense-label readability solution. Label retirement is covered by the follow-up below.
 
 ## Verification
 
@@ -21,6 +21,16 @@ Scope: user requirement for gradual state changes and natural frontend motion. S
 - Temporary prototype instrumentation/store changes are restored and the preview closed after QA.
 
 ## Coordination and open gates
+
+### Exit-label retirement follow-up
+
+Previously, `!node.exiting` immediately removed annotations even while their organisms were still beginning the exit/swallow lifecycle. Keep **previously visible** annotations at their existing placement and fade them with a 220 ms smoothstep on scene time. Do not introduce a new label for a retiring organism whose label was hidden. Retiring labels stop reserving collision space; remove their motion entries once the fade reaches zero. Reduced motion skips the fade. Existing pause/time semantics apply, with no separate timeout or RAF loop. Annotation retirement does not alter the generated-mouth or organism-swallow trajectory.
+
+Added monotonic exit-opacity, finite lifetime and reduced-motion coverage at 30/60/120 sampling steps. `npm run verify`: **181 tests / 32 files**, typecheck and production build passed.
+
+Real-browser Eldritch check: remove demo Chrome PID 5521 through a temporary snapshot filter, without touching OS processes. Canvas `fillText` observation recorded **13** outgoing Chrome-label draws: alpha 0.88 → 0.0011877, monotonically decreasing. First/last observed draw at 41.0/251.6 ms after the state update; this includes update-to-render delay, not a change to the 220 ms scene-time fade. X moved only from 199.616 to 199.676 as its existing relocation settled; Y stayed at 83. No label draw after 350 ms in the 650 ms capture. This demonstrates actual text fading rather than only testing the easing function. Browser warning/error logs empty. Restored the snapshot/store and original `fillText` method, closed the test tab and stopped the preview.
+
+The task-messaging tool was rechecked but remains unavailable through the exposed dynamic interface; coordination continues through PR #7 comments. The shared worktree remains untouched. Native wallpaper and sustained high-refresh checks are not certified by this label test.
 
 ### Viewport-bounds follow-up
 

@@ -1,9 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { LabelMotion } from "./labelMotion";
+import { LabelMotion, labelExitOpacity } from "./labelMotion";
 import { placeSceneLabel } from "./sceneLayout";
 
 const box = { x: 100, y: 100, width: 110, height: 34 };
 describe("label motion", () => {
+  it("fades exiting annotations on scene time and removes them before swallowing", () => {
+    expect(labelExitOpacity(-1, false)).toBe(1);
+    expect(labelExitOpacity(0, false)).toBe(1);
+    expect(labelExitOpacity(110, false)).toBeCloseTo(0.5);
+    expect(labelExitOpacity(220, false)).toBe(0);
+    expect(labelExitOpacity(1000, false)).toBe(0);
+    expect(labelExitOpacity(0, true)).toBe(0);
+    for (const fps of [30, 60, 120]) {
+      const values = Array.from({ length: Math.ceil(fps * .3) }, (_, index) => labelExitOpacity(index * 1000 / fps, false));
+      expect(values.every((value, index) => index === 0 || value <= values[index - 1])).toBe(true);
+      expect(values.at(-1)).toBe(0);
+    }
+  });
+
   it("keeps a widening label inside the viewport during its transition", () => {
     const motion = new LabelMotion();
     const bounds = { width: 740, height: 422 };

@@ -8,7 +8,7 @@ import { ELDRITCH_SWALLOW_DURATION_MS, getEldritchSwallowMotion } from "../anima
 import { decideAnimationFrame } from "../animation/frameRate";
 import { damp, stableProcessAngle } from "../animation/smoothing";
 import { SceneClock } from "../animation/sceneClock";
-import { LabelMotion } from "../animation/labelMotion";
+import { LabelMotion, labelExitOpacity } from "../animation/labelMotion";
 import { ambientFaunaPose, ambientVisibility } from "../animation/ambientMotion";
 import { AgentEmbryoScene, EMBRYO_BIRTH_MS } from "../animation/agentEmbryos";
 import { hitTestScene, placeSceneLabel, separateSceneNodes, type LabelBox } from "../animation/sceneLayout";
@@ -43,7 +43,7 @@ interface VisualNode extends NodePosition {
   emphasis: number;
   emphasisTarget: number;
 }
-type SceneLabelNode = Pick<VisualNode, "pid" | "x" | "y" | "radius" | "targetRadius" | "process" | "opacity" | "exiting" | "displayCpu">;
+type SceneLabelNode = Pick<VisualNode, "pid" | "x" | "y" | "radius" | "targetRadius" | "process" | "opacity" | "exiting" | "displayCpu" | "transitionStartedAt">;
 
 const processIconImageCache = new Map<string, HTMLImageElement>();
 
@@ -1148,11 +1148,15 @@ export function GardenCanvas() {
       const allLabelNodes: SceneLabelNode[] = [...renderNodes, ...renderEmbryos];
       const occupied: LabelBox[] = allLabelNodes.filter((node) => !node.exiting).map((node) => ({ x: node.x - node.radius * 0.9, y: node.y - node.radius * 0.9, width: node.radius * 1.8, height: node.radius * 1.8 }));
       occupied.push({ x: cx - coreRadius, y: cy - coreRadius * 0.85, width: coreRadius * 2, height: coreRadius * 1.7 });
-      const labelNodes = allLabelNodes.filter((node) => !node.exiting && (live.labelsAlwaysVisible || live.selectedPid === node.pid || live.hoveredPid === node.pid || node.radius > 24))
+      const labelNodes = allLabelNodes.filter((node) => node.exiting
+        ? Boolean(labelMotion.target(`${node.pid}:${node.process.startedAt}`))
+        : (live.labelsAlwaysVisible || live.selectedPid === node.pid || live.hoveredPid === node.pid || node.radius > 24))
         .sort((a, b) => Number(b.pid === live.selectedPid) - Number(a.pid === live.selectedPid) || Number(b.pid === live.hoveredPid) - Number(a.pid === live.hoveredPid) || b.targetRadius - a.targetRadius || a.pid - b.pid);
-      const placedLabels: { node: SceneLabelNode; label: { text: string; width: number }; box: LabelBox; focused: boolean }[] = [];
+      const placedLabels: { node: SceneLabelNode; label: { text: string; width: number }; box: LabelBox; focused: boolean; alpha: number }[] = [];
       const visibleLabelKeys = new Set<string>();
       labelNodes.forEach((node) => {
+        const alpha = node.exiting ? labelExitOpacity(time - node.transitionStartedAt, live.reducedMotion) : 1;
+        if (alpha <= 0) return;
         const focused = live.selectedPid === node.pid || live.hoveredPid === node.pid;
         let label = labelTextCache.get(node.process.name);
         if (!label) {
@@ -1163,20 +1167,21 @@ export function GardenCanvas() {
           labelTextCache.set(node.process.name, label);
         }
         const key = `${node.pid}:${node.process.startedAt}`;
-        const box = placeSceneLabel(node, label.width, { width, height, coreRadius }, occupied, focused || live.labelsAlwaysVisible, labelMotion.target(key));
+        const box = node.exiting ? labelMotion.target(key)
+          : placeSceneLabel(node, label.width, { width, height, coreRadius }, occupied, focused || live.labelsAlwaysVisible, labelMotion.target(key));
         if (!box) return;
-        occupied.push({ x: box.x - 4, y: box.y - 4, width: box.width + 8, height: box.height + 8 });
+        if (!node.exiting) occupied.push({ x: box.x - 4, y: box.y - 4, width: box.width + 8, height: box.height + 8 });
         visibleLabelKeys.add(key);
         const visible = labelMotion.update(key, box, staticFrame ? 0 : deltaMs,
           settleStaticState || viewportChanged || live.reducedMotion || (staticFrame && focusOrSearchChanged), { width, height });
-        placedLabels.push({ node, label, box: visible, focused });
+        placedLabels.push({ node, label, box: visible, focused, alpha });
       });
       labelMotion.retain(visibleLabelKeys);
       // Reserve focus space first, then paint it last when a dense scene has unavoidable overlap.
-      placedLabels.reverse().forEach(({ node, label, box, focused }) => {
+      placedLabels.reverse().forEach(({ node, label, box, focused, alpha }) => {
         const color = processColor(node.process, theme, isEldritch, organismVisualIndex(resolveOrganismStyle(node.process, live.processStyleOverrides)));
         context.save();
-        context.globalAlpha = Math.max(0, Math.min(1, node.opacity)) * (focused ? 1 : 0.88);
+        context.globalAlpha = Math.max(0, Math.min(1, node.opacity)) * (focused ? 1 : 0.88) * alpha;
         context.fillStyle = focused ? "rgba(3,15,13,.94)" : "rgba(1,8,8,.8)";
         context.strokeStyle = withAlpha(color, focused ? 0.55 : 0.23);
         context.lineWidth = 0.8;

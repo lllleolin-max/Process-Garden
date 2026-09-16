@@ -1,6 +1,13 @@
 import type { LabelBox } from "./sceneLayout";
 import { damp } from "./smoothing";
 
+/** Retire the annotation before the organism reaches the central mouth. */
+export function labelExitOpacity(elapsedMs: number, reducedMotion: boolean) {
+  if (reducedMotion) return 0;
+  const progress = Math.max(0, Math.min(1, elapsedMs / 220));
+  return 1 - progress * progress * (3 - 2 * progress);
+}
+
 /** Label actors use the scene clock, not independent timers or React updates. */
 export class LabelMotion {
   private labels = new Map<string, { target: LabelBox; visible: LabelBox }>();
