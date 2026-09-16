@@ -53,7 +53,7 @@ function overlapArea(a: LabelBox, b: LabelBox) {
 }
 
 /** The caller places focused labels first; secondary labels yield when space is scarce. */
-export function placeSceneLabel(node: SceneNode, width: number, bounds: SceneBounds, occupied: LabelBox[], required: boolean): LabelBox | null {
+export function placeSceneLabel(node: SceneNode, width: number, bounds: SceneBounds, occupied: LabelBox[], required: boolean, previous?: LabelBox): LabelBox | null {
   const height = 34;
   const gap = node.radius * 1.08 + 12;
   const candidates = [
@@ -64,6 +64,17 @@ export function placeSceneLabel(node: SceneNode, width: number, bounds: SceneBou
     { x: node.x + gap, y: node.y - gap - height },
     { x: node.x - gap - width, y: node.y + gap }
   ].map((box) => ({ x: clamp(box.x, 10, bounds.width - width - 10), y: clamp(box.y, 70, bounds.height - 70 - height), width, height }));
+  // Keep a clear existing side instead of switching back as soon as another side
+  // clears. Collision scores still win; this only changes equal-score preference.
+  if (previous) {
+    let nearest = 0;
+    let distance = Infinity;
+    candidates.forEach((box, index) => {
+      const next = (box.x - previous.x) ** 2 + (box.y - previous.y) ** 2;
+      if (next < distance) { nearest = index; distance = next; }
+    });
+    candidates.unshift(...candidates.splice(nearest, 1));
+  }
   let best = candidates[0];
   let bestScore = Infinity;
   for (const box of candidates) {

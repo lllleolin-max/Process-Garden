@@ -1,0 +1,53 @@
+import { describe, expect, it } from "vitest";
+import { LabelMotion } from "./labelMotion";
+import { placeSceneLabel } from "./sceneLayout";
+
+const box = { x: 100, y: 100, width: 110, height: 34 };
+describe("label motion", () => {
+  it("keeps an unobstructed side after another candidate becomes clear", () => {
+    const node = { pid: 1, x: 300, y: 200, radius: 25 };
+    const bounds = { width: 740, height: 422, coreRadius: 49 };
+    const left = placeSceneLabel(node, 110, bounds, [{ x: 339, y: 180, width: 150, height: 70 }], true)!;
+    expect(left.x).toBeLessThan(node.x);
+    expect(placeSceneLabel(node, 110, bounds, [], true, left)).toEqual(left);
+    const relocated = placeSceneLabel(node, 110, bounds, [left], true, left)!;
+    expect(relocated).not.toEqual(left);
+  });
+
+  it("moves between sides without jumping to the new placement", () => {
+    const motion = new LabelMotion();
+    motion.update("1:100", box, 16, false);
+    const target = { ...box, x: 400, y: 200 };
+    const next = motion.update("1:100", target, 16, false);
+    expect(next.x).toBeGreaterThan(100);
+    expect(next.x).toBeLessThan(150);
+    expect(motion.target("1:100")).toEqual(target);
+    expect(motion.update("1:100", target, 0, false)).toEqual(next);
+    expect(box.x).toBe(100);
+  });
+
+  it("converges equally at 30, 60 and 120 FPS using elapsed scene time", () => {
+    const results = [30, 60, 120].map((fps) => {
+      const motion = new LabelMotion();
+      motion.update("1", box, 0, false);
+      let visible = box;
+      for (let frame = 0; frame < fps; frame++) visible = motion.update("1", { ...box, x: 400 }, 1000 / fps, false);
+      return visible.x;
+    });
+    expect(results[0]).toBeCloseTo(results[1], 8);
+    expect(results[1]).toBeCloseTo(results[2], 8);
+    expect(results[0]).toBeGreaterThan(399.9);
+  });
+
+  it("settles immediately for static frames and does not reuse a recycled PID", () => {
+    const motion = new LabelMotion();
+    motion.update("1:100", box, 0, false);
+    const target = { ...box, x: 400, width: 150 };
+    expect(motion.update("1:100", target, 0, true)).toEqual(target);
+    expect(motion.update("1:200", box, 0, false)).toEqual(box);
+    motion.retain(new Set(["1:200"]));
+    expect(motion.target("1:100")).toBeUndefined();
+    motion.retain(new Set());
+    expect(motion.target("1:200")).toBeUndefined();
+  });
+});

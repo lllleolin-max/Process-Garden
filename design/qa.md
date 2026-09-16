@@ -1,5 +1,7 @@
 # Current QA index
 
+- Label continuity: [2026-09-16 label motion QA](qa-label-motion-2026-09-16.md). Persistent placement preference, scene-clock interpolation and clean-reload pause/reduced-motion checks; does not claim high-density 120 FPS acceptance.
+
 - Current high-density evidence: [2026-09-16 density profiling](qa-density-profile-2026-09-16.md). 32 main organisms plus 12 Agent children, all three target rates and shadow-cost isolation. Eldritch high-density 60/120 targets remain below target; no effects were removed and no native release is certified.
 
 - Isolated performance successor: [2026-09-16 off-thread artwork QA](qa-offthread-artwork-2026-09-16.md). 171 frontend tests and production-CSP browser verification; native acceptance and sustained high-refresh profiling remain open. Existing release artifacts are unchanged.
