@@ -33,6 +33,26 @@ afterEach(() => {
 });
 
 describe("system sampling lifecycle", () => {
+  it("preserves native data through collection failures and recovers without demo telemetry", async () => {
+    invoke.mockRejectedValueOnce(new Error("collector unavailable"));
+    const next = deferred();
+    invoke.mockReturnValue(next.promise);
+    const before = useAppStore.getState();
+    renderHook(() => useSystemFeed());
+    await act(() => vi.dynamicImportSettled());
+    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().snapshot).toBe(before.snapshot);
+    expect(useAppStore.getState().history).toBe(before.history);
+    expect(useAppStore.getState().events).toBe(before.events);
+    expect(useAppStore.getState().collector).toBe("native");
+    await act(() => vi.advanceTimersByTimeAsync(before.samplingMs));
+    expect(invoke).toHaveBeenCalledTimes(2);
+    const recovered = { ...before.snapshot, timestamp: Date.now(), cpuPercent: 23 };
+    await act(async () => { next.resolve(recovered); });
+    expect(useAppStore.getState().snapshot).toBe(recovered);
+    expect(useAppStore.getState().collector).toBe("native");
+  });
+
   it("keeps at most one native request in flight even when the sample is slow", async () => {
     const request = deferred();
     invoke.mockReturnValue(request.promise);

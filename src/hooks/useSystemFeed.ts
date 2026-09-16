@@ -44,7 +44,9 @@ export function useSystemFeed() {
             if (canIngest()) ingestSnapshot(snapshot, "native");
             return;
           } catch {
-            // A restricted process table should never break the visual experience.
+            // A native collection failure must not replace real processes with
+            // simulated ones. Keep the last observation and retry on schedule.
+            return;
           }
         }
         if (canIngest()) ingestSnapshot(makeDemoSnapshot(tick.current), "demo");
