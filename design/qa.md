@@ -1,5 +1,7 @@
 # Current QA index
 
+- Feed health browser check: [2026-09-16 notice visual QA](qa-feed-health-browser-2026-09-16.md). NOT READY: 1280×720 browser screenshots show both Chinese and English notices covering the CPU summary. Recovery removes the notice and no warning/error logs were observed. Functional tests are not visual acceptance.
+
 - Native coverage: [2026-09-16 collector coverage QA](qa-native-process-coverage-2026-09-16.md). Removed the 500-record truncation; a real Windows test returned all 566 enumerated PIDs. This supersedes the cap caveat in the earlier process-explorer record, not the remaining native integration/performance gates.
 
 - Process explorer: [2026-09-16 process table QA](qa-process-explorer-2026-09-16.md). Search/sort/paginate all received records and locate them in Inspector; Chinese Garden / English Eldritch browser checks and 218 tests pass. Native completeness remains blocked by the existing collector cap, not hidden by the UI.
