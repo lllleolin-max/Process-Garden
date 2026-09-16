@@ -1,5 +1,17 @@
 # PR #7 integration handoff — 2026-09-16
 
+## Process list freshness follow-up — 2026-09-17
+
+ProcessExplorer now gates CPU/memory interpolation on shared snapshot freshness,
+matching the summary cards. Failed/stale samples cancel queued transitions while
+retaining row identity, filter text and focus; fresh readings resume animation.
+Regression coverage verifies cancellation, stable DOM and recovery. Frontend
+verification: 506 tests, typecheck and production build pass. Native executable
+has not been rebuilt for this frontend follow-up; native visual acceptance remains
+open. Changes are isolated to ProcessExplorer, its motion test, and this handoff.
+Original worktree at ee5dae4 has no pending edits to those component files at the
+coordination check. Do not overwrite its unrelated pending edits during integration.
+
 ## Latest executable evidence — 2026-09-17
 
 Code 073820b builds successfully with locked/offline no-bundle Tauri release.

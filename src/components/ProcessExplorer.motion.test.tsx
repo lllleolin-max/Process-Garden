@@ -2,9 +2,11 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import i18n from "../i18n/config";
 import { useAppStore } from "../stores/appStore";
+import { useFeedHealth } from "../stores/feedHealth";
 import { ProcessExplorer } from "./ProcessExplorer";
 
 const initial = useAppStore.getState();
+const initialHealth = useFeedHealth.getState();
 let frames: Map<number, FrameRequestCallback>;
 let id = 0;
 beforeEach(async () => {
@@ -17,10 +19,35 @@ beforeEach(async () => {
   const process = { ...initial.snapshot.processes[0], cpuPercent: 0, memoryBytes: 1024 };
   useAppStore.setState({ ...initial, locale: "en-US", collector: "demo", paused: false, reducedMotion: false, displayMode: "windowed", snapshot: { ...initial.snapshot, processes: [process], processCount: 1 } });
 });
-afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial, true); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial, true); useFeedHealth.setState(initialHealth, true); });
 const tick = (now: number) => act(() => { const pending = [...frames.values()]; frames.clear(); pending.forEach(callback => callback(now)); });
 const cells = () => within(within(screen.getByRole("table")).getAllByRole("row")[1]).getAllByRole("cell");
 const visible = (cell: HTMLElement) => cell.querySelector('[aria-hidden="true"]')!;
+it("stops stale readings without remounting rows or losing filter focus, and resumes on fresh samples", () => {
+  useAppStore.setState({ collector: "native", demoMode: false });
+  useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: Date.now() });
+  render(<ProcessExplorer open onClose={() => {}} />);
+  tick(0); tick(16);
+  fireEvent.click(screen.getByRole("button", { name: "Keep row order" }));
+  const filter = screen.getByRole("textbox");
+  fireEvent.change(filter, { target: { value: useAppStore.getState().snapshot.processes[0].name } });
+  filter.focus();
+  const before = cells();
+  sample(100);
+  expect(frames.size).toBe(1);
+  act(() => useFeedHealth.setState({ failed: true }));
+  expect(frames.size).toBe(0);
+  expect(cells()[2]).toBe(before[2]);
+  expect(visible(before[2])).toHaveTextContent(/^100%$/);
+  expect(filter).toHaveFocus();
+  expect(filter).toHaveValue(useAppStore.getState().snapshot.processes[0].name);
+  expect(screen.getByText("Stale data")).toBeInTheDocument();
+  act(() => useFeedHealth.setState({ failed: false, lastSuccess: Date.now() }));
+  expect(frames.size).toBe(0);
+  sample(50);
+  expect(frames.size).toBe(1);
+  expect(cells()[2]).toBe(before[2]);
+});
 function sample(cpuPercent: number, memoryBytes = 2048, startedAt?: number) {
   const snapshot = useAppStore.getState().snapshot;
   act(() => useAppStore.setState({ snapshot: { ...snapshot, processes: snapshot.processes.map(p => ({ ...p, cpuPercent, memoryBytes, startedAt: startedAt ?? p.startedAt })) } }));

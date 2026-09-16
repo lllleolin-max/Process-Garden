@@ -3,7 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { useOverlay } from "../hooks/useOverlay";
-import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
+import { useSnapshotStatusDetails } from "../hooks/useSnapshotStatus";
 import { useAppStore } from "../stores/appStore";
 import { isObservedCount, isObservedMetric, isObservedPercent, queryProcesses, type ProcessSort } from "../data/processTable";
 import { processIdentity } from "../animation/processIdentity";
@@ -15,7 +15,9 @@ import "./ProcessExplorer.css";
 
 const PAGE_SIZE = 50;
 export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const snapshotStatus = useSnapshotStatus();
+  const status = useSnapshotStatusDetails();
+  const snapshotStatus = status.label;
+  const animateReadings = open && (status.animationState === "live" || status.animationState === "demo");
   const { t } = useTranslation();
   const overlay = useOverlay(open, onClose, { restoreFocusSelector: "[data-process-list-trigger]", initialFocusSelector: "[data-process-filter]" });
   const state = useAppStore(useShallow(s => ({ snapshot: overlay.present ? s.snapshot : null, locale: s.locale, selectedPid: s.selectedPid, setSelectedPid: s.setSelectedPid, paused: s.paused, setPaused: s.setPaused, collector: s.collector })));
@@ -109,7 +111,7 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
         }}
         onBlurCapture={() => { focusedRow.current = null; }}>
         <table><caption className="sr-only">{t("processList.title")}</caption><thead><tr>{columns.map(column => <th key={column.key} scope="col" aria-sort={!orderHeld && sort === column.key ? ascending ? "ascending" : "descending" : "none"}><button onClick={() => { setHeldOrder(null); setSort(column.key); setAscending(sort === column.key ? !ascending : column.key === "name" || column.key === "pid"); turnPage(0); }}>{column.label}<span aria-hidden="true">{!orderHeld && sort === column.key ? ascending ? " ↑" : " ↓" : ""}</span></button></th>)}<th scope="col">{t("inspector.path")}</th></tr></thead>
-          <tbody>{shown.map(process => <tr key={`${state.collector}:${processIdentity(process)}`} className={process.pid === state.selectedPid ? "selected" : undefined}><td><button className="process-list-select" aria-label={t("processList.inspect", { name: process.name, pid: process.pid })} onClick={() => inspectProcess(process)}><ProcessIcon process={process} /><span>{process.name}</span></button></td><td>{process.pid}</td><td><AnimatedMetric active={open} value={isObservedPercent(process.cpuPercent) ? process.cpuPercent : NaN} format={formatCpu} /></td><td><AnimatedMetric active={open} value={isObservedMetric(process.memoryBytes) ? process.memoryBytes : NaN} format={formatMemory} /></td><td>{isObservedCount(process.threadCount) ? process.threadCount : "—"}</td><td className="process-list-path" title={process.executablePath}>{process.executablePath || "—"}</td></tr>)}</tbody>
+          <tbody>{shown.map(process => <tr key={`${state.collector}:${processIdentity(process)}`} className={process.pid === state.selectedPid ? "selected" : undefined}><td><button className="process-list-select" aria-label={t("processList.inspect", { name: process.name, pid: process.pid })} onClick={() => inspectProcess(process)}><ProcessIcon process={process} /><span>{process.name}</span></button></td><td>{process.pid}</td><td><AnimatedMetric active={animateReadings} value={isObservedPercent(process.cpuPercent) ? process.cpuPercent : NaN} format={formatCpu} /></td><td><AnimatedMetric active={animateReadings} value={isObservedMetric(process.memoryBytes) ? process.memoryBytes : NaN} format={formatMemory} /></td><td>{isObservedCount(process.threadCount) ? process.threadCount : "—"}</td><td className="process-list-path" title={process.executablePath}>{process.executablePath || "—"}</td></tr>)}</tbody>
         </table>{!rows.length && <p className="process-list-empty">{t(query.trim() ? "processList.noMatches" : "processList.noData")}</p>}
       </div>
       <footer><button className="process-list-control" disabled={currentPage === 0} onClick={() => turnPage(currentPage - 1)}>{t("processList.previous")}</button><span>{t("processList.page", { page: currentPage + 1, pages: pageCount })}</span><button className="process-list-control" disabled={currentPage + 1 >= pageCount} onClick={() => turnPage(currentPage + 1)}>{t("processList.next")}</button></footer>
