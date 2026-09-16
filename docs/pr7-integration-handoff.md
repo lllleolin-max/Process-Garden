@@ -112,6 +112,15 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+ProcessIcon now keeps its initials underneath the image until the current source
+fires load, then crossfades over 160 ms. Failed sources keep the fallback; ordinary
+sampling preserves the same loaded image node. Merge ProcessIcon.css with the
+component, preserving the grid-area overlap if global icon styles change in the
+other task. App/system reduced-motion disables the CSS transition. Local verify:
+362 tests, type checking and build. These are load-state/identity tests, not
+visual proof: native decoding, dual-theme crossfade and display pacing need QA.
+No new visual asset was synthesized; the OS application icon remains the source.
+
 Relationship filtering now shares isObservedChild with observedParent. The child
 list no longer allocates a singleton array and calls find for every process;
 the full-table scan remains linear, followed by sorting matched children. Tests

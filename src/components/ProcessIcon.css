@@ -1,0 +1,8 @@
+.process-icon > img, .process-icon > .process-icon-fallback { grid-area: 1 / 1; transition: opacity 160ms ease-out; }
+.process-icon > img { opacity: 0; }
+.process-icon.process-icon-ready > img { opacity: 1; }
+.process-icon.process-icon-ready > .process-icon-fallback { opacity: 0; }
+.process-icon.process-icon-static > img, .process-icon.process-icon-static > .process-icon-fallback { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .process-icon > img, .process-icon > .process-icon-fallback { transition: none; }
+}
