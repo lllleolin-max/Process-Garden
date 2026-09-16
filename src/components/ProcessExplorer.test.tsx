@@ -59,6 +59,23 @@ it("accepts more than 500 received records without losing the last process", () 
   expect(useAppStore.getState().selectedPid).toBe(1500);
 });
 
+it.each([NaN, Infinity, -1])("renders invalid metrics %s as unavailable and recovers to observed zero", value => {
+  const before = useAppStore.getState().snapshot;
+  const process = { ...before.processes[0], cpuPercent: value, memoryBytes: value, threadCount: value };
+  useAppStore.setState({ snapshot: { ...before, processes: [process], processCount: 1 } });
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  const row = within(screen.getByRole("table")).getAllByRole("row")[1];
+  const cells = within(row).getAllByRole("cell");
+  for (const index of [2, 3, 4]) expect(cells[index]).toHaveTextContent(/^—$/);
+  act(() => useAppStore.setState({ snapshot: { ...before, processes: [{ ...process, cpuPercent: 0, memoryBytes: 0, threadCount: 0 }], processCount: 1 } }));
+  // The existing row remains mounted; its metric cells update in place.
+  expect(within(screen.getByRole("table")).getAllByRole("row")[1]).toBe(row);
+  expect(cells[2]).toHaveTextContent(/^0%$/);
+  expect(cells[3]).toHaveTextContent(/^0 MB$/);
+  expect(cells[4]).toHaveTextContent(/^0$/);
+});
+
 it("does not jump back to an obsolete page when process counts recover", () => {
   const full = useAppStore.getState().snapshot;
   render(<TopBar />);
