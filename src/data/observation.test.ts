@@ -4,6 +4,23 @@ import { toObservation } from "./observation";
 import { processHistory } from "./processHistory";
 import { threadHistory } from "./threadHistory";
 
+it("copies network measurements without retaining adapter aliases and preserves availability states", () => {
+  const source = makeDemoSnapshot(0);
+  expect(toObservation(source)).not.toHaveProperty("network");
+  source.network = null;
+  expect(toObservation(source).network).toBeNull();
+  source.network = [];
+  expect(toObservation(source).network).toEqual([]);
+  source.network = [{ id: "18446744073709551615", name: "local alias", interfaceType: 6,
+    operational: true, receivedBytesPerSecond: 0, sentBytesPerSecond: null }];
+  const observation = toObservation(source);
+  expect(observation.network?.[0]).not.toHaveProperty("name");
+  expect(observation.network?.[0].id).toBe("18446744073709551615");
+  source.network[0].receivedBytesPerSecond = 100;
+  expect(observation.network?.[0].receivedBytesPerSecond).toBe(0);
+  expect(observation.network?.[0].sentBytesPerSecond).toBeNull();
+});
+
 it("retains measurements and identity without executable metadata or mutable aliases", () => {
   const source = makeDemoSnapshot(0);
   source.processes[0] = { ...source.processes[0], threadCount: 0, command: "private command", executablePath: "private path" };

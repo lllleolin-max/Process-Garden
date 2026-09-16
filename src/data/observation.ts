@@ -12,6 +12,9 @@ export function toObservation(snapshot: SystemSnapshot): SystemObservation {
     logicalCpuCount: snapshot.logicalCpuCount,
     uptimeSeconds: snapshot.uptimeSeconds,
     power: { ...snapshot.power },
+    ...(snapshot.network === undefined ? {} : { network: snapshot.network === null ? null
+      : snapshot.network.map(({ id, interfaceType, operational, receivedBytesPerSecond, sentBytesPerSecond }) =>
+        ({ id, interfaceType, operational, receivedBytesPerSecond, sentBytesPerSecond })) }),
     processes: snapshot.processes.map(({ pid, startedAt, cpuPercent, memoryBytes, threadCount }) => ({
       pid, startedAt, cpuPercent, memoryBytes,
       ...(threadCount === undefined ? {} : { threadCount }),

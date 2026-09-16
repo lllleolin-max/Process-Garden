@@ -39,8 +39,16 @@ JavaScript precision. Unchanged counters give observed zero; first/recovery
 observations have null rates. Four new rate tests pass; full Rust regression:
 31 passed, 5 manual ignored. This is not controlled-traffic validation.
 
-- Wire the rate engine to native collector/IPC without blocking frontend
-  rendering, retaining explicit errors and baseline resets.
+Collector integration: the existing background system-sample path now owns a
+shared NetworkRateTracker. Network failures return network:null without failing
+CPU/memory/process collection. A successful empty table is network:[], and a
+baseline row retains null rates. No second frontend sampling loop was added.
+The TypeScript snapshot protocol matches; compact history copies identity/type/
+operational/rate fields but omits aliases. Tests cover null vs empty serialization,
+shared collector state and history copy/precision/availability. Rust: 31 passed,
+5 manual ignored; frontend: 390 passed plus type checking/production build.
+
+- Validate packaged IPC and measure the added interface-query overhead.
 - Integrate bounded history and bilingual per-adapter UI with stale/unsupported
   states, pause/visibility handling and the shared motion policy.
 - Compare controlled traffic and idle behavior to OS counters, measure overhead,

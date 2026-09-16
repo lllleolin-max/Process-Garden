@@ -46,6 +46,7 @@ pub struct SystemSnapshot {
     pub logical_cpu_count: usize,
     pub uptime_seconds: u64,
     pub power: PowerReading,
+    pub network: Option<Vec<crate::network::InterfaceRates>>,
     pub processes: Vec<ProcessSnapshot>,
 }
 
@@ -83,10 +84,14 @@ mod tests {
             logical_cpu_count: 8,
             uptime_seconds: 7,
             power: PowerReading::default(),
+            network: None,
             processes: Vec::new(),
         };
         let value = serde_json::to_value(&snapshot).expect("snapshot serializes");
         assert_eq!(value["logicalCpuCount"], 8);
+        assert!(value["network"].is_null());
+        snapshot.network = Some(Vec::new());
+        assert_eq!(serde_json::to_value(&snapshot).unwrap()["network"], serde_json::json!([]));
         assert_eq!(value["cpuCorePercents"], serde_json::json!([0.0, 100.0, null]));
         assert_eq!(value["memoryUsedBytes"], 3);
         assert_eq!(value["threadCount"], 6);

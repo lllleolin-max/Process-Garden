@@ -8,6 +8,7 @@ use sysinfo::{CpuRefreshKind, ProcessRefreshKind, ProcessesToUpdate, RefreshKind
 
 use crate::models::{ProcessSnapshot, SystemSnapshot};
 use crate::power::PowerSampler;
+use crate::network::{read_network_counters, NetworkRateTracker};
 
 fn process_refresh_kind() -> ProcessRefreshKind {
     ProcessRefreshKind::nothing()
@@ -104,6 +105,7 @@ fn thread_counts() -> Option<HashMap<u32, usize>> {
 pub struct SystemCollector {
     system: Arc<Mutex<System>>,
     power: Arc<Mutex<PowerSampler>>,
+    network: Arc<Mutex<NetworkRateTracker>>,
 }
 
 impl Default for SystemCollector {
@@ -117,6 +119,7 @@ impl Default for SystemCollector {
                     .with_processes(process_refresh_kind()),
             ))),
             power: Arc::new(Mutex::new(PowerSampler::default())),
+            network: Arc::new(Mutex::new(NetworkRateTracker::default())),
         }
     }
 }
@@ -175,6 +178,10 @@ fn sample_observed(collector: &SystemCollector, mut observe: impl FnMut(&'static
 
     let power = collector.power.lock().map(|mut sampler| sampler.sample()).unwrap_or_default();
     observe("power");
+    // A network-specific failure must not discard the process/system sample.
+    let network = collector.network.lock().ok()
+        .and_then(|mut tracker| tracker.observe(read_network_counters().ok()));
+    observe("network");
 
     Ok(SystemSnapshot {
         timestamp: SystemTime::now()
@@ -195,6 +202,7 @@ fn sample_observed(collector: &SystemCollector, mut observe: impl FnMut(&'static
         logical_cpu_count,
         uptime_seconds: System::uptime(),
         power,
+        network,
         processes,
     })
 }
@@ -250,10 +258,12 @@ mod tests {
         let collector = SystemCollector {
             system: Arc::new(Mutex::new(System::new())),
             power: Arc::new(Mutex::new(PowerSampler::default())),
+            network: Arc::new(Mutex::new(NetworkRateTracker::default())),
         };
         let worker_collector = collector.clone();
         assert!(Arc::ptr_eq(&collector.system, &worker_collector.system));
         assert!(Arc::ptr_eq(&collector.power, &worker_collector.power));
+        assert!(Arc::ptr_eq(&collector.network, &worker_collector.network));
 
         // A worker clone must synchronize against the same process history and
         // CPU baseline, rather than refreshing an independent System instance.
