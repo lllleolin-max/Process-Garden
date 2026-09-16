@@ -112,6 +112,13 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+Shared byte/percent/watt formatting now reuses a bounded (16-entry) Intl cache
+keyed by locale, format kind and precision. The regression calls all three 120
+times and observes only three constructors, with separate locale/precision
+results and eviction coverage. Date formatting is unchanged (no cached timezone).
+Full local verification: 398 tests, type checking and production build. This is
+constructor-count evidence, not an actual hardware FPS or CPU benchmark.
+
 PowerMetric rejects nonfinite, nonpositive or future snapshot timestamps as stale
 in both the card and wallpaper HUD, without scheduling an expiry timer for those
 observations. Four regressions check invalid-time rejection and valid recovery.
