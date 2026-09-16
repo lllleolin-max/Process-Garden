@@ -1,5 +1,18 @@
 # Current QA index
 
+- ServicePanel browser check (ca9f175, 2026-09-17): independent 1437 preview,
+  Garden theme, 1280x720. Chinese/English unavailable-state screenshots inspected
+  inline: status and permission/driver/PID notes wrap inside the existing sidebar;
+  input/select/paging controls do not overlap. Four Tabs from disclosure reach
+  Previous, scroll it into view and show its focus ring; Return leaves page 1/1
+  unchanged while AX exposes it as disabled. Collapse removes filter/list/paging
+  controls and retains disclosure focus. No fake service rows injected, other
+  task's 1420 tab untouched. PASS for this unavailable-state flow only.
+  NOT READY: real native service success/error recovery, long service names and
+  many rows in the actual window, Eldritch service view, manual screen-reader
+  speech/contrast and 30/60/120 pacing remain unverified. Existing backend probes
+  and mocked component tests do not replace those gates.
+
 - Actual browser process-list check (code 78a83e1): English Eldritch keyboard
   filter/fixed order/inspect and Chinese Garden empty-state/Escape verified at
   1280 × 720, with visible focus and correct trigger return. Detailed scope and
