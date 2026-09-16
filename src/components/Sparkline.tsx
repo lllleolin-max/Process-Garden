@@ -30,6 +30,7 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
   ]);
   const points = coordinates.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   const displayed = useRef(points);
+  const displayedHeight = useRef(height);
   const tip = coordinates.at(-1);
 
   useLayoutEffect(() => {
@@ -50,7 +51,17 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
         tipRef.current?.setAttribute("cy", last[1]);
       }
     };
-    const start = displayed.current;
+    // The viewBox changes immediately on resize. Rebase the displayed geometry
+    // into its new coordinate system before morphing so it stays in the same
+    // relative position instead of jumping or being clipped on the first frame.
+    const oldHeight = displayedHeight.current;
+    displayedHeight.current = height;
+    const start = oldHeight !== height && oldHeight > 0
+      ? displayed.current.split(" ").filter(Boolean).map(point => {
+        const [x, y] = point.split(",").map(Number);
+        return `${x.toFixed(1)},${(y * height / oldHeight).toFixed(1)}`;
+      }).join(" ")
+      : displayed.current;
     const previous = start.split(" ").map((point) => point.split(",").map(Number));
     const target = points.split(" ").map((point) => point.split(",").map(Number));
     if (!start || !points || start === points || previous.length < 2 || target.length < 2 || motionDisabled || document.hidden || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {

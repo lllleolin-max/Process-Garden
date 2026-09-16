@@ -46,6 +46,23 @@ it("does not restart an active transition when the selected rate changes", () =>
   expect(frames.size).toBe(0);
 });
 
+it("rebases an in-flight curve when its viewBox height changes", () => {
+  const view = render(<Sparkline values={[0, 10, 0]} height={40} />);
+  view.rerender(<Sparkline values={[10, 0, 10]} height={40} />);
+  tick(1000); tick(1200);
+  const line = view.container.querySelector("polyline")!;
+  const before = line.getAttribute("points")!.split(" ").map(point => point.split(",").map(Number));
+  view.rerender(<Sparkline values={[10, 0, 10]} height={80} />);
+  const rebased = line.getAttribute("points")!.split(" ").map(point => point.split(",").map(Number));
+  expect(rebased).toEqual(before.map(([x, y]) => [x, Number((y * 2).toFixed(1))]));
+  expect(view.container.querySelector("polygon")).toHaveAttribute("points", `0,80 ${line.getAttribute("points")} 160,80`);
+  expect(view.container.querySelector("circle")).toHaveAttribute("cy", rebased.at(-1)![1].toFixed(1));
+  expect(frames.size).toBe(1);
+  tick(1210); tick(1640);
+  expect(line).toHaveAttribute("points", "0.0,6.0 80.0,76.0 160.0,6.0");
+  expect(frames.size).toBe(0);
+});
+
 it("morphs a growing history and reverses from the displayed curve when interrupted", () => {
   useAppStore.setState({ animationFps: 60 });
   const view = render(<Sparkline values={[0, 10, 0]} />);
