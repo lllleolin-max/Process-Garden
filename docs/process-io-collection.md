@@ -119,3 +119,14 @@ Acceptance tests: observed zero, increasing counters, first sample, permission
 failure, recovery, PID reuse, decreasing counters, delayed intervals, pause/resume,
 large u64 counters, controlled temporary-file I/O and idle overhead. No process
 I/O collection or disk-rate UI is claimed complete by this research.
+
+### Bridge-loading cancellation follow-up
+
+The frontend rechecks poll generation, timeout and document visibility after
+the asynchronous Tauri bridge import, before invoking native collection. Closing
+the Inspector, hiding the window or pausing during that import must not start
+an obsolete native request. Three regression cases cover those transitions;
+all eight hook tests pass. Full local verification: 331 tests, type checking and
+production build. Already-started native queries still cannot be cancelled;
+their replies are discarded by the existing generation guard. This does not
+replace packaged-runtime or real-window scheduling validation.

@@ -34,9 +34,14 @@ export function useProcessIo(pid: number, startedAt: number) {
         try {
           if (pending) await pending.catch(() => undefined);
           if (generation !== run || expired) return;
-          const task = import("@tauri-apps/api/core").then(({ invoke }) => invoke<IoRates | null>("sample_process_io", {
-            pid, startedAt: Math.floor(startedAt > 10_000_000_000 ? startedAt / 1000 : startedAt), session,
-          }));
+          const task = import("@tauri-apps/api/core").then(({ invoke }) => {
+            // Loading the bridge is asynchronous too. Selection/visibility may
+            // have invalidated this poll before a native request even started.
+            if (generation !== run || expired || document.hidden) return null;
+            return invoke<IoRates | null>("sample_process_io", {
+              pid, startedAt: Math.floor(startedAt > 10_000_000_000 ? startedAt / 1000 : startedAt), session,
+            });
+          });
           pending = task;
           let result: IoRates | null;
           try { result = await task; } finally { if (pending === task) pending = null; }

@@ -17,6 +17,20 @@ afterEach(() => { cleanup(); vi.clearAllTimers(); vi.useRealTimers(); vi.restore
 const settle = () => act(async () => { await vi.dynamicImportSettled(); });
 const advance = (ms = 1000) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
 
+it.each(["unmount", "hide", "pause"])("does not start native I/O when %s happens while loading the bridge", async change => {
+  invoke.mockResolvedValue(null);
+  const view = renderHook(() => useProcessIo(42, 1_800_000_000));
+  if (change === "unmount") view.unmount();
+  else if (change === "hide") {
+    hidden = true;
+    act(() => document.dispatchEvent(new Event("visibilitychange")));
+  } else act(() => useAppStore.setState({ paused: true }));
+  await settle();
+  await advance(10000);
+  expect(invoke).not.toHaveBeenCalled();
+  if (change !== "unmount") expect(view.result.current.status).toBe("paused");
+});
+
 it("shows baseline, observed zero, failure, then fresh recovery without retaining old curves", async () => {
   invoke.mockResolvedValueOnce(null).mockResolvedValueOnce({ readBytesPerSecond: 0, writtenBytesPerSecond: 20 })
     .mockRejectedValueOnce(new Error("denied")).mockResolvedValueOnce(null).mockResolvedValue({ readBytesPerSecond: 4, writtenBytesPerSecond: 5 });
