@@ -71,6 +71,20 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+### Coordination checkpoint — 2026-09-16
+
+- The shared `feat/motion-integration` worktree still contains uncommitted theme,
+  lifecycle, artwork and termination work. It was inspected read-only; none of
+  those files were overwritten, staged or committed by this branch.
+- Numeric CPU/memory motion is isolated in AnimatedMetric, MetricCard and Sidebar.
+  Keep its source-change reset, cancellation and 30/60/120 frame budget together;
+  rounded labels now skip duplicate DOM writes without losing interpolation state.
+- Local `npm run verify` passed: 57 test files, 294 tests, type checking and build.
+  This is branch-level evidence, not proof the other task's dirty tree integrates.
+- GitHub run 35092244214 passed for 938a52d. Later commits require their own CI.
+- Preserve this PR as a draft targeting `feat/motion-integration`; resolve overlaps
+  by hunk and rerun acceptance on the combined tree before any merge.
+
 CI cancels prior runs on new PR commits. Allow the current run to reach a real
 terminal state before pushing queued test-only commits when practical. Do not
 call an in-progress or cancelled run successful. Do not auto-merge this draft,
