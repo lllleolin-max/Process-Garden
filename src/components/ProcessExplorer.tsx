@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
@@ -9,6 +9,7 @@ import { isObservedCount, isObservedMetric, isObservedPercent, queryProcesses, t
 import { processIdentity } from "../animation/processIdentity";
 import { formatBytes, formatPercent } from "../i18n/formatters";
 import { ProcessIcon } from "./ProcessIcon";
+import { AnimatedMetric } from "./AnimatedMetric";
 import type { ProcessSnapshot } from "../types/system";
 import "./ProcessExplorer.css";
 
@@ -24,6 +25,8 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
   const [page, setPage] = useState(0);
   const [heldOrder, setHeldOrder] = useState<{ collector: string; ids: string[] } | null>(null);
   const scroll = useRef<HTMLDivElement>(null);
+  const formatCpu = useCallback((value: number) => formatPercent(value, state.locale, 1), [state.locale]);
+  const formatMemory = useCallback((value: number) => formatBytes(value, state.locale), [state.locale]);
   const sortedRows = useMemo(() => state.snapshot ? queryProcesses(state.snapshot.processes, query, sort, ascending, state.locale) : [], [state.snapshot, query, sort, ascending, state.locale]);
   const orderHeld = heldOrder !== null && heldOrder.collector === state.collector;
   const rows = useMemo(() => {
@@ -81,7 +84,7 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
       {missing > 0 && <p className="process-list-warning" role="status">{t("processList.partial", { count: missing })}</p>}
       <div className="process-list-scroll" ref={scroll} tabIndex={0} aria-label={t("processList.title")}>
         <table><caption className="sr-only">{t("processList.title")}</caption><thead><tr>{columns.map(column => <th key={column.key} scope="col" aria-sort={!orderHeld && sort === column.key ? ascending ? "ascending" : "descending" : "none"}><button onClick={() => { setHeldOrder(null); setSort(column.key); setAscending(sort === column.key ? !ascending : column.key === "name" || column.key === "pid"); turnPage(0); }}>{column.label}<span aria-hidden="true">{!orderHeld && sort === column.key ? ascending ? " ↑" : " ↓" : ""}</span></button></th>)}<th scope="col">{t("inspector.path")}</th></tr></thead>
-          <tbody>{shown.map(process => <tr key={processIdentity(process)} className={process.pid === state.selectedPid ? "selected" : undefined}><td><button className="process-list-select" aria-label={t("processList.inspect", { name: process.name, pid: process.pid })} onClick={() => inspectProcess(process)}><ProcessIcon process={process} /><span>{process.name}</span></button></td><td>{process.pid}</td><td>{isObservedPercent(process.cpuPercent) ? formatPercent(process.cpuPercent, state.locale, 1) : "—"}</td><td>{isObservedMetric(process.memoryBytes) ? formatBytes(process.memoryBytes, state.locale) : "—"}</td><td>{isObservedCount(process.threadCount) ? process.threadCount : "—"}</td><td className="process-list-path" title={process.executablePath}>{process.executablePath || "—"}</td></tr>)}</tbody>
+          <tbody>{shown.map(process => <tr key={`${state.collector}:${processIdentity(process)}`} className={process.pid === state.selectedPid ? "selected" : undefined}><td><button className="process-list-select" aria-label={t("processList.inspect", { name: process.name, pid: process.pid })} onClick={() => inspectProcess(process)}><ProcessIcon process={process} /><span>{process.name}</span></button></td><td>{process.pid}</td><td><AnimatedMetric active={open} value={isObservedPercent(process.cpuPercent) ? process.cpuPercent : NaN} format={formatCpu} /></td><td><AnimatedMetric active={open} value={isObservedMetric(process.memoryBytes) ? process.memoryBytes : NaN} format={formatMemory} /></td><td>{isObservedCount(process.threadCount) ? process.threadCount : "—"}</td><td className="process-list-path" title={process.executablePath}>{process.executablePath || "—"}</td></tr>)}</tbody>
         </table>{!rows.length && <p className="process-list-empty">{t(query.trim() ? "processList.noMatches" : "processList.noData")}</p>}
       </div>
       <footer><button className="process-list-control" disabled={currentPage === 0} onClick={() => turnPage(currentPage - 1)}>{t("processList.previous")}</button><span>{t("processList.page", { page: currentPage + 1, pages: pageCount })}</span><button className="process-list-control" disabled={currentPage + 1 >= pageCount} onClick={() => turnPage(currentPage + 1)}>{t("processList.next")}</button></footer>

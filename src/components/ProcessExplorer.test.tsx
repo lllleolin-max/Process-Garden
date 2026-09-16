@@ -84,7 +84,7 @@ it("marks out-of-domain percentages and fractional counts unavailable in the tab
   render(<TopBar />);
   fireEvent.click(screen.getByRole("button", { name: "Processes" }));
   const cells = within(within(screen.getByRole("table")).getAllByRole("row")[1]).getAllByRole("cell");
-  expect(cells[2]).toHaveTextContent(/^—$/);
+  expect(cells[2].querySelector('[aria-hidden="true"]')).toHaveTextContent(/^—$/);
   expect(cells[4]).toHaveTextContent(/^—$/);
 });
 
@@ -143,12 +143,13 @@ it.each([NaN, Infinity, -1])("renders invalid metrics %s as unavailable and reco
   fireEvent.click(screen.getByRole("button", { name: "Processes" }));
   const row = within(screen.getByRole("table")).getAllByRole("row")[1];
   const cells = within(row).getAllByRole("cell");
-  for (const index of [2, 3, 4]) expect(cells[index]).toHaveTextContent(/^—$/);
+  for (const index of [2, 3]) expect(cells[index].querySelector('[aria-hidden="true"]')).toHaveTextContent(/^—$/);
+  expect(cells[4]).toHaveTextContent(/^—$/);
   act(() => useAppStore.setState({ snapshot: { ...before, processes: [{ ...process, cpuPercent: 0, memoryBytes: 0, threadCount: 0 }], processCount: 1 } }));
   // The existing row remains mounted; its metric cells update in place.
   expect(within(screen.getByRole("table")).getAllByRole("row")[1]).toBe(row);
-  expect(cells[2]).toHaveTextContent(/^0%$/);
-  expect(cells[3]).toHaveTextContent(/^0 MB$/);
+  expect(cells[2].querySelector('[aria-hidden="true"]')).toHaveTextContent(/^0%$/);
+  expect(cells[3].querySelector('[aria-hidden="true"]')).toHaveTextContent(/^0 MB$/);
   expect(cells[4]).toHaveTextContent(/^0$/);
 });
 

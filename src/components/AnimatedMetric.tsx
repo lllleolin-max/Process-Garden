@@ -3,7 +3,7 @@ import { decideAnimationFrame } from "../animation/frameRate";
 import { useAppStore } from "../stores/appStore";
 import "./AnimatedMetric.css";
 
-export function AnimatedMetric({ value, format }: { value: number; format: (value: number) => string }) {
+export function AnimatedMetric({ value, format, active = true }: { value: number; format: (value: number) => string; active?: boolean }) {
   const node = useRef<HTMLSpanElement>(null);
   const displayed = useRef(value);
   const collector = useAppStore(s => s.collector);
@@ -18,7 +18,7 @@ export function AnimatedMetric({ value, format }: { value: number; format: (valu
     const from = displayed.current;
     const changedSource = previousCollector.current !== collector;
     previousCollector.current = collector;
-    if (changedSource || disabled || document.hidden || !Number.isFinite(from) || !Number.isFinite(value)
+    if (!active || changedSource || disabled || document.hidden || !Number.isFinite(from) || !Number.isFinite(value)
       || from === value || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
       draw(value); return;
     }
@@ -39,7 +39,7 @@ export function AnimatedMetric({ value, format }: { value: number; format: (valu
     frame = requestAnimationFrame(animate);
     document.addEventListener("visibilitychange", hide);
     return () => { cancelAnimationFrame(frame); document.removeEventListener("visibilitychange", hide); };
-  }, [value, format, disabled, collector]);
+  }, [value, format, active, disabled, collector]);
   const label = Number.isFinite(value) ? format(value) : "—";
   // Assistive technology receives the real observation, not intermediate frames.
   return <span><span className="animated-metric-observation">{label}</span><span aria-hidden="true" ref={node}>{label}</span></span>;

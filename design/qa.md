@@ -1,5 +1,20 @@
 # Current QA index
 
+- ProcessExplorer numeric motion (2026-09-16), source: design/context.md legible
+  living monitoring and reduced-motion requirements plus user's sampling continuity
+  request. CPU and memory now reuse AnimatedMetric's 320ms interpolation and
+  global frame budget; stable locale callbacks avoid restarting a transition on
+  unrelated renders. Collector + process-lifetime keys prevent cross-identity
+  interpolation. Actual observations remain available to assistive technology.
+  Closing the overlay disables transitions immediately, before its exit completes.
+  PASS (automated): nine new cases cover simulated 30/60/120 Hz, close, pause,
+  reduced motion, source/lifetime changes, invalid/recovered measurements, and
+  1500-record pagination with only 50 rows animated; paging/unmount cancels work.
+  Full verify: 415 tests, type checking and production build passed.
+  NOT READY (visual/runtime): browser inventory again failed with HTML instead of
+  JSON. Both-theme typography, actual frame pacing, power overhead and manual
+  screen-reader behavior are not proven by these tests. No raster artwork changed.
+
 - ProcessExplorer row-order hold (2026-09-16): source is the user's requirement
   to avoid sampling-driven jumps while developing a usable Task Manager replacement.
   Added an explicit bilingual, keyboard-accessible pressed-state control. Holding

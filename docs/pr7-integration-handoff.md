@@ -292,6 +292,14 @@ this is not the global Pause action. Files: ProcessExplorer.tsx/.css/.test.tsx.
 Six new tests; full local verify now 406 tests plus typecheck and build. Actual
 visual QA remains unavailable; see design/qa.md. No shared-worktree edits.
 
+Numeric-motion follow-up: merge ProcessExplorer's AnimatedMetric use with the
+new optional active prop on AnimatedMetric (default true for existing callers).
+The list passes open so exit animations retain their surface without running
+numeric transitions; source/lifetime row keys reset observations across identities.
+Only the visible 50 rows mount numeric effects. Nine added motion tests bring
+full local verify to 415 tests plus typecheck/build. This is not hardware-FPS or
+power-consumption evidence; actual visual QA is still unavailable.
+
 - Shared worktree remains read-only, including its new AGENTS.md, generated
   artwork, lifecycle modules and process-termination UI. Nothing was staged there.
 - Merge network.rs, collector.rs, models.rs, lib.rs, Cargo feature additions,
