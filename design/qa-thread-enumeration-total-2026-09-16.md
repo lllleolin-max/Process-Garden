@@ -1,5 +1,13 @@
 # Complete thread-enumeration semantics
 
+Native follow-up: 17 library tests pass. A direct normal-host Toolhelp check
+returned 557 process entries and 10,637 threads; the independent process sample
+returned all 559 enumerated processes. These are separate snapshots, so their
+process counts are not required to match. SystemSnapshot serde now explicitly
+tests that observed total six is preserved and missing total is omitted while
+other metrics remain present. This is normal-path and wire-format validation,
+not synthetic native failure injection.
+
 UI follow-up: Sidebar component tests verify a missing latest enumeration shows
 a dash and an empty SVG polyline, then recovery starts a single-point new tail
 rather than connecting to the pre-gap observation. A separately observed zero

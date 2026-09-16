@@ -169,6 +169,16 @@ mod tests {
         assert!(!profile.disk_usage());
     }
 
+    #[cfg(windows)]
+    #[test]
+    fn real_thread_enumeration_has_a_complete_nonempty_result() {
+        let counts = thread_counts().expect("normal host thread enumeration completes");
+        assert!(!counts.is_empty());
+        assert!(counts.values().all(|count| *count > 0));
+        assert!(counts.values().sum::<usize>() >= counts.len());
+        println!("Thread enumeration: {} process entries, {} threads", counts.len(), counts.values().sum::<usize>());
+    }
+
     #[test]
     fn process_cpu_uses_whole_machine_capacity() {
         assert_eq!(machine_cpu_percent(100.0, 8), 12.5);

@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn serializes_frontend_field_names() {
-        let value = serde_json::to_value(SystemSnapshot {
+        let mut snapshot = SystemSnapshot {
             timestamp: 1,
             cpu_percent: 2.0,
             memory_used_bytes: 3,
@@ -80,12 +80,17 @@ mod tests {
             uptime_seconds: 7,
             power: PowerReading::default(),
             processes: Vec::new(),
-        })
-        .expect("snapshot serializes");
+        };
+        let value = serde_json::to_value(&snapshot).expect("snapshot serializes");
         assert_eq!(value["logicalCpuCount"], 8);
         assert_eq!(value["memoryUsedBytes"], 3);
+        assert_eq!(value["threadCount"], 6);
         assert!(value["power"]["watts"].is_null());
         assert_eq!(value["power"]["source"], "unavailable");
+        snapshot.thread_count = None;
+        let missing = serde_json::to_value(&snapshot).expect("snapshot serializes");
+        assert!(missing.get("threadCount").is_none());
+        assert_eq!(missing["processCount"], 5, "missing threads do not erase other metrics");
     }
 
     #[test]
