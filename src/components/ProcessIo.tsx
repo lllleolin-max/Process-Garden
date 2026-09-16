@@ -2,9 +2,9 @@ import { useProcessIo } from "../hooks/useProcessIo";
 import { useAppStore } from "../stores/appStore";
 import { Sparkline } from "./Sparkline";
 import { AnimatedMetric } from "./AnimatedMetric";
-import { useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 
-export function ProcessIo({ pid, startedAt }: { pid: number; startedAt: number }) {
+export const ProcessIo = memo(function ProcessIo({ pid, startedAt }: { pid: number; startedAt: number }) {
   const io = useProcessIo(pid, startedAt);
   const locale = useAppStore(s => s.locale);
   const zh = locale === "zh-CN";
@@ -28,4 +28,4 @@ export function ProcessIo({ pid, startedAt }: { pid: number; startedAt: number }
       {io.history.length > 0 && <Sparkline values={io.history.map(sample => sample[field])} height={32} color={index === 0 ? "var(--color-primary)" : "var(--color-tertiary)"} />}
     </div>)}
   </section>;
-}
+});

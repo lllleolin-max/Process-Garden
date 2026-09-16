@@ -4,8 +4,13 @@ import { ProcessIo } from "./ProcessIo";
 import { useAppStore } from "../stores/appStore";
 
 const read = vi.hoisted(() => vi.fn());
-vi.mock("../hooks/useProcessIo", () => ({ useProcessIo: read }));
+vi.mock("../hooks/useProcessIo", () => ({ useProcessIo: () => {
+  // Test-only signal models the hook's independent state notifications.
+  useAppStore(s => s.snapshot.timestamp);
+  return read();
+} }));
 const initial = useAppStore.getState();
+const publish = () => act(() => useAppStore.setState(s => ({ snapshot: { ...s.snapshot, timestamp: s.snapshot.timestamp + 1 } })));
 afterEach(() => { cleanup(); useAppStore.setState(initial, true); read.mockReset(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 it("shows binary rate units and truthful bilingual states without stale curves", () => {
@@ -18,12 +23,14 @@ it("shows binary rate units and truthful bilingual states without stale curves",
   expect(view.container.querySelectorAll("svg")).toHaveLength(2);
   expect(screen.getByText(/not physical disk throughput/)).toBeInTheDocument();
   read.mockReturnValue({ status: "error", rates: null, history: [] });
+  publish();
   view.rerender(<ProcessIo pid={42} startedAt={1800000000} />);
   expect(labels()).toEqual(["—", "—"]);
   expect(view.container.querySelectorAll("svg")).toHaveLength(0);
   act(() => useAppStore.setState({ locale: "zh-CN" }));
   expect(screen.getByText("读数不可用，正在重试")).toBeInTheDocument();
   read.mockReturnValue({ status: "live", rates: { readBytesPerSecond: 0, writtenBytesPerSecond: 0 }, history: [] });
+  publish();
   view.rerender(<ProcessIo pid={42} startedAt={1800000000} />);
   expect(labels()).toEqual(["0 B/s", "0 B/s"]);
 });
@@ -39,6 +46,7 @@ it("morphs displayed rates while exposing the actual value and clears errors imm
   read.mockReturnValue({ status: "live", rates: { readBytesPerSecond: 0, writtenBytesPerSecond: 0 }, history: [] });
   const view = render(<ProcessIo pid={42} startedAt={1800000000} />);
   read.mockReturnValue({ status: "live", rates: { readBytesPerSecond: 1024, writtenBytesPerSecond: 0 }, history: [] });
+  publish();
   view.rerender(<ProcessIo pid={42} startedAt={1800000000} />);
   const visible = view.container.querySelector('strong [aria-hidden="true"]')!;
   expect(visible).toHaveTextContent("0 B/s");
@@ -48,7 +56,20 @@ it("morphs displayed rates while exposing the actual value and clears errors imm
   expect(visible.textContent).not.toBe("0 B/s");
   expect(visible.textContent).not.toBe("1 KiB/s");
   read.mockReturnValue({ status: "error", rates: null, history: [] });
+  publish();
   view.rerender(<ProcessIo pid={42} startedAt={1800000000} />);
   expect(visible).toHaveTextContent("—");
   expect(frames.size).toBe(0);
+});
+
+it("ignores parent rerenders with unchanged process props but responds to its own data", () => {
+  useAppStore.setState({ reducedMotion: true });
+  read.mockReturnValue({ status: "baseline", rates: null, history: [] });
+  const view = render(<div><span>0</span><ProcessIo pid={42} startedAt={1800000000} /></div>);
+  read.mockClear();
+  for (let index = 1; index <= 20; index++) view.rerender(<div><span>{index}</span><ProcessIo pid={42} startedAt={1800000000} /></div>);
+  expect(read).not.toHaveBeenCalled();
+  read.mockReturnValue({ status: "live", rates: { readBytesPerSecond: 25, writtenBytesPerSecond: 0 }, history: [] });
+  publish();
+  expect(view.container.querySelector(".animated-metric-observation")).toHaveTextContent("25 B/s");
 });

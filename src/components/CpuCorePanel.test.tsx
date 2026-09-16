@@ -48,6 +48,17 @@ it("shows unsupported data honestly instead of manufacturing idle processors", (
   expect(view.container.querySelectorAll("svg")).toHaveLength(0);
 });
 
+it.each(["fullscreen", "wallpaper"] as const)("unmounts invisible charts in %s and restores expansion on return", displayMode => {
+  useAppStore.setState({ displayMode: "windowed" });
+  const view = setup([10, 20]);
+  view.toggle(true);
+  expect(view.container.querySelectorAll("svg")).toHaveLength(2);
+  act(() => useAppStore.setState({ displayMode }));
+  expect(view.container.querySelectorAll("svg")).toHaveLength(0);
+  act(() => useAppStore.setState({ displayMode: "windowed" }));
+  expect(view.container.querySelectorAll("svg")).toHaveLength(2);
+});
+
 it("preserves chart identity for telemetry but resets it across source or topology changes", () => {
   const view = setup([10, 20]);
   view.toggle(true);

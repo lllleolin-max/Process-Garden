@@ -41,9 +41,10 @@ function CoreReadings() {
 
 export function CpuCorePanel() {
   const locale = useAppStore(s => s.locale);
+  const windowed = useAppStore(s => s.displayMode === "windowed");
   const [open, setOpen] = useState(false);
   return <details className="cpu-core-panel" onToggle={event => setOpen(event.currentTarget.open)}>
     <summary>{locale === "zh-CN" ? "逻辑处理器" : "Logical processors"}</summary>
-    {open && <CoreReadings />}
+    {open && windowed && <CoreReadings />}
   </details>;
 }
