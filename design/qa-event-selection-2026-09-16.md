@@ -1,5 +1,11 @@
 # Event selection follows lifetime identity
 
+Follow-up component coverage: both timeline markers and recent-event entries
+are tested with a replacement at the same PID. Neither selects it or marks it
+pressed; matching lifetimes select normally, then become non-selectable when
+removed from a later snapshot. These tests cover actual DOM click handlers in
+addition to the helper-level identity tests (not native process operations).
+
 Event derivation already distinguished PID reuse but Timeline still selected
 the PID directly. An old exit event could therefore select a different current
 process. Native and generated demo events now carry normalized processKey;
