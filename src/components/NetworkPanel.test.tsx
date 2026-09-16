@@ -86,3 +86,35 @@ it("commits selection fallback after removal and does not resurrect an old adapt
   act(() => useAppStore.setState({ snapshot: { ...initial.snapshot, network: rows } }));
   expect(select).toHaveValue(row.id);
 });
+
+it("recovers from a failed query through an empty baseline to a fresh history tail", () => {
+  const view = setup(); view.toggle(true);
+  const observations = [toObservation({ ...initial.snapshot, network: [row] })];
+  const update = (network: NetworkInterfaceRates[] | null) => {
+    const snapshot = { ...initial.snapshot, network };
+    observations.push(toObservation(snapshot));
+    act(() => useAppStore.setState({ snapshot, history: [...observations] }));
+  };
+  update(null);
+  expect(screen.getByText("Network interface data unavailable")).toBeInTheDocument();
+  expect(view.container.querySelectorAll("svg")).toHaveLength(0);
+  update([{ ...row, receivedBytesPerSecond: null, sentBytesPerSecond: null }]);
+  expect(screen.getByText("Waiting for consecutive valid samples")).toBeInTheDocument();
+  expect(view.container.querySelector("polyline")).toHaveAttribute("points", "");
+  update([{ ...row, receivedBytesPerSecond: 32, sentBytesPerSecond: 0 }]);
+  expect(screen.queryByText("Waiting for consecutive valid samples")).toBeNull();
+  expect(screen.getByRole("region", { name: "Receive rate" })).toHaveTextContent("32 B/s");
+  expect(screen.getByRole("region", { name: "Send rate" })).toHaveTextContent("0 B/s");
+  for (const line of view.container.querySelectorAll("polyline"))
+    expect(line.getAttribute("points")?.trim().split(" ")).toHaveLength(1);
+});
+
+it("tracks history by adapter identity rather than row order or display name", () => {
+  const other = { ...row, id: "other", receivedBytesPerSecond: 999 };
+  const history = [
+    toObservation({ ...initial.snapshot, network: [row, other] }),
+    toObservation({ ...initial.snapshot, network: [other, { ...row, name: "renamed", receivedBytesPerSecond: 4 }] }),
+  ];
+  expect(networkHistory(history, row, "receivedBytesPerSecond")).toEqual([0, 4]);
+  expect(networkHistory(history, row, "receivedBytesPerSecond", 1)).toEqual([4]);
+});

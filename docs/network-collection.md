@@ -71,6 +71,14 @@ Logs: `%TEMP%/process-garden-network-isolation.log` and
 
 ## Primary sources
 
+Recovery integration tests additionally drive the visible panel from valid data
+to query failure, baseline-only rows and recovered zero/nonzero rates. Failure
+unmounts charts, baseline has empty geometry and recovery contains only one fresh
+point. Reordering/renaming adapters preserves LUID-scoped history and the sample
+limit. The targeted NetworkPanel suite now passes 8 tests; TypeScript checking
+also passed. No production code changed in this test-only follow-up; it is not
+packaged IPC or physical disconnect/reconnect validation.
+
 Frontend continuity follow-up: two component regressions verify ordinary telemetry
 preserves chart DOM/focus, switching adapter/collector remounts the curve identity,
 and a removed selection does not return automatically when the adapter reappears.
