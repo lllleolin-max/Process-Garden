@@ -25,6 +25,12 @@ Real-browser baseline probe: open settings, wait 65 ms, close, observe after two
 
 ## Coordination / remaining gates
 
+### Presence stress follow-up
+
+Added deterministic regressions for 40 close/reopen reversals (40 ms apart), preserving the same surface, correct inert state/focus, and no stale exit timer that could hide the final open panel. Also suspend delivery of RAF callbacks for 60 seconds of fake time, close/unmount, and reopen a fresh surface; cancelled callbacks never mark the old DOM ready. An unmount test confirms background interactivity is restored while pre-existing inert siblings remain inert, and pending entry callbacks are cancelled.
+
+The unmount harness first counted a zero-delay DOM selection notification as outstanding animation work. Inspection of jsdom's Selection implementation confirmed it queues `selectionchange` using `setTimeout(..., 0)`; flush those immediate DOM notifications before asserting that no delayed entry/exit work remains. No product change was needed for this test correction. These are simulated lifecycle stress tests, not a claim of a 60-second real-browser background run. Final verification: **189 tests / 33 files**, typecheck and production build passed. The preceding implementation commit `be2bad5` also passed GitHub CI; this follow-up requires its own CI run.
+
 `src/styles/overlays.css` is also being edited by the theme task in the shared worktree. Integrate only this entry/exit selector replacement plus `useOverlay.ts` motion-readiness effect; preserve the other task's new theme controls/styles. The shared directory was not modified. Keep PR #7 draft until integration/native gates are satisfied.
 
 This focused check does not certify complete reference fidelity, assistive-technology compliance, full native wallpaper behavior or sustained 120 FPS. Those remain open under the full application goal.
