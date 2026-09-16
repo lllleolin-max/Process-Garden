@@ -9,7 +9,7 @@ import "./CpuCorePanel.css";
 
 const PAGE_SIZE = 8;
 function CoreReadings() {
-  const { snapshot, history, locale } = useAppStore(useShallow(s => ({ snapshot: s.snapshot, history: s.history, locale: s.locale })));
+  const { snapshot, history, locale, collector } = useAppStore(useShallow(s => ({ snapshot: s.snapshot, history: s.history, locale: s.locale, collector: s.collector })));
   const status = useSnapshotStatus();
   const zh = locale === "zh-CN";
   const cores = snapshot.cpuCorePercents;
@@ -24,7 +24,8 @@ function CoreReadings() {
       <div className="cpu-core-grid">{cores.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE).map((value, offset) => {
         const core = current * PAGE_SIZE + offset;
         const valid = typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100;
-        return <section className="cpu-core-reading" key={core} aria-label={`CPU ${core}`}>
+        // A new source or logical topology has no continuous curve identity.
+        return <section className="cpu-core-reading" key={`${collector}:${snapshot.logicalCpuCount}:${core}`} aria-label={`CPU ${core}`}>
           <div><span>CPU {core}</span><strong>{valid ? formatPercent(value, locale, 1) : "—"}</strong></div>
           <Sparkline values={valid ? cpuCoreHistory(history, core) : []} height={32} scale="percent" />
         </section>;

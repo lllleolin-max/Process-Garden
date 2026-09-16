@@ -47,3 +47,32 @@ it("shows unsupported data honestly instead of manufacturing idle processors", (
   expect(screen.getByText(/readings are unavailable/)).toBeInTheDocument();
   expect(view.container.querySelectorAll("svg")).toHaveLength(0);
 });
+
+it("preserves chart identity for telemetry but resets it across source or topology changes", () => {
+  const view = setup([10, 20]);
+  view.toggle(true);
+  const original = screen.getByRole("region", { name: "CPU 0" });
+  const before = useAppStore.getState().snapshot;
+  act(() => useAppStore.setState({ snapshot: { ...before, cpuCorePercents: [30, 40] } }));
+  expect(screen.getByRole("region", { name: "CPU 0" })).toBe(original);
+  act(() => useAppStore.setState({ collector: "demo" }));
+  const newSource = screen.getByRole("region", { name: "CPU 0" });
+  expect(newSource).not.toBe(original);
+  act(() => useAppStore.setState({ snapshot: { ...before, logicalCpuCount: 1, cpuCorePercents: [50] } }));
+  expect(screen.getByRole("region", { name: "CPU 0" })).not.toBe(newSource);
+});
+
+it("keeps the current page on samples and commits a clamp after topology shrink", () => {
+  const view = setup(Array.from({ length: 20 }, (_, i) => i));
+  view.toggle(true);
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  const full = useAppStore.getState().snapshot;
+  act(() => useAppStore.setState({ snapshot: { ...full, timestamp: full.timestamp + 1000 } }));
+  expect(screen.getByText("CPU 19")).toBeInTheDocument();
+  act(() => useAppStore.setState({ snapshot: { ...full, logicalCpuCount: 2, cpuCorePercents: [0, 1] } }));
+  expect(screen.getByText("CPU 0")).toBeInTheDocument();
+  act(() => useAppStore.setState({ snapshot: full }));
+  expect(screen.getByText("CPU 0")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+});

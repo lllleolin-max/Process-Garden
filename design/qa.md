@@ -1,5 +1,15 @@
 # Current QA index
 
+- Logical CPU panel (2026-09-16): compared code/tests with the current logical-CPU
+  brief in context.md. Five component tests pass: bounded pages, collapsed chart
+  unmount, missing/zero distinction, bilingual stale status, source/topology
+  identity reset, and page persistence/clamping. Fixed reuse of old curve DOM
+  across source/count changes; ordinary telemetry retains chart identity.
+  Browser inventory failed twice with a service HTML/JSON parsing error, so no
+  new screenshots or visual conclusions were obtained. NOT READY for visual
+  sign-off: Garden/Eldritch layout, sidebar scrolling, keyboard navigation,
+  contrast and real screen-reader behavior still require browser/native QA.
+
 - Parent navigation runtime check (2026-09-16, Chinese Garden 1280×720): selecting python then its `code · PID 2458` parent changes Inspector to code. Initial check lost focus to body; fixed by focusing the persistent Inspector before selection. Browser recheck confirms focus on the named Inspector and the new heading. Missing parent PID 1120 remains non-actionable text. Long-name layout, English/Eldritch and native-parent checks remain open; this is not a complete process-tree acceptance.
 
 - Cumulative browser follow-up: [2026-09-16 runtime checkpoint](qa-cumulative-browser-2026-09-16.md). Chinese Garden filtering/focus passes; header label wrapping fixed and visually rechecked at 1280×720. Other widths, Eldritch and motion checks remain open; NOT READY for visual sign-off.
