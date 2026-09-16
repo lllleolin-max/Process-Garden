@@ -1,0 +1,11 @@
+.cpu-core-panel { padding: 10px 11px; border-bottom: 1px solid var(--color-border); font-size: 11px; }
+.cpu-core-panel summary { cursor: pointer; padding-block: 4px; }
+.cpu-core-panel summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.cpu-core-status { opacity: .7; margin: 8px 0; }
+.cpu-core-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cpu-core-reading { min-width: 0; }
+.cpu-core-reading > div { display: flex; justify-content: space-between; gap: 4px; font-variant-numeric: tabular-nums; }
+.cpu-core-reading strong { font-weight: 500; }
+.cpu-core-reading .sparkline { display: block; width: 100%; height: 32px; margin-block: 5px; }
+.cpu-core-readings nav { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-top: 8px; }
+.cpu-core-readings nav button { font-size: inherit; }

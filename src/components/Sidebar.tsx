@@ -4,6 +4,7 @@ import { formatBytes, formatDuration, formatPercent } from "../i18n/formatters";
 import { useAppStore } from "../stores/appStore";
 import { MetricCard } from "./MetricCard";
 import { PowerMetric } from "./PowerMetric";
+import { CpuCorePanel } from "./CpuCorePanel";
 import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
 import { threadHistory } from "../data/threadHistory";
 import { useCallback } from "react";
@@ -42,6 +43,7 @@ export function Sidebar() {
         progress={memoryPercent}
         color="linear-gradient(90deg, var(--color-tertiary), var(--color-secondary))"
       />
+      <CpuCorePanel />
       <PowerMetric />
       <MetricCard
         label={t("metrics.processes")}

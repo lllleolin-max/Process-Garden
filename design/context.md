@@ -1,5 +1,21 @@
 # Context
 
+## Current objective supersedes the original v1 exclusions
+
+The user now requires a complete Task Manager alternative, including safe process
+operations and native wallpaper behavior; the original v1 non-goals below are
+historical planning context, not acceptance limits for the current goal.
+
+Logical CPU panel brief (2026-09-16): help identify single-thread saturation that
+the total CPU percentage hides. Reuse existing theme tokens and curves, fixed
+0–100% scales, bilingual labels, honest unavailable/stale states. Assumption:
+an initially collapsed sidebar section preserves the reference composition;
+paginate eight logical processors at a time to bound active curves. Success:
+every received processor is reachable, zero differs from unavailable, closed
+content has no chart animation, and telemetry updates preserve navigation.
+Risk: sampler order is not a stable hardware ID; same-count topology replacement
+cannot currently be detected. Native desktop and both-theme visual QA remain required.
+
 goal: Build Process Garden v2 as a polished Windows-first desktop product that turns live process activity into a legible, living ecosystem across windowed, fullscreen, and ambient wallpaper experiences.
 
 user: Developers, power users, creative technologists, and showcase audiences who want system monitoring to feel expressive without losing factual clarity.

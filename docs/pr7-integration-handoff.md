@@ -68,8 +68,14 @@ Values reuse the existing sysinfo CPU refresh, with no extra scan; each logical
 processor has its own 0–100% scale (do not apply process CPU normalization).
 An absent array means unsupported and a null element means unavailable; neither
 is an observed zero. Array order is sampler order, not stable physical-core IDs.
-History copies the array to avoid mutable aliases. The dedicated per-processor
-UI, topology-change handling and packaged-runtime visual validation remain open.
+History copies the array to avoid mutable aliases. CpuCorePanel now mounts in
+Sidebar as an initially collapsed bilingual section, eight processors per page.
+Closed content unmounts its charts; unavailable values remain dashes. Keep its
+CSS, cpuCoreHistory and percent-scale Sparkline support together when merging.
+Count changes and missing observations break history; same-count reindexing is
+not detectable with the current sampler schema. Packaged-runtime and both-theme
+visual validation remain open. Local npm verify passed 310 tests plus typecheck
+and production build after the panel addition; this is not visual acceptance.
 
 Run npm verify and locked Rust library tests/compile check on the integrated
 tree, not only this branch. Then verify both reference themes, PID reuse,
