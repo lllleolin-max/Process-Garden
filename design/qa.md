@@ -1,5 +1,10 @@
 # Current QA index
 
+- Actual browser process-list check (code 78a83e1): English Eldritch keyboard
+  filter/fixed order/inspect and Chinese Garden empty-state/Escape verified at
+  1280 × 720, with visible focus and correct trigger return. Detailed scope and
+  unverified native departure/FPS/AT gates: [browser record](qa-process-list-browser-2026-09-17.md).
+
 - Process I/O continuity: same-lifetime stale snapshots remain visible through
   pause/errors/baseline with explicit bilingual not-live status and stopped
   interpolation. Changed PID/start-time/source clears immediately; fresh data
