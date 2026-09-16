@@ -28,6 +28,17 @@ afterEach(() => {
 });
 
 describe("power measurement presentation", () => {
+  it.each([NaN, Infinity, 0, 1800000010000])("rejects ambiguous power sample time %s without scheduling expiry", timestamp => {
+    vi.useFakeTimers(); vi.setSystemTime(1800000000000);
+    useAppStore.setState({ snapshot: sample(battery, timestamp) });
+    const view = render(<><PowerMetric /><PowerMetric compact /></>);
+    expect(screen.getByRole("region", { name: "Power" })).toHaveTextContent("Reading out of date");
+    expect(view.container.querySelector(".power-hud")).toHaveTextContent("—");
+    expect(vi.getTimerCount()).toBe(0);
+    act(() => useAppStore.setState({ snapshot: sample(battery) }));
+    expect(screen.getByRole("region", { name: "System power" })).toHaveTextContent("24.4 W");
+  });
+
   it("immediately marks native failures stale in the card and HUD without waiting for expiry", () => {
     const view = render(<><PowerMetric /><PowerMetric compact /></>);
     act(() => useFeedHealth.setState({ failed: true }));

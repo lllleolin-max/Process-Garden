@@ -112,6 +112,13 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+PowerMetric rejects nonfinite, nonpositive or future snapshot timestamps as stale
+in both the card and wallpaper HUD, without scheduling an expiry timer for those
+observations. Four regressions check invalid-time rejection and valid recovery.
+Full local verification: 389 tests, type checking and build passed. Coordinate
+this presentation-only change with the power-metrics branch; no native sensor,
+permission, driver or power-collection implementation was changed.
+
 System process/thread totals now share discrete count validation with process
 details. Invalid count observations break history rather than drawing negative
 or fractional peaks; core-count detail also rejects unknown/invalid topology.
