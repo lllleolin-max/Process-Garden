@@ -60,6 +60,36 @@ Follow-up on the same isolated baseline: implement a 96-actor / 16 MiB two-layer
 
 ### Remaining acceptance work
 
+### Sprite-size isolation and ordinary-density comparison
+
+On the restored renderer, use a temporary browser-only `drawImage` wrapper restricted to generated Canvas sources and five-argument draws on the scene Canvas. Account for the current transform scale and select halved dimensions only while each axis retains at least **2× its displayed physical-pixel size**. Retain original images, use high-quality filtering for derived layers, and restore the wrapper after measurement. This changes no source asset files.
+
+Observed source/eligible-level pairs: 627² → 313² / 156² / 78², and 1254² → 627² / 313². In four alternating three-second samples (400 ms settling) of the same 44-process Eldritch stress fixture at target 120:
+
+| Path | FPS | Gap p95 / max (ms) |
+| --- | ---: | ---: |
+| Original | 55.54 | 27.0 / 32.9 |
+| Derived levels | 56.49 | 24.7 / 30.9 |
+| Original | 57.09 | 26.0 / 33.5 |
+| Derived levels | 54.79 | 27.1 / 33.8 |
+
+The 17 derived tiles used 5,707,800 bytes of RGBA backing storage. **Reject this optimization:** no repeatable improvement, added memory, and no reason to accept a new resampling/fidelity risk. The temporary layers were released (width/height zero), prototype methods restored, and preview stopped. No runtime code was changed in this experiment.
+
+For comparison, restore ordinary demo sampling (20 source processes), ecological density .82 (10 main organisms), labels-on-demand, no selection, particles enabled. Same 740×422 Canvas and development browser. Two-second samples after 1.2 s theme settling / 200 ms target settling, with original source drawing throughout:
+
+| Theme | Target | Observed FPS | Gap p95 / max (ms) |
+| --- | ---: | ---: | ---: |
+| Garden | 30 | 30.10 | 41.2 / 43.4 |
+| Garden | 60 | 60.13 | 21.2 / 24.2 |
+| Garden | 120 | 117.91 | 14.0 / 21.9 |
+| Eldritch | 30 | 29.90 | 39.3 / 41.2 |
+| Eldritch | 60 | 60.29 | 25.6 / 31.5 |
+| Eldritch | 120 | 102.47 | 16.6 / 23.2 |
+
+These short comparisons show that ordinary-density behavior differs materially from forced-label stress conditions; the limiter is not universally stuck below 60. They do not prove stable cadence, sustained 120 FPS, native performance, or that density/labels alone explain the difference. Both population and label configuration changed, so isolate those costs separately before drawing a causal conclusion. Sprite downsampling and per-badge caches have now both failed acceptance; investigate cord/label compositing without removing visual detail.
+
+### Open gates
+
 1. Per-badge caching has been tested and rejected above. Any alternative reuse/batching of glows must preserve breath, color, selection, opacity, geometry, high-DPI sharpness and bounded memory, and demonstrate a repeatable benefit. Simply deleting effects is not an aligned fix.
 2. Inspect generated-sprite drawing costs and backing sizes; do not lower art resolution indiscriminately, especially in fullscreen/wallpaper modes.
 3. Repeat on production builds, longer samples, multiple viewport sizes and native WebView2/WorkerW with live sampling. Current short desktop-browser results do not certify 30/60/120 across the app.
