@@ -46,6 +46,19 @@ it("does not restart an active transition when the selected rate changes", () =>
   expect(frames.size).toBe(0);
 });
 
+it("uses a fixed percentage scale without amplifying small CPU fluctuations", () => {
+  useAppStore.setState({ reducedMotion: true });
+  const view = render(<Sparkline values={[0, 1, 0]} scale="percent" />);
+  const line = view.container.querySelector("polyline")!;
+  expect(line).toHaveAttribute("points", "0.0,38.0 80.0,37.7 160.0,38.0");
+  view.rerender(<Sparkline values={[0, 100, 0]} scale="percent" />);
+  expect(line).toHaveAttribute("points", "0.0,38.0 80.0,6.0 160.0,38.0");
+  view.rerender(<Sparkline values={[10, 101, 20]} scale="percent" />);
+  expect(line).toHaveAttribute("points", "160.0,31.6");
+  view.rerender(<Sparkline values={[0, 1, 0]} scale="auto" />);
+  expect(line).toHaveAttribute("points", "0.0,38.0 80.0,6.0 160.0,38.0");
+});
+
 it("rebases an in-flight curve when its viewBox height changes", () => {
   const view = render(<Sparkline values={[0, 10, 0]} height={40} />);
   view.rerender(<Sparkline values={[10, 0, 10]} height={40} />);

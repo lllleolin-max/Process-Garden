@@ -8,9 +8,10 @@ interface SparklineProps {
   color?: string;
   height?: number;
   fill?: boolean;
+  scale?: "auto" | "percent";
 }
 
-export const Sparkline = memo(function Sparkline({ values, color = "var(--color-primary)", height = 42, fill = true }: SparklineProps) {
+export const Sparkline = memo(function Sparkline({ values, color = "var(--color-primary)", height = 42, fill = true, scale = "auto" }: SparklineProps) {
   const lineRef = useRef<SVGPolylineElement>(null);
   const fillRef = useRef<SVGPolygonElement>(null);
   const tipRef = useRef<SVGCircleElement>(null);
@@ -19,10 +20,11 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
   // A missing observation breaks continuity; filtering it out would fabricate
   // a connection between samples on opposite sides of the gap.
   let tailStart = values.length;
-  while (tailStart > 0 && Number.isFinite(values[tailStart - 1])) tailStart--;
+  while (tailStart > 0 && Number.isFinite(values[tailStart - 1])
+    && (scale !== "percent" || (values[tailStart - 1] >= 0 && values[tailStart - 1] <= 100))) tailStart--;
   const samples = values.slice(tailStart);
-  const min = Math.min(...samples);
-  const max = Math.max(...samples);
+  const min = scale === "percent" ? 0 : Math.min(...samples);
+  const max = scale === "percent" ? 100 : Math.max(...samples);
   const range = Math.max(max - min, 1);
   const coordinates = samples.map((value, index) => [
     samples.length === 1 ? width : (index / (samples.length - 1)) * width,
@@ -106,4 +108,4 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
       {tip && <circle ref={tipRef} className="sparkline-tip" cx={tip[0]} cy={tip[1]} r="2" fill={color} />}
     </svg>
   );
-}, (previous, next) => previous.color === next.color && previous.height === next.height && previous.fill === next.fill && previous.values.length === next.values.length && previous.values.every((value, index) => Object.is(value, next.values[index])));
+}, (previous, next) => previous.scale === next.scale && previous.color === next.color && previous.height === next.height && previous.fill === next.fill && previous.values.length === next.values.length && previous.values.every((value, index) => Object.is(value, next.values[index])));

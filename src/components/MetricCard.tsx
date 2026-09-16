@@ -13,9 +13,10 @@ interface MetricCardProps {
   hint?: string;
   animatedValue?: number;
   formatValue?: (value: number) => string;
+  percentScale?: boolean;
 }
 
-export function MetricCard({ label, value, detail, icon: Icon, values, color, progress, hint, animatedValue, formatValue }: MetricCardProps) {
+export function MetricCard({ label, value, detail, icon: Icon, values, color, progress, hint, animatedValue, formatValue, percentScale }: MetricCardProps) {
   return (
     <section className="metric-card" aria-label={label} title={hint}>
       <div className="metric-heading">
@@ -26,7 +27,7 @@ export function MetricCard({ label, value, detail, icon: Icon, values, color, pr
       {progress !== undefined ? (
         <div className="progress-track" aria-hidden="true"><span style={{ transform: `scaleX(${Math.max(0, Math.min(Number.isFinite(progress) ? progress : 0, 100)) / 100})`, background: color }} /></div>
       ) : (
-        <Sparkline values={values} color={color} height={34} />
+        <Sparkline values={values} color={color} height={34} scale={percentScale ? "percent" : "auto"} />
       )}
       <div className="metric-detail">{detail}</div>
     </section>

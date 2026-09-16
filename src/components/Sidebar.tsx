@@ -25,6 +25,7 @@ export function Sidebar() {
         value={formatPercent(snapshot.cpuPercent, locale)}
         animatedValue={snapshot.cpuPercent}
         formatValue={cpuLabel}
+        percentScale
         detail={`${snapshot.logicalCpuCount} ${t("metrics.cores")}`}
         icon={Cpu}
         values={history.slice(-36).map((item) => item.cpuPercent)}
