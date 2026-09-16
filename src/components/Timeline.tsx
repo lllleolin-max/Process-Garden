@@ -1,15 +1,20 @@
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useAppStore } from "../stores/appStore";
 import type { EventKind } from "../types/system";
 import { eventTarget } from "../data/eventSelection";
 import type { ProcessEvent } from "../types/system";
+import { processIdentity } from "../animation/processIdentity";
 
 const kinds: EventKind[] = ["birth", "spawn", "network", "io", "spike", "exit"];
 
 export function Timeline() {
   const { t } = useTranslation();
-  const state = useAppStore();
+  const state = useAppStore(useShallow(({ snapshot, events, selectedPid }) => ({ snapshot, events, selectedPid })));
+  // One pass per process table, not one full-table scan for every event button.
+  const identities = useMemo(() => new Map(state.snapshot.processes.map(process =>
+    [process.pid, processIdentity(process)] as const)), [state.snapshot.processes]);
   const [showAll, setShowAll] = useState(false);
   const now = state.snapshot.timestamp;
   const recent = state.events.filter((event) => event.timestamp <= now && now - event.timestamp <= 60_000);
@@ -21,7 +26,7 @@ export function Timeline() {
     if (pid !== null) current.setSelectedPid(pid);
   };
   const eventButton = (event: ProcessEvent) => {
-    const pid = eventTarget(event, state.snapshot);
+    const pid = event.processKey && identities.get(event.pid) === event.processKey ? event.pid : null;
     return { onClick: () => selectEvent(event), "aria-disabled": pid === null, "aria-pressed": pid !== null && state.selectedPid === pid };
   };
   return (
