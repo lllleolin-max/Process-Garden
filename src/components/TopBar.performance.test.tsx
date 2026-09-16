@@ -4,12 +4,31 @@ import { afterEach, expect, it, vi } from "vitest";
 import i18n from "../i18n/config";
 import { useAppStore } from "../stores/appStore";
 import { TopBar } from "./TopBar";
+import { useFeedHealth } from "../stores/feedHealth";
 
 const initial = useAppStore.getState();
 afterEach(() => {
   cleanup();
   useAppStore.setState(initial);
+  useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: null });
   localStorage.clear();
+});
+
+it("only marks healthy unpaused native acquisition as a live animation state", async () => {
+  await i18n.changeLanguage("en-US");
+  useAppStore.setState({ ...initial, locale: "en-US", paused: false, collector: "demo" });
+  render(<TopBar />);
+  const button = screen.getByRole("button", { name: "Pause" });
+  expect(button).toHaveAttribute("data-observation-state", "demo");
+  act(() => useAppStore.setState({ collector: "native", demoMode: false }));
+  expect(button).toHaveAttribute("data-observation-state", "live");
+  act(() => useFeedHealth.setState({ failed: true }));
+  expect(button).toHaveAttribute("data-observation-state", "stale");
+  expect(button).toHaveTextContent("Stale data");
+  act(() => useAppStore.setState({ paused: true }));
+  expect(button).toHaveAttribute("data-observation-state", "paused");
+  act(() => { useFeedHealth.setState({ failed: false }); useAppStore.setState({ paused: false }); });
+  expect(button).toHaveAttribute("data-observation-state", "live");
 });
 
 it("does not commit toolbar renders for telemetry updates but keeps controls reactive", async () => {

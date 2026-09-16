@@ -11,11 +11,14 @@ import "../styles/overlays.css";
 import { ProcessExplorer } from "./ProcessExplorer";
 import { FeedHealthNotice } from "./FeedHealthNotice";
 import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
+import { useFeedHealth } from "../stores/feedHealth";
 
 export function TopBar() {
   const snapshotStatus = useSnapshotStatus();
   const { t } = useTranslation();
   const state = useAppStore(useShallow(({ snapshot: _snapshot, history: _history, events: _events, ...controls }) => controls));
+  const samplingFailed = useFeedHealth(state => state.failed);
+  const observationState = state.paused ? "paused" : state.collector === "demo" ? "demo" : samplingFailed ? "stale" : "live";
   const setMode = useDisplayMode();
   const [displayError, setDisplayError] = useState(false);
   const [processListOpen, setProcessListOpen] = useState(false);
@@ -75,7 +78,7 @@ export function TopBar() {
 
       <nav className="topbar-actions" aria-label={t("a11y.appControls")}>
         <button className="icon-button" data-process-list-trigger aria-label={t("processList.title")} title={t("processList.title")} aria-haspopup="dialog" aria-expanded={processListOpen} onClick={() => { state.setThemeMenuOpen(false); setProcessListOpen(true); }}><List size={18} /></button>
-        <button className={`live-pill ${state.paused ? "paused" : ""}`} onClick={() => state.setPaused(!state.paused)} aria-pressed={state.paused} aria-label={state.paused ? t("nav.resume") : t("nav.pause")} title={state.paused ? t("nav.resume") : t("nav.pause")}>
+        <button className={`live-pill ${state.paused ? "paused" : ""}`} data-observation-state={observationState} onClick={() => state.setPaused(!state.paused)} aria-pressed={state.paused} aria-label={state.paused ? t("nav.resume") : t("nav.pause")} title={state.paused ? t("nav.resume") : t("nav.pause")}>
           <span className="live-dot" />
           {state.paused ? <Play size={13} /> : <Pause size={13} />}
           {state.paused ? t("nav.resume") : snapshotStatus}

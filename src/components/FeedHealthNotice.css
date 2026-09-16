@@ -27,3 +27,17 @@
 }
 .feed-health-notice span { font-size: 11px; font-variant-numeric: tabular-nums; }
 .feed-health-notice:focus-visible { outline: 2px solid var(--color-warning); outline-offset: 3px; }
+
+.live-pill[data-observation-state]:not([data-observation-state="live"]) .live-dot::after {
+  display: none;
+  animation: none;
+}
+.live-pill[data-observation-state="demo"] .live-dot {
+  background: var(--color-text-muted);
+  box-shadow: none;
+}
+.live-pill[data-observation-state="stale"], .live-pill[data-observation-state="paused"] { color: var(--color-warning); }
+.live-pill[data-observation-state="stale"] .live-dot, .live-pill[data-observation-state="paused"] .live-dot {
+  background: var(--color-warning);
+  box-shadow: none;
+}
