@@ -21,6 +21,23 @@ afterEach(() => {
 });
 
 describe("monitoring motion and feedback", () => {
+  it.each([NaN, Infinity, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])("rejects invalid discrete counts %s and preserves observed zero", value => {
+    const process = { ...initial.snapshot.processes[0], threadCount: value, connections: value };
+    const snapshot = { ...initial.snapshot, processes: [process] };
+    useAppStore.setState({ selectedPid: process.pid, snapshot });
+    const view = render(<Inspector />);
+    const counts = () => [...view.container.querySelectorAll(".detail-grid strong")].slice(1, 3).map(node => node.textContent);
+    expect(counts()).toEqual(["—", "—"]);
+    for (const tab of ["Threads", "Connections"]) {
+      fireEvent.click(screen.getByRole("tab", { name: tab }));
+      expect(view.container.querySelector(".inspector-tab-summary strong")).toHaveTextContent(i18n.t("common.unavailable"));
+    }
+    act(() => useAppStore.setState({ snapshot: { ...snapshot, processes: [{ ...process, threadCount: 0, connections: 0 }] } }));
+    expect(counts()).toEqual(["0", "0"]);
+    expect(view.container.querySelector(".inspector-tab-summary strong")).toHaveTextContent("0");
+    expect(view.container.querySelector(".activity-highlights")).toHaveTextContent("0 connections");
+  });
+
   it("smooths Inspector readings without carrying values into a reused PID", () => {
     vi.spyOn(document, "hidden", "get").mockReturnValue(false);
     vi.stubGlobal("matchMedia", () => ({ matches: false }));

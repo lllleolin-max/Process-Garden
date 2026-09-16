@@ -36,6 +36,8 @@ export function Inspector() {
   const cpuLabel = Number.isFinite(process.cpuPercent) && process.cpuPercent >= 0 && process.cpuPercent <= 100
     ? formatPercent(process.cpuPercent, state.locale, 1) : "—";
   const memoryLabel = isObservedMetric(process.memoryBytes) ? formatBytes(process.memoryBytes, state.locale) : "—";
+  const threadCount = isObservedMetric(process.threadCount) && Number.isSafeInteger(process.threadCount) ? process.threadCount : undefined;
+  const connections = isObservedMetric(process.connections) && Number.isSafeInteger(process.connections) ? process.connections : undefined;
   const agentTasks = isAgentProcess(process) ? state.snapshot.processes.filter((item) => item.parentPid === process.pid && item.status !== "dead") : [];
   const copyDetails = async () => {
     const request = ++copyRequest.current;
@@ -71,18 +73,18 @@ export function Inspector() {
         <section className="resource-chart"><div className="resource-chart-title"><span><Activity size={14} />{t("inspector.memoryUsage")}</span><strong><AnimatedMetric key={`${selectedLifetime}-memory-value`} value={isObservedMetric(process.memoryBytes) ? process.memoryBytes : NaN} format={formatMemory} /></strong></div><Sparkline key={`${selectedLifetime}-memory`} values={history.map((item) => isObservedMetric(item.memoryBytes) ? item.memoryBytes : NaN).slice(-42)} color="var(--color-tertiary)" height={44} /></section>
         <ProcessIo key={`${selectedLifetime}-io`} pid={process.pid} startedAt={process.startedAt} />
       </>}
-      {tab === "threads" && <section className="inspector-tab-summary"><Workflow size={24} /><strong>{process.threadCount ?? t("common.unavailable")}</strong><p>{t("inspector.threadSummary")}</p></section>}
-      {tab === "connections" && <section className="inspector-tab-summary"><Network size={24} /><strong>{process.connections ?? t("common.unavailable")}</strong><p>{t("inspector.connectionPrivacy")}</p></section>}
+      {tab === "threads" && <section className="inspector-tab-summary"><Workflow size={24} /><strong>{threadCount ?? t("common.unavailable")}</strong><p>{t("inspector.threadSummary")}</p></section>}
+      {tab === "connections" && <section className="inspector-tab-summary"><Network size={24} /><strong>{connections ?? t("common.unavailable")}</strong><p>{t("inspector.connectionPrivacy")}</p></section>}
       </div>
       {isAgentProcess(process) && <section className="agent-lifecycle-card"><header><BrainCircuit size={16} /><div><strong>{t("inspector.agentCore")}</strong><small>{t("inspector.agentTasks", { count: agentTasks.length })}</small></div></header><p>{t("inspector.agentStageHint")}</p>{agentTasks.length ? agentTasks.map((task) => { const stage = agentEmbryoStage(task, state.snapshot.timestamp); return <button className={`agent-task-stage stage-${stage}`} key={`${task.pid}:${task.startedAt}`} onClick={() => state.setSelectedPid(task.pid)} aria-label={t("a11y.selectProcess", { name: task.name })}><ProcessIcon process={task} /><span><strong>{task.name}</strong><small>{t(`inspector.embryoStage${stage}`)}</small></span><i>{stage + 1}/3</i></button>; }) : <p>{t("inspector.noAgentTasks")}</p>}</section>}
       <div className="detail-grid">
         <Detail icon={Binary} label={t("inspector.pid")} value={String(process.pid)} />
-        <Detail icon={Workflow} label={t("metrics.threads")} value={String(process.threadCount ?? "—")} />
-        <Detail icon={Network} label={t("nav.connections")} value={String(process.connections ?? "—")} />
+        <Detail icon={Workflow} label={t("metrics.threads")} value={String(threadCount ?? "—")} />
+        <Detail icon={Network} label={t("nav.connections")} value={String(connections ?? "—")} />
         <Detail icon={Clock3} label={t("inspector.started")} value={formatDateTime(process.startedAt, state.locale)} />
       </div>
       <ParentProcess process={process} processes={state.snapshot.processes} locale={state.locale} />
-      <section className="activity-highlights"><h3>{t("inspector.activity")}</h3><p><span className="event-dot network" />{process.connections ?? "—"} {t("nav.connections").toLowerCase()}</p><p><span className="event-dot spawn" />{process.threadCount ?? "—"} {t("metrics.threads").toLowerCase()}</p><p><span className="event-dot io" />{memoryLabel} {t("metrics.memory").toLowerCase()}</p></section>
+      <section className="activity-highlights"><h3>{t("inspector.activity")}</h3><p><span className="event-dot network" />{connections ?? "—"} {t("nav.connections").toLowerCase()}</p><p><span className="event-dot spawn" />{threadCount ?? "—"} {t("metrics.threads").toLowerCase()}</p><p><span className="event-dot io" />{memoryLabel} {t("metrics.memory").toLowerCase()}</p></section>
       <section className="path-card"><span><FolderCog size={14} />{t("inspector.path")}</span><code>{process.executablePath ?? t("common.unavailable")}</code></section>
     </aside>
   );

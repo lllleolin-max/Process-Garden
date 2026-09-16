@@ -112,6 +112,14 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+Inspector thread/connection counts now require nonnegative safe integers in all
+three presentations (tab summary, detail grid and activity highlights). Invalid
+counts are unavailable, never zero; genuine zero remains visible. Five regression
+inputs cover NaN, infinity, negative, fractional and unsafe-integer values, then
+recovery to zero. Full local verification passed 338 tests, type checking and
+production build. This is display validation, not new connection enumeration;
+native connection collection remains an outstanding capability.
+
 Sparkline now compares actual SVG attributes before writing each animated frame,
 so rounded, unchanged geometry and stationary endpoints do not cause redundant
 DOM mutations. Checking the DOM rather than only the cached displayed value also
