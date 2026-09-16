@@ -11,6 +11,10 @@ interface SparklineProps {
   scale?: "auto" | "percent";
 }
 
+function setChangedAttribute(node: SVGElement | null, name: string, value: string) {
+  if (node && node.getAttribute(name) !== value) node.setAttribute(name, value);
+}
+
 export const Sparkline = memo(function Sparkline({ values, color = "var(--color-primary)", height = 42, fill = true, scale = "auto" }: SparklineProps) {
   const lineRef = useRef<SVGPolylineElement>(null);
   const fillRef = useRef<SVGPolygonElement>(null);
@@ -45,12 +49,12 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
   useLayoutEffect(() => {
     const draw = (next: string) => {
       displayed.current = next;
-      lineRef.current?.setAttribute("points", next);
-      fillRef.current?.setAttribute("points", next ? `0,${height} ${next} ${width},${height}` : "");
+      setChangedAttribute(lineRef.current, "points", next);
+      setChangedAttribute(fillRef.current, "points", next ? `0,${height} ${next} ${width},${height}` : "");
       const last = next.split(" ").at(-1)?.split(",");
       if (last?.length === 2) {
-        tipRef.current?.setAttribute("cx", last[0]);
-        tipRef.current?.setAttribute("cy", last[1]);
+        setChangedAttribute(tipRef.current, "cx", last[0]);
+        setChangedAttribute(tipRef.current, "cy", last[1]);
       }
     };
     // The viewBox changes immediately on resize. Rebase the displayed geometry

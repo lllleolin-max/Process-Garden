@@ -112,6 +112,16 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+Sparkline now compares actual SVG attributes before writing each animated frame,
+so rounded, unchanged geometry and stationary endpoints do not cause redundant
+DOM mutations. Checking the DOM rather than only the cached displayed value also
+preserves correction after React commits a new target. A fixed-percent 0→1%
+middle-point regression at simulated 120 Hz completes with at most three line
+writes and zero stationary-tip writes, then releases its frame. Existing resize,
+fill-toggle and frame-budget tests still pass. Full local verification: 333
+tests, type checking and production build. This is a DOM-write reduction test,
+not a measured GPU/CPU improvement or a real-display frame-rate acceptance result.
+
 CPU core readouts also use the shared AnimatedMetric transition now. Keep the
 stable locale formatter and existing source/topology/core keys: ordinary samples
 interpolate, new identities start fresh. Expanded pages remain bounded to eight

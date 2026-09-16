@@ -26,9 +26,28 @@ it.each([30, 60, 120] as const)("paces SVG writes at %i Hz without changing tran
   const writes = vi.spyOn(line, "setAttribute");
   for (let index = 0; index <= 51; index++) tick(1000 + index * 1000 / 120);
   const pointsWrites = writes.mock.calls.filter(([name]) => name === "points").length;
-  expect(pointsWrites).toBeGreaterThanOrEqual(Math.floor(0.42 * fps));
+  // Rounded geometry may repeat; a rendered frame need not mutate the DOM.
+  expect(pointsWrites).toBeGreaterThan(0);
   expect(pointsWrites).toBeLessThanOrEqual(Math.ceil(0.42 * fps) + 2);
   expect(line).toHaveAttribute("points", "0.0,6.0 80.0,38.0 160.0,6.0");
+  expect(frames.size).toBe(0);
+});
+
+it("skips repeated rounded geometry and stationary tip writes at 120 Hz", () => {
+  useAppStore.setState({ animationFps: 120 });
+  const view = render(<Sparkline values={[0, 0, 0]} scale="percent" />);
+  const line = view.container.querySelector("polyline")!;
+  const tip = view.container.querySelector("circle")!;
+  view.rerender(<Sparkline values={[0, 1, 0]} scale="percent" />);
+  const writes = vi.spyOn(line, "setAttribute");
+  const tipWrites = vi.spyOn(tip, "setAttribute");
+  for (let index = 0; index <= 51; index++) tick(1000 + index * 1000 / 120);
+  const geometry = writes.mock.calls.filter(([name]) => name === "points").map(([, value]) => value);
+  expect(geometry.length).toBeGreaterThan(0);
+  expect(geometry.length).toBeLessThanOrEqual(3);
+  expect(new Set(geometry).size).toBe(geometry.length);
+  expect(tipWrites).not.toHaveBeenCalled();
+  expect(line).toHaveAttribute("points", "0.0,38.0 80.0,37.7 160.0,38.0");
   expect(frames.size).toBe(0);
 });
 
