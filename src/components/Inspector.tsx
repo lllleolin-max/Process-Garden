@@ -1,5 +1,5 @@
 import { Activity, Binary, BrainCircuit, Check, CircleDot, Clock3, Copy, Cpu, FolderCog, Network, Workflow } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
 import { formatBytes, formatDateTime, formatPercent } from "../i18n/formatters";
@@ -12,6 +12,7 @@ import { processIdentity } from "../animation/processIdentity";
 import { ParentProcess } from "./ParentProcess";
 import { ProcessIo } from "./ProcessIo";
 import { isObservedMetric } from "../data/processTable";
+import { AnimatedMetric } from "./AnimatedMetric";
 
 export function Inspector() {
   const { t } = useTranslation();
@@ -24,6 +25,8 @@ export function Inspector() {
   const process = state.snapshot.processes.find((item) => item.pid === state.selectedPid);
   const history = useMemo(() => process && tab === "overview" ? processHistory(state.history, process, 42) : [], [state.history, process, tab]);
   const selectedLifetime = process ? processIdentity(process) : null;
+  const formatCpu = useCallback((value: number) => formatPercent(value, state.locale, 1), [state.locale]);
+  const formatMemory = useCallback((value: number) => formatBytes(value, state.locale), [state.locale]);
   useEffect(() => {
     setCopyStatus("idle");
     return () => { clearTimeout(copyTimer.current); copyRequest.current += 1; };
@@ -64,8 +67,8 @@ export function Inspector() {
       </div>
       <div id="inspector-tabpanel" className="inspector-tabpanel" role="tabpanel" aria-labelledby={`inspector-tab-${tab}`} tabIndex={0} key={`${process.pid}-${tab}`}>
       {tab === "overview" && <>
-        <section className="resource-chart" title={state.locale === "zh-CN" ? "全机 CPU 容量 · 固定 0–100% 刻度" : "Whole-machine CPU capacity · fixed 0–100% scale"}><div className="resource-chart-title"><span><Cpu size={14} />{t("inspector.cpuUsage")}</span><strong>{cpuLabel}</strong></div><Sparkline key={`${selectedLifetime}-cpu`} values={history.map((item) => item.cpuPercent).slice(-42)} height={50} scale="percent" /></section>
-        <section className="resource-chart"><div className="resource-chart-title"><span><Activity size={14} />{t("inspector.memoryUsage")}</span><strong>{memoryLabel}</strong></div><Sparkline key={`${selectedLifetime}-memory`} values={history.map((item) => isObservedMetric(item.memoryBytes) ? item.memoryBytes : NaN).slice(-42)} color="var(--color-tertiary)" height={44} /></section>
+        <section className="resource-chart" title={state.locale === "zh-CN" ? "全机 CPU 容量 · 固定 0–100% 刻度" : "Whole-machine CPU capacity · fixed 0–100% scale"}><div className="resource-chart-title"><span><Cpu size={14} />{t("inspector.cpuUsage")}</span><strong><AnimatedMetric key={`${selectedLifetime}-cpu-value`} value={cpuLabel === "—" ? NaN : process.cpuPercent} format={formatCpu} /></strong></div><Sparkline key={`${selectedLifetime}-cpu`} values={history.map((item) => item.cpuPercent).slice(-42)} height={50} scale="percent" /></section>
+        <section className="resource-chart"><div className="resource-chart-title"><span><Activity size={14} />{t("inspector.memoryUsage")}</span><strong><AnimatedMetric key={`${selectedLifetime}-memory-value`} value={isObservedMetric(process.memoryBytes) ? process.memoryBytes : NaN} format={formatMemory} /></strong></div><Sparkline key={`${selectedLifetime}-memory`} values={history.map((item) => isObservedMetric(item.memoryBytes) ? item.memoryBytes : NaN).slice(-42)} color="var(--color-tertiary)" height={44} /></section>
         <ProcessIo key={`${selectedLifetime}-io`} pid={process.pid} startedAt={process.startedAt} />
       </>}
       {tab === "threads" && <section className="inspector-tab-summary"><Workflow size={24} /><strong>{process.threadCount ?? t("common.unavailable")}</strong><p>{t("inspector.threadSummary")}</p></section>}

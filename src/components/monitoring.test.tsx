@@ -21,6 +21,36 @@ afterEach(() => {
 });
 
 describe("monitoring motion and feedback", () => {
+  it("smooths Inspector readings without carrying values into a reused PID", () => {
+    vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    let id = 0;
+    const frames = new Map<number, FrameRequestCallback>();
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; });
+    vi.stubGlobal("cancelAnimationFrame", (key: number) => frames.delete(key));
+    const tick = (now: number) => act(() => { const pending = [...frames.values()]; frames.clear(); pending.forEach(callback => callback(now)); });
+    const process = { ...initial.snapshot.processes[0], cpuPercent: 0, memoryBytes: 0 };
+    const snapshot = { ...initial.snapshot, processes: [process] };
+    useAppStore.setState({ selectedPid: process.pid, snapshot, history: [] });
+    const view = render(<Inspector />);
+    const readings = () => [...view.container.querySelectorAll('.resource-chart-title strong [aria-hidden="true"]')];
+    const original = readings();
+    act(() => useAppStore.setState({ snapshot: { ...snapshot, processes: [{ ...process, cpuPercent: 100, memoryBytes: 100 * 1024 * 1024 }] } }));
+    expect(readings()[0]).toBe(original[0]);
+    expect(readings()[0]).toHaveTextContent("0%");
+    expect(view.container.querySelector(".animated-metric-observation")).toHaveTextContent("100%");
+    tick(1000); tick(1160);
+    expect(parseFloat(readings()[0].textContent!)).toBeGreaterThan(0);
+    expect(parseFloat(readings()[0].textContent!)).toBeLessThan(100);
+    expect(readings()[1]).not.toHaveTextContent(/^0 MB$/);
+    act(() => useAppStore.setState({ snapshot: { ...snapshot, processes: [{ ...process, startedAt: process.startedAt + 1000, cpuPercent: 25 }] } }));
+    expect(readings()[0]).not.toBe(original[0]);
+    expect(readings()[0]).toHaveTextContent("25%");
+    expect(readings()[1]).toHaveTextContent("0 MB");
+    view.unmount();
+    expect(frames.size).toBe(0);
+  });
+
   it.each([NaN, Infinity, -1])("does not display invalid memory %s as observed zero or bridge its history", value => {
     const process = { ...initial.snapshot.processes[0], memoryBytes: value };
     const snapshot = { ...initial.snapshot, processes: [process] };

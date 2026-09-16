@@ -1,5 +1,16 @@
 # Current QA index
 
+- Inspector CPU/memory readouts now use 320 ms AnimatedMetric transitions with
+  stable locale formatters and lifetime-keyed reset. Local verification passed
+  61 files / 327 tests, type checking and production build. Regression checks
+  retained DOM nodes during sampling, intermediate values, immediate accessible
+  observations, PID-reuse reset and unmount cancellation. Existing metric tests
+  cover 30/60/120 frame budgets, pause, reduced motion and hidden windows.
+  Source requirement: gradual sample updates without flashing (design/context.md
+  and user motion request). Browser inventory failed again on 2026-09-16 with a
+  service response parse error. NOT READY for visual conformance: both themes,
+  real display pacing and packaged native behavior remain unverified. No new art.
+
 - Release manifest defect confirmed: [2026-09-16 diagnosis](qa-manifest-conflict-2026-09-16.md).
   Original artifact had duplicate ID 1 entries. Project-scoped GCC-spec and
   application-manifest repair now rebuilds without the warning; actual artifact
