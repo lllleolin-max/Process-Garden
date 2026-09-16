@@ -57,3 +57,20 @@ it("clamps a shrunken list and keeps the clamp when children return", () => {
   act(() => view.rerender(<ChildProcesses process={parent} processes={[parent, ...children]} locale="zh-CN" />));
   expect(screen.getByRole("button", { name: "上一页" })).toBeDisabled();
 });
+
+it("preserves page, row identity and focus on telemetry but resets across sources", () => {
+  const children = Array.from({ length: 19 }, (_, i) => ({ ...child, pid: 101 + i, name: `child-${i}` }));
+  useAppStore.setState({ collector: "native" });
+  const view = render(<ChildProcesses process={parent} processes={[parent, ...children]} locale="en-US" />);
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  const button = screen.getByRole("button", { name: "Inspect child-8, PID 109" });
+  button.focus();
+  view.rerender(<ChildProcesses process={{ ...parent, cpuPercent: 50 }} processes={[parent, ...children.map(item => ({ ...item, memoryBytes: 1234 }))]} locale="en-US" />);
+  expect(screen.getByRole("button", { name: "Inspect child-8, PID 109" })).toBe(button);
+  expect(button).toHaveFocus();
+  expect(screen.getByText("2 / 3")).toBeInTheDocument();
+  act(() => useAppStore.setState({ collector: "demo" }));
+  expect(screen.getByText("1 / 3")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.getByRole("button", { name: "Inspect child-8, PID 109" })).not.toBe(button);
+});

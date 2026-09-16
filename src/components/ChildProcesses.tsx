@@ -17,6 +17,8 @@ export function ChildProcesses({ process, processes, locale }: {
   const children = useMemo(() => processes.filter(child => child.status !== "dead"
     && observedParent(child, [process]) !== null).sort((a, b) => a.pid - b.pid), [process, processes]);
   const [page, setPage] = useState(0);
+  const parentIdentity = processIdentity(process);
+  useEffect(() => { setPage(0); }, [collector, parentIdentity]);
   const pages = Math.max(1, Math.ceil(children.length / PAGE_SIZE));
   const current = Math.min(page, pages - 1);
   useEffect(() => { setPage(previous => Math.min(previous, pages - 1)); }, [pages]);
@@ -36,7 +38,7 @@ export function ChildProcesses({ process, processes, locale }: {
     <span>{zh ? "子进程 · 当前快照" : "Child processes · current snapshot"} · {children.length}</span>
     <small>{zh ? "按父 PID 和启动时间推断，不代表完整历史进程树。" : "Inferred from parent PID and start time, not a complete historical tree."}</small>
     {children.length ? <ul>{children.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE).map(child =>
-      <li key={processIdentity(child)}><button className="icon-button text-button" onClick={event => select(event, child)}
+      <li key={`${collector}:${processIdentity(child)}`}><button className="icon-button text-button" onClick={event => select(event, child)}
         aria-label={zh ? `查看 ${child.name}，PID ${child.pid}` : `Inspect ${child.name}, PID ${child.pid}`}>
         <ProcessIcon process={child} /><span>{child.name}</span><small>PID {child.pid}</small>
       </button></li>)}</ul> : <code>{zh ? "当前快照中没有可确认的子进程" : "No confirmed children in this snapshot"}</code>}

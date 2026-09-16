@@ -112,6 +112,12 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+Child-list continuity follow-up: source/parent identity changes reset pagination;
+row keys include collector identity. Ordinary telemetry keeps the selected page,
+the same button DOM node and keyboard focus, as verified by a component regression.
+Full local verify passed 358 tests, type checking and production build. The source
+reset is intentional and does not claim a visual transition for process exits.
+
 Inspector now includes ChildProcesses.tsx/CSS after ParentProcess: direct children
 are inferred from parent PID/start time in the current snapshot, sorted by PID,
 and paginated eight at a time. No extra sampler/query or process mutation occurs.
