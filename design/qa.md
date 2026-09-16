@@ -1,5 +1,16 @@
 # Current QA index
 
+- Network continuity (2026-09-17): against the no-flash and factual-state brief,
+  failed interface queries retain the last successful same-source table/history,
+  selection, chart nodes and focus. Status explicitly says unavailable/not live;
+  paused/stale metrics stop interpolation and curve opacity transitions. Empty
+  observations clear devices; source changes never resurrect retained interfaces.
+  Recovery history still breaks across missing samples. PASS: 480 frontend tests,
+  typecheck and production build; focused network suite 9 tests, including retained
+  DOM/focus and accessible status descriptions. NOT READY for native visual/AT
+  acceptance: no real WebView failure/recovery or hardware FPS measurement here.
+  The previously built 073820b Windows executable does NOT include this change.
+
 - Windows rebuild (2026-09-17, code 073820b): no-bundle locked/offline release
   build and actual PE manifest verification passed. Includes latest GPU/device
   frontend and retained stale-state motion changes. Unsigned; not launched,

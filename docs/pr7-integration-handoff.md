@@ -497,3 +497,13 @@ Validation: 50 Rust tests passed / 10 ignored, cargo check passed; explicit nati
 probe grouped 700 records into 31 engines across 3 provider adapter identities,
 with no duplicates/type conflicts/unknown or out-of-range sums. This does not
 prove controlled-workload parity, physical GPU enumeration or visual acceptance.
+# Network continuity follow-up (2026-09-17)
+
+NetworkPanel.tsx/.css/.test.tsx now retain the last successful same-collector
+interface table and history when network is null (query unavailable). Empty arrays
+remain authoritative removals. Stale/paused values explicitly say not live and stop
+metric/curve interpolation; status is an accessible description of each metric.
+Source switches clear retained data, and recovered history does not cross gaps.
+480 frontend tests/typecheck/build pass. No native changes or additional artwork.
+Real WebView failure/recovery remains unverified; the 073820b EXE predates this patch.
+These three files do not overlap the other worktree's observed pending changes.

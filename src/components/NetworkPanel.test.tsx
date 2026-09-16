@@ -44,7 +44,7 @@ it("keeps every adapter reachable and preserves selection through samples", () =
 });
 it("separates unavailable and empty tables and translates the empty state", () => {
   const view = setup(null); view.toggle(true);
-  expect(screen.getByText("Network interface data unavailable")).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent("Network interface data unavailable");
   act(() => useAppStore.setState({ snapshot: { ...initial.snapshot, network: [] } }));
   expect(screen.getByText("No network interfaces found")).toBeInTheDocument();
   act(() => useAppStore.setState({ locale: "zh-CN" }));
@@ -89,6 +89,9 @@ it("commits selection fallback after removal and does not resurrect an old adapt
 
 it("recovers from a failed query through an empty baseline to a fresh history tail", () => {
   const view = setup(); view.toggle(true);
+  const line = view.container.querySelector("polyline");
+  const select = screen.getByRole("combobox");
+  select.focus();
   const observations = [toObservation({ ...initial.snapshot, network: [row] })];
   const update = (network: NetworkInterfaceRates[] | null) => {
     const snapshot = { ...initial.snapshot, network };
@@ -96,8 +99,12 @@ it("recovers from a failed query through an empty baseline to a fresh history ta
     act(() => useAppStore.setState({ snapshot, history: [...observations] }));
   };
   update(null);
-  expect(screen.getByText("Network interface data unavailable")).toBeInTheDocument();
-  expect(view.container.querySelectorAll("svg")).toHaveLength(0);
+  expect(screen.getByRole("status")).toHaveTextContent("Network interface data unavailable");
+  expect(screen.getByRole("status")).toHaveTextContent("not live");
+  expect(screen.getByRole("region", { name: "Receive rate" })).toHaveAccessibleDescription(/not live/);
+  expect(view.container.querySelectorAll("svg")).toHaveLength(2);
+  expect(view.container.querySelector("polyline")).toBe(line);
+  expect(select).toHaveFocus();
   update([{ ...row, receivedBytesPerSecond: null, sentBytesPerSecond: null }]);
   expect(screen.getByText("Waiting for consecutive valid samples")).toBeInTheDocument();
   expect(view.container.querySelector("polyline")).toHaveAttribute("points", "");
@@ -107,6 +114,22 @@ it("recovers from a failed query through an empty baseline to a fresh history ta
   expect(screen.getByRole("region", { name: "Send rate" })).toHaveTextContent("0 B/s");
   for (const line of view.container.querySelectorAll("polyline"))
     expect(line.getAttribute("points")?.trim().split(" ")).toHaveLength(1);
+});
+
+it("clears retained interfaces on empty observations and collector changes", () => {
+  const view = setup(); view.toggle(true);
+  const update = (network: NetworkInterfaceRates[] | null) => act(() =>
+    useAppStore.setState({ snapshot: { ...initial.snapshot, network } }));
+  update(null);
+  expect(screen.getByRole("combobox")).toBeInTheDocument();
+  act(() => useAppStore.setState({ collector: "demo" }));
+  expect(screen.queryByRole("combobox")).toBeNull();
+  update([row]);
+  update([]);
+  update(null);
+  expect(screen.queryByRole("combobox")).toBeNull();
+  act(() => useAppStore.setState({ locale: "zh-CN" }));
+  expect(screen.getByRole("status")).toHaveTextContent("网络接口数据不可用");
 });
 
 it("tracks history by adapter identity rather than row order or display name", () => {
