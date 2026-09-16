@@ -360,6 +360,17 @@ typecheck and build passed. This proves scheduling/allocation reductions, not
 measured hardware-FPS, CPU, battery or native visual acceptance. Existing EXE
 evidence at 3623cfe predates this scheduler change.
 
+Sparkline now uses the same metricFrames scheduler as AnimatedMetric. Keep that
+dependency during integration: curves and labels share one browser callback while
+retaining independent 420ms/320ms durations, cancellation, frame budgets and final
+values. A 12-curve-plus-label regression checks cancelling curves does not cancel
+the label, and label completion does not stop the longer curves. Sparkline also
+reuses its live MediaQueryList instead of allocating one per animation frame.
+Full verify passed 447 tests, typecheck and production build; final strengthened
+Sparkline assertions also passed. This is scheduler behavior, not measured native
+frame pacing, reduced CPU/power, or visual acceptance. Latest EXE at 49c1d81
+predates this curve scheduling change; no artwork/shared-worktree files changed.
+
 - Shared worktree remains read-only, including its new AGENTS.md, generated
   artwork, lifecycle modules and process-termination UI. Nothing was staged there.
 - Merge network.rs, collector.rs, models.rs, lib.rs, Cargo feature additions,

@@ -2,6 +2,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useAppStore } from "../stores/appStore";
 import { Sparkline } from "./Sparkline";
+import { AnimatedMetric } from "./AnimatedMetric";
 
 const initial = useAppStore.getState();
 let frames: Map<number, FrameRequestCallback>, id: number;
@@ -17,6 +18,52 @@ beforeEach(() => {
   useAppStore.setState({ paused: false, reducedMotion: false, displayMode: "windowed" });
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial); });
+
+it("shares one browser frame across curves and numeric labels without coupling cancellation", () => {
+  const format = (value: number) => value.toFixed(1);
+  function Metrics({ changed, charts = true }: { changed: boolean; charts?: boolean }) {
+    return <><AnimatedMetric value={changed ? 100 : 0} format={format} />
+      {charts && Array.from({ length: 12 }, (_, index) => <Sparkline key={index} values={changed ? [10, 0, 10] : [0, 10, 0]} />)}</>;
+  }
+  const view = render(<Metrics changed={false} />);
+  view.rerender(<Metrics changed />);
+  expect(frames.size).toBe(1);
+  tick(1000); tick(1100);
+  const label = view.container.querySelector('span[aria-hidden="true"]')!;
+  expect(Number(label.textContent)).toBeGreaterThan(0);
+  expect(Number(label.textContent)).toBeLessThan(100);
+  view.rerender(<Metrics changed charts={false} />);
+  expect(frames.size).toBe(1);
+  tick(1325);
+  expect(label).toHaveTextContent("100.0");
+  expect(frames.size).toBe(0);
+  view.rerender(<Metrics changed={false} />);
+  tick(1500); tick(1825);
+  expect(label).toHaveTextContent("0.0");
+  view.rerender(<Metrics changed />);
+  tick(2000); tick(2325);
+  expect(label).toHaveTextContent("100.0");
+  // Curves take 420ms; finishing the 320ms label must not stop their frame.
+  expect(frames.size).toBe(1);
+  tick(2425);
+  expect(frames.size).toBe(0);
+});
+
+it("reuses a live reduced-motion query while morphing and settles when it changes", () => {
+  const preference = { matches: false };
+  const matchMedia = vi.fn(() => preference);
+  vi.stubGlobal("matchMedia", matchMedia);
+  const view = render(<Sparkline values={[0, 10, 0]} />);
+  matchMedia.mockClear();
+  view.rerender(<Sparkline values={[10, 0, 10]} />);
+  for (let index = 0; index < 20; index++) tick(1000 + index * 1000 / 120);
+  expect(matchMedia).toHaveBeenCalledTimes(1);
+  preference.matches = true;
+  tick(1200);
+  expect(view.container.querySelector("polyline")).toHaveAttribute("points", "0.0,6.0 80.0,38.0 160.0,6.0");
+  expect(matchMedia).toHaveBeenCalledTimes(1);
+  expect(frames.size).toBe(0);
+});
 
 it.each([30, 60, 120] as const)("paces SVG writes at %i Hz without changing transition duration", (fps) => {
   useAppStore.setState({ animationFps: fps });

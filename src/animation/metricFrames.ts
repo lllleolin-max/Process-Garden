@@ -18,7 +18,7 @@ function flush(now: number) {
   }
 }
 
-/** One browser frame for all active numeric transitions; no idle timer. */
+/** One browser frame for active metric labels and curves; no idle timer. */
 export function requestMetricFrame(callback: FrameRequestCallback): () => void {
   const work: Work = { callback, cancelled: false };
   pending.add(work);

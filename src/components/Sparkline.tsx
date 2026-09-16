@@ -2,6 +2,7 @@ import { memo, useLayoutEffect, useRef } from "react";
 import { useAppStore } from "../stores/appStore";
 import { decideAnimationFrame } from "../animation/frameRate";
 import { alignPolylinePoints } from "../animation/polylineMorph";
+import { requestMetricFrame } from "../animation/metricFrames";
 
 interface SparklineProps {
   values: number[];
@@ -70,37 +71,38 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
       : displayed.current;
     const previous = start.split(" ").map((point) => point.split(",").map(Number));
     const target = points.split(" ").map((point) => point.split(",").map(Number));
-    if (!start || !points || start === points || previous.length < 2 || target.length < 2 || motionDisabled || document.hidden || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    const motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (!start || !points || start === points || previous.length < 2 || target.length < 2 || motionDisabled || document.hidden || motionPreference?.matches) {
       draw(points);
       return;
     }
     const { from, to } = alignPolylinePoints(previous, target);
-    let frame = 0;
+    let cancelFrame = () => {};
     let startedAt: number | null = null;
     let lastRenderedAt = 0;
     const animate = (now: number) => {
-      if (document.hidden || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { draw(points); return; }
+      if (document.hidden || motionPreference?.matches) { draw(points); return; }
       startedAt ??= now;
       const progress = Math.min(1, (now - startedAt) / 420);
       if (progress === 1) { draw(points); return; }
       const decision = decideAnimationFrame(lastRenderedAt, now, useAppStore.getState().animationFps);
       if (!decision.render && progress < 1) {
-        frame = requestAnimationFrame(animate);
+        cancelFrame = requestMetricFrame(animate);
         return;
       }
       lastRenderedAt = decision.alignedTime;
       const eased = 1 - (1 - progress) ** 3;
       draw(to.map(([x, y], index) => `${(from[index][0] + (x - from[index][0]) * eased).toFixed(1)},${(from[index][1] + (y - from[index][1]) * eased).toFixed(1)}`).join(" "));
-      if (progress < 1) frame = requestAnimationFrame(animate);
+      if (progress < 1) cancelFrame = requestMetricFrame(animate);
     };
     const finishWhenHidden = () => {
-      if (document.hidden) { cancelAnimationFrame(frame); draw(points); }
+      if (document.hidden) { cancelFrame(); draw(points); }
     };
     draw(start);
-    frame = requestAnimationFrame(animate);
+    cancelFrame = requestMetricFrame(animate);
     document.addEventListener("visibilitychange", finishWhenHidden);
     return () => {
-      cancelAnimationFrame(frame);
+      cancelFrame();
       document.removeEventListener("visibilitychange", finishWhenHidden);
     };
   }, [points, height, motionDisabled]);
