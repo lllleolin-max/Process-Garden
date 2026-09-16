@@ -29,6 +29,25 @@ it.each(["exit", "rank", "reuse"])("returns focus to the list, never another pro
   expect(screen.getByRole("dialog")).toBeInTheDocument();
 });
 
+it.each(["Previous", "Next"])("retains %s focus when live page counts collapse and guards unavailable activation", label => {
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  const button = screen.getByRole("button", { name: label });
+  act(() => button.focus());
+  const snapshot = useAppStore.getState().snapshot;
+  act(() => useAppStore.setState({ snapshot: { ...snapshot, processes: snapshot.processes.slice(0, 1), processCount: 1 } }));
+  expect(button).toHaveFocus();
+  expect(button).toHaveAttribute("aria-disabled", "true");
+  expect(button).not.toBeDisabled();
+  fireEvent.click(button);
+  expect(screen.getByText("Page 1 of 1")).toBeInTheDocument();
+  act(() => useAppStore.setState({ snapshot }));
+  expect(screen.getByText("Page 1 of 3")).toBeInTheDocument();
+  expect(button).toHaveFocus();
+  expect(useAppStore.getState().selectedPid).toBeNull();
+});
+
 it("does not steal filter focus when the previously focused process disappears", () => {
   render(<TopBar />);
   fireEvent.click(screen.getByRole("button", { name: "Processes" }));
@@ -159,7 +178,7 @@ it("clamps a shrinking result set and shows an honest empty state", () => {
   act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, processes: [], processCount: 0 } }));
   expect(screen.getByText("Page 1 of 1")).toBeInTheDocument();
   expect(screen.getByText("No process records are available.")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Next" })).toHaveAttribute("aria-disabled", "true");
   fireEvent.change(screen.getByRole("textbox", { name: "Filter processes" }), { target: { value: "missing" } });
   expect(screen.getByText("No processes match this filter.")).toBeInTheDocument();
 });

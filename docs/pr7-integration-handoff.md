@@ -2,6 +2,15 @@
 
 ## Process list freshness follow-up — 2026-09-17
 
+Pagination follow-up: previous/next controls remain focusable when sample counts
+shrink, expose aria-disabled and guard activation instead of natively disabling
+the focused button. Both directions have collapse/recovery regression coverage;
+restored counts do not resurrect an obsolete page or select a process. Include
+ProcessExplorer.css and ProcessExplorer.test.tsx alongside the component. Full
+verification now passes 508 tests, typecheck and production build. Browser/native
+keyboard and assistive-technology acceptance for this follow-up remains open.
+CI 35127062884 for preceding e0f75c3 completed successfully before this batch push.
+
 ProcessExplorer now gates CPU/memory interpolation on shared snapshot freshness,
 matching the summary cards. Failed/stale samples cancel queued transitions while
 retaining row identity, filter text and focus; fresh readings resume animation.
