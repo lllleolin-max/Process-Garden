@@ -4,8 +4,10 @@ import { formatBytes, formatDuration, formatPercent } from "../i18n/formatters";
 import { useAppStore } from "../stores/appStore";
 import { MetricCard } from "./MetricCard";
 import { PowerMetric } from "./PowerMetric";
+import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
 
 export function Sidebar() {
+  const snapshotStatus = useSnapshotStatus();
   const { t } = useTranslation();
   const snapshot = useAppStore((state) => state.snapshot);
   const history = useAppStore((state) => state.history);
@@ -35,7 +37,7 @@ export function Sidebar() {
       <MetricCard
         label={t("metrics.processes")}
         value={new Intl.NumberFormat(locale).format(snapshot.processCount)}
-        detail={t("common.live")}
+        detail={snapshotStatus}
         icon={Activity}
         values={history.slice(-36).map((item) => item.processCount)}
         color="var(--color-secondary)"
@@ -43,7 +45,7 @@ export function Sidebar() {
       <MetricCard
         label={t("metrics.threads")}
         value={new Intl.NumberFormat(locale).format(snapshot.threadCount)}
-        detail={t("common.live")}
+        detail={snapshotStatus}
         icon={Workflow}
         values={history.slice(-36).map((item) => item.threadCount)}
         color="var(--color-warning)"

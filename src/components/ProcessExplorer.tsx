@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { useOverlay } from "../hooks/useOverlay";
+import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
 import { useAppStore } from "../stores/appStore";
 import { queryProcesses, type ProcessSort } from "../data/processTable";
 import { processIdentity } from "../animation/processIdentity";
@@ -12,6 +13,7 @@ import "./ProcessExplorer.css";
 
 const PAGE_SIZE = 50;
 export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const snapshotStatus = useSnapshotStatus();
   const { t } = useTranslation();
   const overlay = useOverlay(open, onClose, { restoreFocusSelector: "[data-process-list-trigger]", initialFocusSelector: "[data-process-filter]" });
   const state = useAppStore(useShallow(s => ({ snapshot: overlay.present ? s.snapshot : null, locale: s.locale, selectedPid: s.selectedPid, setSelectedPid: s.setSelectedPid, paused: s.paused, setPaused: s.setPaused, collector: s.collector })));
@@ -34,7 +36,7 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
   const turnPage = (next: number) => { setPage(next); if (scroll.current) scroll.current.scrollTop = 0; };
   return <div className="modal-backdrop process-list-backdrop" data-overlay-root="modal" data-state={overlay.state} aria-hidden={!open} inert={!open}>
     <section className="process-explorer" ref={overlay.surfaceRef} role="dialog" aria-modal="true" aria-labelledby="process-list-title" tabIndex={-1}>
-      <header><div><small>{state.collector === "demo" ? t("common.demo") : t("common.live")}</small><h2 id="process-list-title">{t("processList.title")}</h2></div><button className="icon-button" aria-label={t("a11y.closePanel")} onClick={onClose}><X size={18} /></button></header>
+      <header><div><small>{snapshotStatus}</small><h2 id="process-list-title">{t("processList.title")}</h2></div><button className="icon-button" aria-label={t("a11y.closePanel")} onClick={onClose}><X size={18} /></button></header>
       <div className="process-list-tools"><label>{t("processList.filter")}<input data-process-filter value={query} onChange={event => { setQuery(event.target.value); turnPage(0); }} placeholder={t("processList.filterHint")} /></label><button className="process-list-control" aria-pressed={state.paused} onClick={() => state.setPaused(!state.paused)}>{t(state.paused ? "nav.resume" : "nav.pause")}</button></div>
       <p className="process-list-summary">{t("processList.count", { count: rows.length, received: state.snapshot.processes.length, total: state.snapshot.processCount })}</p>
       {missing > 0 && <p className="process-list-warning" role="status">{t("processList.partial", { count: missing })}</p>}

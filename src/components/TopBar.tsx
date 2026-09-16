@@ -10,8 +10,10 @@ import { useAppStore } from "../stores/appStore";
 import "../styles/overlays.css";
 import { ProcessExplorer } from "./ProcessExplorer";
 import { FeedHealthNotice } from "./FeedHealthNotice";
+import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
 
 export function TopBar() {
+  const snapshotStatus = useSnapshotStatus();
   const { t } = useTranslation();
   const state = useAppStore(useShallow(({ snapshot: _snapshot, history: _history, events: _events, ...controls }) => controls));
   const setMode = useDisplayMode();
@@ -76,11 +78,11 @@ export function TopBar() {
         <button className={`live-pill ${state.paused ? "paused" : ""}`} onClick={() => state.setPaused(!state.paused)} aria-pressed={state.paused} aria-label={state.paused ? t("nav.resume") : t("nav.pause")} title={state.paused ? t("nav.resume") : t("nav.pause")}>
           <span className="live-dot" />
           {state.paused ? <Play size={13} /> : <Pause size={13} />}
-          {state.paused ? t("nav.resume") : t("common.live")}
+          {state.paused ? t("nav.resume") : snapshotStatus}
         </button>
 
         <button className="icon-button text-button" onClick={() => state.setDemoMode(!state.demoMode)} aria-pressed={state.demoMode} aria-label={t("a11y.toggleData")}>
-          <Sparkles size={16} /> {state.demoMode ? t("common.demo") : t("common.live")}
+          <Sparkles size={16} /> {state.demoMode ? t("common.demo") : state.locale === "zh-CN" ? "本机" : "Native"}
         </button>
 
         <div className="popover-anchor">
