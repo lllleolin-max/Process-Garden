@@ -30,9 +30,17 @@ using the isolated cargo-target-coverage output directory and locked/offline
 dependencies. No deliberate network traffic or configuration change was generated.
 This proves enumeration on this host, not rate accuracy or all-platform behavior.
 
-- Derive per-adapter rates with integer counter differences and measured monotonic
-  intervals. First samples, reset counters, removed/replaced adapters, long gaps
-  and failed queries must reset baselines instead of showing spikes or fake zero.
+Rate engine follow-up: NetworkRateTracker derives optional per-adapter B/s using
+checked u64 differences before f64 conversion and measured Instant gaps. It
+rejects zero/backwards/>15-second intervals, failures, duplicate LUIDs, counter
+rollback, down/reconnected adapters and interface-type replacement. Removed
+interfaces are dropped on snapshot replacement. LUIDs serialize as strings for
+JavaScript precision. Unchanged counters give observed zero; first/recovery
+observations have null rates. Four new rate tests pass; full Rust regression:
+31 passed, 5 manual ignored. This is not controlled-traffic validation.
+
+- Wire the rate engine to native collector/IPC without blocking frontend
+  rendering, retaining explicit errors and baseline resets.
 - Integrate bounded history and bilingual per-adapter UI with stale/unsupported
   states, pause/visibility handling and the shared motion policy.
 - Compare controlled traffic and idle behavior to OS counters, measure overhead,
