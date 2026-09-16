@@ -43,6 +43,13 @@ Compared **44,030,448 RGBA channels**. Final software-backed output differed in 
 
 ## Remaining gates
 
+### Worker lifetime follow-up
+
+- A fault-injection regression delivered error/message-error callbacks from an idle-terminated Worker after a replacement started. Before the fix, the replacement was terminated and its pending preparation fell back to the main thread. Callbacks now check their owning Worker instance; obsolete bitmap replies are closed without settling replacement jobs.
+- Red/green regression verified; full `npm run verify` passed with 172 tests in 31 files, TypeScript checking and production build. This verifies callback isolation, not the frequency of delayed Worker events in native WebView2. The preceding browser visual evidence is unchanged; no new browser or native visual certification is claimed for this follow-up.
+
+### Open acceptance checks
+
 1. Integrated native WebView2 cold-start/theme-switch, WorkerW wallpaper and live CPU/memory checks; verify same-origin fetch under the packaged Tauri protocol before making installers current.
 2. Longer, high-density 30/60/120-target profiling. Removing preparation stalls does not prove every frame of the full renderer meets a high-refresh budget.
 3. Broader original requirements remain open, including true Agent task-progress integration and complete custom art/font theme-package support. This pass does not redefine the overall goal as completed.

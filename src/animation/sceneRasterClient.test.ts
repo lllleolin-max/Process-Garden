@@ -23,6 +23,27 @@ beforeEach(() => {
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("off-thread artwork preparation", () => {
+  it("ignores retired worker errors without interrupting a new theme preparation", async () => {
+    const { prepareSceneOffThread } = await import("./sceneRasterClient");
+    const first = prepareSceneOffThread(new Image(), "core");
+    const retired = workers[0];
+    retired.reply(retired.requests[0].id, [bitmap()]);
+    await first;
+    await vi.advanceTimersByTimeAsync(1_000);
+    const next = prepareSceneOffThread(new Image(), "maw");
+    const current = workers[1];
+    retired.onerror?.(new ErrorEvent("error"));
+    retired.onmessageerror?.();
+    expect(current.terminate).not.toHaveBeenCalled();
+    const stale = bitmap();
+    retired.reply(current.requests[0].id, [stale]);
+    expect(stale.close).toHaveBeenCalledOnce();
+    const output = bitmap();
+    current.reply(current.requests[0].id, [output]);
+    expect(await next).toHaveLength(1);
+    expect(output.close).toHaveBeenCalledOnce();
+  });
+
   it("shares a worker, routes out-of-order replies and releases transferred output bitmaps", async () => {
     const { prepareSceneOffThread } = await import("./sceneRasterClient");
     const first = prepareSceneOffThread(new Image(), "core"), second = prepareSceneOffThread(new Image(), "atlas");

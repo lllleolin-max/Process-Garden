@@ -20,10 +20,12 @@ function fail() {
 function getWorker() {
   clearTimeout(idle);
   if (worker) return worker;
-  worker = new Worker(new URL("./sceneRaster.worker.ts", import.meta.url), { type: "module", name: "scene-artwork" });
-  worker.onmessage = (event: MessageEvent<RasterResponse>) => {
+  const target = new Worker(new URL("./sceneRaster.worker.ts", import.meta.url), { type: "module", name: "scene-artwork" });
+  worker = target;
+  target.onmessage = (event: MessageEvent<RasterResponse>) => {
     const response = event.data;
-    const job = pending.get(response.id);
+    // A retired worker must not settle or disable its replacement's jobs.
+    const job = worker === target ? pending.get(response.id) : undefined;
     if (!job) {
       if ("bitmaps" in response) response.bitmaps.forEach((bitmap) => bitmap.close());
       return;
@@ -34,9 +36,9 @@ function getWorker() {
     job.resolve(response.bitmaps);
     if (!pending.size) idle = setTimeout(stop, 1_000);
   };
-  worker.onerror = (event) => { event.preventDefault(); fail(); };
-  worker.onmessageerror = fail;
-  return worker;
+  target.onerror = (event) => { event.preventDefault(); if (worker === target) fail(); };
+  target.onmessageerror = () => { if (worker === target) fail(); };
+  return target;
 }
 
 /** Null means use the existing local renderer, including restricted WebViews. */
