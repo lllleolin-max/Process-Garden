@@ -9,6 +9,19 @@ import type { ProcessEvent } from "../types/system";
 const initial = useAppStore.getState();
 afterEach(() => { cleanup(); useAppStore.setState(initial, true); });
 
+it.each([".timeline-point", ".recent-event"])("rejects a source handover before a %s click executes", selector => {
+  const process = initial.snapshot.processes[0];
+  const event: ProcessEvent = { id: "source-event", pid: process.pid, processKey: processIdentity(process), processName: process.name, timestamp: initial.snapshot.timestamp, kind: "birth", messageKey: "events.born" };
+  useAppStore.setState({ collector: "demo", snapshot: { ...initial.snapshot, processes: [process] }, events: [event], selectedPid: null });
+  const view = render(<Timeline />);
+  const button = view.container.querySelector(selector)!;
+  button.addEventListener("click", () => {
+    useAppStore.setState({ collector: "native", events: [] });
+  }, { capture: true, once: true });
+  fireEvent.click(button);
+  expect(useAppStore.getState().selectedPid).toBeNull();
+});
+
 it("keeps both event entry points readable but non-selectable after PID reuse", () => {
   const old = { ...initial.snapshot.processes[0], pid: 42, name: "old-app", startedAt: 1_800_000_000 };
   const replacement = { ...old, name: "new-app", startedAt: old.startedAt + 1 };

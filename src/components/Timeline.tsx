@@ -11,7 +11,7 @@ const kinds: EventKind[] = ["birth", "spawn", "network", "io", "spike", "exit"];
 
 export function Timeline() {
   const { t } = useTranslation();
-  const state = useAppStore(useShallow(({ snapshot, events, selectedPid }) => ({ snapshot, events, selectedPid })));
+  const state = useAppStore(useShallow(({ snapshot, events, selectedPid, collector }) => ({ snapshot, events, selectedPid, collector })));
   // One pass per process table, not one full-table scan for every event button.
   const identities = useMemo(() => new Map(state.snapshot.processes.map(process =>
     [process.pid, processIdentity(process)] as const)), [state.snapshot.processes]);
@@ -22,6 +22,7 @@ export function Timeline() {
   const selectEvent = (event: ProcessEvent) => {
     // Recheck the latest table at click time, not the render-time snapshot.
     const current = useAppStore.getState();
+    if (current.collector !== state.collector) return;
     const pid = eventTarget(event, current.snapshot);
     if (pid !== null) current.setSelectedPid(pid);
   };
