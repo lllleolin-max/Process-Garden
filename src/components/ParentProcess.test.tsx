@@ -25,3 +25,16 @@ it("shows an unavailable parent as text instead of an actionable target", () => 
   expect(screen.queryByRole("button")).toBeNull();
   expect(screen.getByText("PID 999 · 无法确认当前父进程")).toBeInTheDocument();
 });
+
+it.each(["exit", "restart", "reselect", "parent-exit"])("does not follow a stale relationship after %s", change => {
+  const parent = { ...initial.snapshot.processes[0], pid: 4, startedAt: 1800000000 };
+  const child = { ...parent, pid: 8, parentPid: 4, startedAt: parent.startedAt + 10 };
+  useAppStore.setState({ snapshot: { ...initial.snapshot, processes: [parent, child] }, selectedPid: 8 });
+  render(<ParentProcess process={child} processes={[parent, child]} locale="en-US" />);
+  const processes = change === "exit" ? [parent] : change === "parent-exit" ? [child]
+    : [parent, change === "restart" ? { ...child, startedAt: child.startedAt + 1 } : child];
+  const selectedPid = change === "reselect" ? null : 8;
+  useAppStore.setState({ snapshot: { ...initial.snapshot, processes }, selectedPid });
+  fireEvent.click(screen.getByRole("button"));
+  expect(useAppStore.getState().selectedPid).toBe(selectedPid);
+});

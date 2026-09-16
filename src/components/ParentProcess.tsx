@@ -11,6 +11,7 @@ export function ParentProcess({ process, processes, locale }: {
   const zh = locale === "zh-CN";
   const selectParent = (event: MouseEvent<HTMLButtonElement>) => {
     const current = useAppStore.getState();
+    if (current.selectedPid !== process.pid) return;
     const child = current.snapshot.processes.find(item => item.pid === process.pid);
     if (!parent || !child || processIdentity(child) !== processIdentity(process)) return;
     const latestParent = observedParent(child, current.snapshot.processes);
