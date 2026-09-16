@@ -8,6 +8,10 @@
   line-height: 1.6;
 }
 .brand-lockup:has(.feed-health-notice) > :not(.feed-health-notice) { display: none; }
+.wallpaper-brand:has(.feed-health-notice) > :not(.feed-health-notice) { display: none; }
+.wallpaper-brand:has(.feed-health-notice) { min-width: 0; align-self: start; padding-right: 12px; }
+.wallpaper-brand .feed-health-notice { max-width: 30rem; background: var(--color-background-elevated); padding: 6px 9px; }
+.wallpaper-brand .feed-health-notice strong { color: var(--color-warning); font: 600 12px/1.6 var(--font-body); }
 .topbar .brand-lockup .feed-health-notice strong {
   display: block;
   color: var(--color-warning);

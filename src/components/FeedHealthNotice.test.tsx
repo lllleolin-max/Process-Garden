@@ -5,10 +5,23 @@ import { useFeedHealth } from "../stores/feedHealth";
 import { FeedHealthNotice } from "./FeedHealthNotice";
 
 beforeEach(() => {
-  useAppStore.setState({ locale: "en-US", paused: false, demoMode: false });
+  useAppStore.setState({ locale: "en-US", paused: false, demoMode: false, displayMode: "windowed" });
   useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: null });
 });
 afterEach(cleanup);
+
+it("shows one notice in the active presentation and never focuses the passive wallpaper HUD", () => {
+  useFeedHealth.setState({ failed: true });
+  render(<><FeedHealthNotice /><FeedHealthNotice wallpaper /></>);
+  expect(screen.getAllByRole("status")).toHaveLength(1);
+  expect(screen.getByRole("status")).toHaveAttribute("tabindex", "0");
+  act(() => useAppStore.setState({ displayMode: "wallpaper" }));
+  expect(screen.getAllByRole("status")).toHaveLength(1);
+  expect(screen.getByRole("status")).toHaveAttribute("tabindex", "-1");
+  act(() => useAppStore.setState({ displayMode: "fullscreen" }));
+  expect(screen.getAllByRole("status")).toHaveLength(1);
+  expect(screen.getByRole("status")).toHaveAttribute("tabindex", "0");
+});
 
 it("does not claim a retry is running while the original native call is pending", () => {
   useFeedHealth.setState({ failed: true, stalled: true });

@@ -1,4 +1,5 @@
 import { Leaf, MemoryStick, MonitorUp } from "lucide-react";
+import { FeedHealthNotice } from "./components/FeedHealthNotice";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
@@ -105,7 +106,7 @@ function WallpaperHud() {
   const locale = useAppStore((state) => state.locale);
   return (
     <div className="wallpaper-hud">
-      <div className="wallpaper-brand"><Leaf size={16} /><span>{t("app.name")}</span><i /></div>
+      <div className="wallpaper-brand"><FeedHealthNotice wallpaper /><Leaf size={16} /><span>{t("app.name")}</span><i /></div>
       <div className="wallpaper-metrics"><span><MonitorUp size={14} />{formatPercent(snapshot.cpuPercent, locale)}</span><span><MemoryStick size={14} />{formatBytes(snapshot.memoryUsedBytes, locale)}</span><PowerMetric compact /><span>{snapshot.processCount} {t("metrics.processes")}</span></div>
       <small>{t("modes.ambientHint")}</small>
     </div>
