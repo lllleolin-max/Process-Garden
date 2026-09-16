@@ -4,6 +4,7 @@ mod models;
 mod power;
 pub mod process_io;
 pub mod network;
+pub mod disk;
 
 #[cfg(not(test))]
 use collector::SystemCollector;

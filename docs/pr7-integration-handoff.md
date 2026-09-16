@@ -284,6 +284,16 @@ handoff. No such action was performed during this audit.
 
 ### Latest network and motion-formatting handoff — 2026-09-16
 
+Physical disk foundation: disk.rs and the Win32_System_Performance Cargo feature
+provide a local PDH reader with explicit unavailable values, bounded wildcard
+arrays and baseline handling. This is NOT wired to collector/UI yet. Preserve the
+module declaration and additive Cargo feature when resolving the other task's
+Cargo/lib.rs edits. Native read-only probe passed (one disk): initialization
+601.352ms, next collect+format 0.399ms; independent background initialization is
+required before integration so CPU/process sampling is not delayed. Rust suite:
+35 passed / 7 ignored, plus the explicitly executed disk probe passed separately.
+See docs/disk-collection.md for counter semantics, sources and remaining gates.
+
 ProcessExplorer follow-up: explicit Keep row order control separates continuous
 measurement updates from automatic rank changes while a user inspects rows.
 Preserve lifetime keys, collector-bound order reset, pruning/append behavior,
