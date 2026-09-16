@@ -39,10 +39,15 @@ export function AnimatedMetric({ value, format, active = true }: { value: number
       cancelFrame = requestMetricFrame(animate);
     };
     const hide = () => { if (document.hidden) { cancelFrame(); draw(value); } };
+    const reduce = () => { if (motionPreference?.matches) { cancelFrame(); draw(value); } };
     draw(from);
     cancelFrame = requestMetricFrame(animate);
     document.addEventListener("visibilitychange", hide);
-    return () => { cancelFrame(); document.removeEventListener("visibilitychange", hide); };
+    motionPreference?.addEventListener?.("change", reduce);
+    return () => {
+      cancelFrame(); document.removeEventListener("visibilitychange", hide);
+      motionPreference?.removeEventListener?.("change", reduce);
+    };
   }, [value, format, active, disabled, collector]);
   const label = Number.isFinite(value) ? format(value) : "—";
   // Assistive technology receives the real observation, not intermediate frames.

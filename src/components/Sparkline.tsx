@@ -99,12 +99,17 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
     const finishWhenHidden = () => {
       if (document.hidden) { cancelFrame(); draw(points); }
     };
+    const finishWhenReduced = () => {
+      if (motionPreference?.matches) { cancelFrame(); draw(points); }
+    };
     draw(start);
     cancelFrame = requestMetricFrame(animate);
     document.addEventListener("visibilitychange", finishWhenHidden);
+    motionPreference?.addEventListener?.("change", finishWhenReduced);
     return () => {
       cancelFrame();
       document.removeEventListener("visibilitychange", finishWhenHidden);
+      motionPreference?.removeEventListener?.("change", finishWhenReduced);
     };
   }, [points, height, motionDisabled, active]);
 

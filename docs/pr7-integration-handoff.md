@@ -499,6 +499,16 @@ with no duplicates/type conflicts/unknown or out-of-range sums. This does not
 prove controlled-workload parity, physical GPU enumeration or visual acceptance.
 # Network continuity follow-up (2026-09-17)
 
+OS motion preference follow-up: AnimatedMetric and Sparkline now subscribe to the
+live MediaQueryList change event during transitions. Enabling reduced motion
+settles the observed target and cancels queued shared frame work immediately,
+without waiting for rAF. Disabling it does not replay a completed transition;
+later observations can animate. Cleanup removes both preference listeners.
+485 tests/typecheck/build pass, including 30/60/120 synthetic shared-frame cases
+with no frame delivered between preference change and cancellation. This is not
+physical refresh-rate or Windows settings UI verification. No native/art edits;
+neither modified component overlaps the other worktree's pending diff at check time.
+
 Process I/O follow-up: same PID/start-time/source observations now remain visible
 through pause, error, watchdog and renewed baseline, explicitly not live and with
 metric/curve animation disabled. Changed lifetime/source clears immediately;
