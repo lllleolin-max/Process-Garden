@@ -1,6 +1,7 @@
 import { Expand, Languages, Leaf, Maximize2, MonitorUp, Pause, Play, Plus, Search, Settings, Sparkles, X } from "lucide-react";
 import { useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
 import { builtInThemes } from "../design-system/themes/builtIn";
 import { useDisplayMode } from "../hooks/useDisplayMode";
 import { useOverlay } from "../hooks/useOverlay";
@@ -10,7 +11,7 @@ import "../styles/overlays.css";
 
 export function TopBar() {
   const { t } = useTranslation();
-  const state = useAppStore();
+  const state = useAppStore(useShallow(({ snapshot: _snapshot, history: _history, events: _events, ...controls }) => controls));
   const setMode = useDisplayMode();
   const [displayError, setDisplayError] = useState(false);
   const [changingDisplay, setChangingDisplay] = useState(false);
