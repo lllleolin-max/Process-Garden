@@ -1,5 +1,12 @@
 import { expect, it } from "vitest";
 import { parseServiceReadings, serviceStateLabel } from "./serviceReadings";
+import contract from "../tests/fixtures/service-contract.json";
+
+it("accepts the exact cross-language wire contract also verified by Rust serialization", () => {
+  expect(parseServiceReadings(contract)).toEqual(contract);
+  expect(parseServiceReadings(contract)[0].displayName).toBe("示例服务 🌱");
+  expect(parseServiceReadings(contract)[3].state).toBe(0xffffffff);
+});
 
 const row = { name: "Example", displayName: "Example service", state: 4, processId: 42, serviceType: 32 };
 it("projects only public fields and distinguishes empty tables from malformed data", () => {

@@ -76,3 +76,10 @@ Multiple distinct pages accumulate; duplicate case-insensitive names cannot
 overwrite the earlier row, malformed counts/null strings/empty names fail. The
 native 312-row probe still passes (2.9205 ms once/debug). This covers specific
 adversarial pages, not every concurrent SCM mutation or production performance.
+
+Cross-language contract: src/tests/fixtures/service-contract.json is synthetic
+and contains no host metadata. Rust serialization must equal it exactly; the
+frontend parser must accept/project it unchanged. Covers Unicode, empty display
+names, maximum u32, unknown states and null PIDs for stopped/starting/zero-PID
+cases. Focused Rust contract test, 10 frontend parser tests and typecheck pass.
+This verifies the wire shape, not delivery through an actual Tauri window.

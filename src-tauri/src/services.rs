@@ -171,6 +171,22 @@ pub use native::enumerate;
 mod tests {
     use super::*;
     #[test]
+    fn serialization_matches_the_shared_frontend_wire_contract() {
+        let examples = [
+            ("ExampleRunning", "示例服务 🌱", 4, u32::MAX, 32),
+            ("ExampleStopped", "Stopped example", 1, 42, 16),
+            ("ExampleStarting", "", 2, 42, 16),
+            ("ExampleUnknown", "Future state", u32::MAX, 42, u32::MAX),
+            ("ExampleNoPid", "Running without a PID", 4, 0, 32),
+        ];
+        let rows: Vec<_> = examples.into_iter().map(|(name, display_name, state, pid, service_type)| ServiceReading {
+            name: name.into(), display_name: display_name.into(), state,
+            process_id: observed_pid(state, pid), service_type,
+        }).collect();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../../src/tests/fixtures/service-contract.json")).unwrap();
+        assert_eq!(serde_json::to_value(rows).unwrap(), expected);
+    }
+    #[test]
     fn transient_stopped_unknown_and_zero_pids_are_not_process_targets() {
         for state in [0, 1, 2, 3, 8, u32::MAX] { assert_eq!(observed_pid(state, 42), None); }
         for state in 4..=7 {

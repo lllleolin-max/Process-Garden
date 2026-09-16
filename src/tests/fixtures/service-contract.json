@@ -1,0 +1,7 @@
+[
+  { "name": "ExampleRunning", "displayName": "示例服务 🌱", "state": 4, "processId": 4294967295, "serviceType": 32 },
+  { "name": "ExampleStopped", "displayName": "Stopped example", "state": 1, "processId": null, "serviceType": 16 },
+  { "name": "ExampleStarting", "displayName": "", "state": 2, "processId": null, "serviceType": 16 },
+  { "name": "ExampleUnknown", "displayName": "Future state", "state": 4294967295, "processId": null, "serviceType": 4294967295 },
+  { "name": "ExampleNoPid", "displayName": "Running without a PID", "state": 4, "processId": null, "serviceType": 32 }
+]
