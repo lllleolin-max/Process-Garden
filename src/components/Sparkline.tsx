@@ -29,6 +29,13 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
   const tip = coordinates.at(-1);
 
   useLayoutEffect(() => {
+    // A newly mounted fill must match the in-flight line, not its final target.
+    // Keep this separate from the morph effect so toggling fill never restarts it.
+    const current = displayed.current;
+    fillRef.current?.setAttribute("points", current ? `0,${height} ${current} ${width},${height}` : "");
+  }, [fill, height]);
+
+  useLayoutEffect(() => {
     const draw = (next: string) => {
       displayed.current = next;
       lineRef.current?.setAttribute("points", next);

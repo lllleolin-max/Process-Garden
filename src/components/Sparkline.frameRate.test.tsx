@@ -62,3 +62,18 @@ it("morphs a growing history and reverses from the displayed curve when interrup
   expect(line).toHaveAttribute("points", "0.0,6.0 160.0,38.0");
   expect(frames.size).toBe(0);
 });
+
+it("mounts fill on the displayed curve without restarting an in-flight transition", () => {
+  const view = render(<Sparkline values={[0, 10, 0]} fill={false} />);
+  view.rerender(<Sparkline values={[10, 0, 10]} fill={false} />);
+  tick(1000); tick(1200);
+  const line = view.container.querySelector("polyline")!;
+  const intermediate = line.getAttribute("points");
+  view.rerender(<Sparkline values={[10, 0, 10]} fill />);
+  expect(line.getAttribute("points")).toBe(intermediate);
+  expect(view.container.querySelector("polygon")).toHaveAttribute("points", `0,42 ${intermediate} 160,42`);
+  tick(1425);
+  expect(line).toHaveAttribute("points", "0.0,6.0 80.0,38.0 160.0,6.0");
+  expect(view.container.querySelector("polygon")).toHaveAttribute("points", `0,42 ${line.getAttribute("points")} 160,42`);
+  expect(frames.size).toBe(0);
+});
