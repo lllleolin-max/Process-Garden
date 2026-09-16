@@ -1,13 +1,15 @@
 import type { AppLocale } from "./config";
 
 export function formatBytes(bytes: number, locale: AppLocale, precision = 1) {
-  if (!Number.isFinite(bytes) || bytes <= 0) return "0 MB";
+  if (!Number.isFinite(bytes) || bytes < 0) return "—";
+  if (bytes === 0) return "0 MB";
   const units = ["B", "KB", "MB", "GB", "TB"];
-  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const index = Math.max(0, Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1));
   return `${new Intl.NumberFormat(locale, { maximumFractionDigits: precision }).format(bytes / 1024 ** index)} ${units[index]}`;
 }
 
 export function formatPercent(value: number, locale: AppLocale, precision = 0) {
+  if (!Number.isFinite(value) || value < 0) return "—";
   return new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: precision }).format(Math.max(0, value) / 100);
 }
 
@@ -17,6 +19,7 @@ export function formatWatts(watts: number | null | undefined, locale: AppLocale)
 }
 
 export function formatDuration(seconds: number, locale: AppLocale) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "—";
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);

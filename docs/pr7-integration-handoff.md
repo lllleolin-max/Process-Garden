@@ -112,6 +112,13 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+Shared formatters now return unavailable for negative/nonfinite byte, percentage
+and duration observations instead of manufacturing zero or exposing NaN/Infinity.
+Real zero retains existing localized output; sub-byte positive values use B
+rather than an invalid negative unit index. Bilingual regressions cover these
+cases. Full local verify passed 370 tests, type checking and production build.
+This presentation guard does not validate or add any native telemetry source.
+
 FeedHealthNotice guards nonfinite/out-of-Date-range sample timestamps before Intl
 formatting. A corrupt time cannot crash the error notice or be mislabeled as no
 successful sample ever received; bilingual unavailable-time text is used instead.
