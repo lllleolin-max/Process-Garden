@@ -38,6 +38,7 @@ it("distinguishes zero from unavailable values and exposes stale status", () => 
   for (const index of [1, 2, 3]) expect(screen.getByRole("region", { name: `CPU ${index}` }).querySelector(".animated-metric-observation")).toHaveTextContent("—");
   act(() => useFeedHealth.setState({ failed: true }));
   expect(screen.getByText(/Stale data/)).toBeInTheDocument();
+  expect(screen.getByRole("region", { name: "CPU 0" })).toHaveAccessibleDescription(/Stale data/);
   act(() => useAppStore.setState({ locale: "zh-CN" }));
   expect(screen.getByText("逻辑处理器")).toBeInTheDocument();
   expect(screen.getByText(/数据已过期/)).toBeInTheDocument();
@@ -62,10 +63,19 @@ it("animates core readings and cancels all frame work when collapsed", () => {
   tick(1000); tick(1160);
   expect(parseFloat(visible.textContent!)).toBeGreaterThan(0);
   expect(parseFloat(visible.textContent!)).toBeLessThan(100);
+  const line = region.querySelector("polyline");
+  act(() => useFeedHealth.setState({ failed: true }));
+  expect(frames.size).toBe(0);
+  expect(visible).toHaveTextContent("100%");
+  expect(region.querySelector("polyline")).toBe(line);
+  expect(region).toHaveAccessibleDescription(/Stale data/);
+  act(() => useFeedHealth.setState({ failed: false }));
+  act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, cpuCorePercents: [50] } }));
+  expect(frames.size).toBe(1);
   view.toggle(false);
   expect(frames.size).toBe(0);
   view.toggle(true);
-  expect(screen.getByRole("region", { name: "CPU 0" }).querySelector('strong [aria-hidden="true"]')).toHaveTextContent("100%");
+  expect(screen.getByRole("region", { name: "CPU 0" }).querySelector('strong [aria-hidden="true"]')).toHaveTextContent("50%");
 });
 it("shows unsupported data honestly instead of manufacturing idle processors", () => {
   const view = setup();

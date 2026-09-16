@@ -499,6 +499,14 @@ with no duplicates/type conflicts/unknown or out-of-range sums. This does not
 prove controlled-workload parity, physical GPU enumeration or visual acceptance.
 # Network continuity follow-up (2026-09-17)
 
+Logical CPU stale-state follow-up: CpuCorePanel now consumes snapshot animation
+state, stopping both metric and curve transitions on stale/paused observations.
+Each core region references the shared status as its accessible description.
+Existing tests strengthened to verify immediate cancellation, same chart node,
+honest final observation, recovery animation and collapse cleanup. No sampler or
+theme edits; this component does not overlap the other worktree pending diff.
+Actual native stale/recovery rendering and screen-reader speech remain unverified.
+
 Browser-QA finding fixed: ProcessExplorer no longer calls demo totals "reported
 by system". Both languages identify simulated totals as not measured on this
 computer; missing demo records remain disclosed. Native totals and partial-data
