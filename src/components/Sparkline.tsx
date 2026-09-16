@@ -21,6 +21,8 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
   const lineRef = useRef<SVGPolylineElement>(null);
   const fillRef = useRef<SVGPolygonElement>(null);
   const tipRef = useRef<SVGCircleElement>(null);
+  const collector = useAppStore(state => state.collector);
+  const previousCollector = useRef(collector);
   const motionDisabled = useAppStore((state) => state.reducedMotion || state.paused || state.displayMode !== "windowed");
   const width = 160;
   // A missing observation breaks continuity; filtering it out would fabricate
@@ -73,7 +75,9 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
     const previous = start.split(" ").map((point) => point.split(",").map(Number));
     const target = points.split(" ").map((point) => point.split(",").map(Number));
     const motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    if (!active || !start || !points || start === points || previous.length < 2 || target.length < 2 || motionDisabled || document.hidden || motionPreference?.matches) {
+    const changedSource = previousCollector.current !== collector;
+    previousCollector.current = collector;
+    if (!active || changedSource || !start || !points || start === points || previous.length < 2 || target.length < 2 || motionDisabled || document.hidden || motionPreference?.matches) {
       draw(points);
       return;
     }
@@ -111,7 +115,7 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
       document.removeEventListener("visibilitychange", finishWhenHidden);
       motionPreference?.removeEventListener?.("change", finishWhenReduced);
     };
-  }, [points, height, motionDisabled, active]);
+  }, [points, height, motionDisabled, active, collector]);
 
   return (
     <svg className="sparkline" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">

@@ -2,6 +2,15 @@
 
 ## Process list freshness follow-up — 2026-09-17
 
+Curve source boundary follow-up: Sparkline now observes collector identity just
+as AnimatedMetric does. A demo/native handover cancels pending interpolation and
+settles current geometry without bridging two sources. Subsequent same-source
+samples still morph normally. Tests cover both handover directions during an
+active transition and an atomic source/history replacement; stable SVG identity
+and zero pending frames at the boundary are asserted. All 513 frontend tests,
+typecheck and production build pass. Actual desktop source handover remains to
+be verified. No artwork or original-worktree pending changes were modified.
+
 Pointer activation follow-up: remember the pressed process button and reject a
 pointer click delivered to a different button after sampling/removal/replacement.
 Pointer cancellation clears the target; detail-zero keyboard/assistive activation

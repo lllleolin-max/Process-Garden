@@ -19,6 +19,38 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial); });
 
+it.each(["demo", "native"] as const)("cancels an in-flight curve when switching away from %s, then animates fresh same-source samples", collector => {
+  useAppStore.setState({ collector });
+  const view = render(<Sparkline values={[0, 10, 0]} />);
+  const line = view.container.querySelector("polyline")!;
+  view.rerender(<Sparkline values={[10, 0, 10]} />);
+  tick(1000); tick(1100);
+  expect(frames.size).toBe(1);
+  act(() => useAppStore.setState({ collector: collector === "demo" ? "native" : "demo" }));
+  expect(frames.size).toBe(0);
+  expect(view.container.querySelector("polyline")).toBe(line);
+  expect(line).toHaveAttribute("points", "0.0,6.0 80.0,38.0 160.0,6.0");
+  view.rerender(<Sparkline values={[0, 10, 0]} />);
+  expect(frames.size).toBe(1);
+  tick(2000); tick(2425);
+  expect(frames.size).toBe(0);
+  expect(line).toHaveAttribute("points", "0.0,38.0 80.0,6.0 160.0,38.0");
+});
+
+it("does not morph between histories delivered with a source handover", () => {
+  useAppStore.setState({ collector: "demo" });
+  function SourceCurve() {
+    const source = useAppStore(state => state.collector);
+    return <Sparkline values={source === "demo" ? [0, 10, 0] : [10, 0, 10]} />;
+  }
+  const view = render(<SourceCurve />);
+  const line = view.container.querySelector("polyline")!;
+  act(() => useAppStore.setState({ collector: "native" }));
+  expect(frames.size).toBe(0);
+  expect(view.container.querySelector("polyline")).toBe(line);
+  expect(line).toHaveAttribute("points", "0.0,6.0 80.0,38.0 160.0,6.0");
+});
+
 it("shares one browser frame across curves and numeric labels without coupling cancellation", () => {
   const format = (value: number) => value.toFixed(1);
   function Metrics({ changed, charts = true }: { changed: boolean; charts?: boolean }) {
