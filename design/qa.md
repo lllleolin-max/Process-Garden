@@ -1,5 +1,7 @@
 # Current QA index
 
+- Trend-chart frame pacing: [2026-09-16 Sparkline QA](qa-sparkline-frame-rate-2026-09-16.md). Global rate now gates SVG updates without restarting active transitions; 207 tests pass. Growing-history shape changes remain separate follow-up work.
+
 - Native icon replacement: [2026-09-16 icon cache QA](qa-icon-replacement-2026-09-16.md). Canvas now accepts later native icons while retaining decoded fallback images during loading; stale callback and unmount regressions included. Native visual follow-up remains open.
 
 - PID reuse continuity: [2026-09-16 process lifetime QA](qa-process-lifetime-2026-09-16.md). Main nodes retire/birth independently for reused PIDs; both-theme Canvas regressions, 197 tests and focused browser captures pass. Native/high-density acceptance remains open; coordinate overlapping theme hunks.
