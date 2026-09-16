@@ -48,3 +48,37 @@ code is reused by the timing experiment and this fixture.
 The complete release library suite also passed: 17 passed, 3 manual tests ignored.
 System/PID 0 coverage and production error-path validation remain outstanding;
 this fixture does not establish parity across protected/system processes.
+
+## Production switch and follow-up
+
+Subsequent coverage inspection found PID 0 = 48 and PID 4 = 461 in both sources.
+The process snapshot included two zero-thread processes absent from thread-owner
+enumeration; total threads agreed (10,360 on the first coverage run). These zeroes
+are real observations and are retained, unlike absent/failed values.
+
+Production now reads PROCESSENTRY32W.cntThreads. The old thread walk is compiled
+only for tests. Invalid snapshot handles and non-ERROR_NO_MORE_FILES enumeration
+failures return None; partial maps are discarded and the handle is closed before
+return. This preserves the existing unknown-value contract. Error handling was
+code-reviewed, not verified by injected Windows failures.
+
+Post-switch release suite: 17 passed, 4 manual tests ignored. Explicitly running
+all four manual tests serially also passed. The controlled fixture still observed
+5 -> 13 -> 5. Coverage repeated with both totals at 10,253 and the same PID 0/4
+counts. The same-run paired benchmark measured process-snapshot median/P95
+12.635/13.975 ms versus old thread-walk 59.725/62.656 ms.
+
+Complete production pipeline (24 samples, 544 processes returned in each):
+
+| Stage | Median ms | P95 ms |
+| --- | ---: | ---: |
+| Collection | 67.955 | 81.465 |
+| Process refresh | 54.857 | 67.062 |
+| Thread counts | 12.028 | 13.338 |
+| Serialization | 0.106 | 0.142 |
+
+Earlier release collection measured 167.398 ms median, but process refresh also
+fell from 96.772 to 54.857 ms as host conditions changed. Do not attribute the
+entire end-to-end difference to this patch. Neither run proves installed-app
+CPU overhead, wallpaper behavior, or animation frame rate. Native snapshot and
+sysinfo reads remain sequential, not an atomic whole-system observation.

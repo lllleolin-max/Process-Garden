@@ -34,6 +34,35 @@ fn process_status(cpu_percent: f32) -> &'static str {
 
 #[cfg(windows)]
 fn thread_counts() -> Option<HashMap<u32, usize>> {
+    use std::mem::size_of;
+    use windows_sys::Win32::{
+        Foundation::{CloseHandle, GetLastError, ERROR_NO_MORE_FILES, INVALID_HANDLE_VALUE},
+        System::Diagnostics::ToolHelp::{
+            CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
+            TH32CS_SNAPPROCESS,
+        },
+    };
+    // cntThreads avoids an additional API call per thread. Keep genuine zeroes;
+    // missing/failed enumeration remains unknown, not an invented zero.
+    let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
+    if snapshot == INVALID_HANDLE_VALUE {
+        return None;
+    }
+    let mut entry: PROCESSENTRY32W = unsafe { std::mem::zeroed() };
+    entry.dwSize = size_of::<PROCESSENTRY32W>() as u32;
+    let mut counts = HashMap::new();
+    let mut present = unsafe { Process32FirstW(snapshot, &mut entry) } != 0;
+    while present {
+        counts.insert(entry.th32ProcessID, entry.cntThreads as usize);
+        present = unsafe { Process32NextW(snapshot, &mut entry) } != 0;
+    }
+    let complete = unsafe { GetLastError() } == ERROR_NO_MORE_FILES;
+    unsafe { CloseHandle(snapshot) };
+    complete.then_some(counts)
+}
+
+#[cfg(all(windows, test))]
+fn thread_counts_by_walk() -> Option<HashMap<u32, usize>> {
     use std::{mem::size_of, ptr};
     use windows_sys::Win32::{
         Foundation::{CloseHandle, GetLastError, ERROR_NO_MORE_FILES, INVALID_HANDLE_VALUE},
@@ -186,8 +215,8 @@ mod tests {
     fn real_thread_enumeration_has_a_complete_nonempty_result() {
         let counts = thread_counts().expect("normal host thread enumeration completes");
         assert!(!counts.is_empty());
-        assert!(counts.values().all(|count| *count > 0));
-        assert!(counts.values().sum::<usize>() >= counts.len());
+        assert!(counts.get(&std::process::id()).is_some_and(|count| *count > 0));
+        assert!(counts.values().sum::<usize>() > 0);
         println!("Thread enumeration: {} process entries, {} threads", counts.len(), counts.values().sum::<usize>());
     }
 
@@ -298,25 +327,7 @@ mod tests {
 
     #[cfg(windows)]
     fn process_snapshot_thread_counts() -> HashMap<u32, usize> {
-        use std::mem::size_of;
-        use windows_sys::Win32::{
-            Foundation::{CloseHandle, GetLastError, ERROR_NO_MORE_FILES, INVALID_HANDLE_VALUE},
-            System::Diagnostics::ToolHelp::{CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS},
-        };
-        let handle = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
-        assert_ne!(handle, INVALID_HANDLE_VALUE);
-        let mut entry: PROCESSENTRY32W = unsafe { std::mem::zeroed() };
-        entry.dwSize = size_of::<PROCESSENTRY32W>() as u32;
-        let mut counts = HashMap::new();
-        let mut present = unsafe { Process32FirstW(handle, &mut entry) } != 0;
-        while present {
-            counts.insert(entry.th32ProcessID, entry.cntThreads as usize);
-            present = unsafe { Process32NextW(handle, &mut entry) } != 0;
-        }
-        let complete = unsafe { GetLastError() } == ERROR_NO_MORE_FILES;
-        unsafe { CloseHandle(handle) };
-        assert!(complete);
-        counts
+        thread_counts().expect("complete process snapshot enumeration")
     }
 
     #[cfg(windows)]
@@ -327,7 +338,7 @@ mod tests {
         let pid = std::process::id();
         let read = || {
             let process = process_snapshot_thread_counts()[&pid];
-            let walked = thread_counts().expect("complete thread enumeration")[&pid];
+            let walked = thread_counts_by_walk().expect("complete thread enumeration")[&pid];
             (process, walked)
         };
         let before = read();
@@ -357,6 +368,24 @@ mod tests {
 
     #[cfg(windows)]
     #[test]
+    #[ignore = "manual system-process coverage inspection; live snapshots can differ"]
+    fn inspect_thread_snapshot_system_coverage() {
+        let processes = process_snapshot_thread_counts();
+        let threads = thread_counts_by_walk().expect("complete thread enumeration");
+        for pid in [0, 4] {
+            println!("pid={pid} process_snapshot={:?} thread_walk={:?}", processes.get(&pid), threads.get(&pid));
+        }
+        let process_only = processes.keys().filter(|pid| !threads.contains_key(pid)).count();
+        let thread_only = threads.keys().filter(|pid| !processes.contains_key(pid)).count();
+        let zero_counts = processes.values().filter(|count| **count == 0).count();
+        println!("process_entries={} thread_owner_entries={} process_only={process_only} thread_only={thread_only} zero_counts={zero_counts} process_total={} thread_total={}",
+            processes.len(), threads.len(), processes.values().sum::<usize>(), threads.values().sum::<usize>());
+        assert!(processes.contains_key(&std::process::id()));
+        assert!(threads.contains_key(&std::process::id()));
+    }
+
+    #[cfg(windows)]
+    #[test]
     #[ignore = "manual comparison of native thread-count APIs"]
     fn compare_thread_count_sources() {
         use std::time::Instant;
@@ -374,7 +403,7 @@ mod tests {
             };
             let read_thread_counts = || {
                 let started = Instant::now();
-                let counts = thread_counts().expect("thread walk completes");
+                let counts = thread_counts_by_walk().expect("thread walk completes");
                 (counts, started.elapsed().as_secs_f64() * 1000.0)
             };
             // Alternate order; separate snapshots can legitimately differ under churn.
