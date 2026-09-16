@@ -112,6 +112,16 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+Snapshot status labels now expire a previously successful native observation
+after max(5 seconds, three sampling intervals), even without a reported query
+failure. A one-shot deadline is reset on success and rechecked on visibility
+change; hidden documents do not schedule a new deadline timer. Paused/demo labels
+retain their existing semantics. Two hook regressions cover silent staleness,
+fresh recovery, pause/resume, timer cleanup and hidden-window wall-clock advance.
+Full local verification passed 344 tests, type checking and production build.
+This labels retained observations; it neither cancels native queries nor claims
+real system suspend/resume validation or a completed Task Manager replacement.
+
 ProcessExplorer and Inspector now share count/percentage domain validators.
 Whole-machine CPU must be 0–100%; counts must be nonnegative safe integers.
 Invalid metrics sort after observations in either direction and display as

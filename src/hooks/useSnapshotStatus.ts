@@ -1,5 +1,6 @@
 import { useAppStore } from "../stores/appStore";
 import { useFeedHealth } from "../stores/feedHealth";
+import { useEffect, useState } from "react";
 
 export function snapshotStatusLabel(collector: "demo" | "native", paused: boolean, failed: boolean, locale: "zh-CN" | "en-US") {
   const zh = locale === "zh-CN";
@@ -15,5 +16,21 @@ export function useSnapshotStatus() {
   const paused = useAppStore(state => state.paused);
   const locale = useAppStore(state => state.locale);
   const failed = useFeedHealth(state => state.failed);
-  return snapshotStatusLabel(collector, paused, failed, locale);
+  const lastSuccess = useFeedHealth(state => state.lastSuccess);
+  const samplingMs = useAppStore(state => state.samplingMs);
+  const [expired, setExpired] = useState(false);
+  useEffect(() => {
+    if (collector !== "native" || paused || lastSuccess === null) { setExpired(false); return; }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const check = () => {
+      clearTimeout(timer);
+      const remaining = lastSuccess + Math.max(5000, samplingMs * 3) - Date.now();
+      setExpired(!Number.isFinite(remaining) || remaining <= 0);
+      if (remaining > 0 && !document.hidden) timer = setTimeout(check, remaining);
+    };
+    check();
+    document.addEventListener("visibilitychange", check);
+    return () => { clearTimeout(timer); document.removeEventListener("visibilitychange", check); };
+  }, [collector, paused, lastSuccess, samplingMs]);
+  return snapshotStatusLabel(collector, paused, failed || expired, locale);
 }
