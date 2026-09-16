@@ -58,3 +58,31 @@ it("accepts more than 500 received records without losing the last process", () 
   fireEvent.click(screen.getByRole("button", { name: "Inspect large-1500, PID 1500" }));
   expect(useAppStore.getState().selectedPid).toBe(1500);
 });
+
+it("does not jump back to an obsolete page when process counts recover", () => {
+  const full = useAppStore.getState().snapshot;
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.getByText("Page 3 of 3")).toBeInTheDocument();
+  act(() => useAppStore.setState({ snapshot: { ...full, processes: full.processes.slice(0, 20), processCount: 20 } }));
+  expect(screen.getByText("Page 1 of 1")).toBeInTheDocument();
+  act(() => useAppStore.setState({ snapshot: full }));
+  expect(screen.getByText("Page 1 of 3")).toBeInTheDocument();
+});
+
+it("preserves the search input and caret through telemetry updates", () => {
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  const input = screen.getByRole("textbox", { name: "Filter processes" }) as HTMLInputElement;
+  fireEvent.change(input, { target: { value: "app-1" } });
+  input.setSelectionRange(3, 3);
+  const current = useAppStore.getState().snapshot;
+  act(() => useAppStore.setState({ snapshot: { ...current, timestamp: current.timestamp + 1000, processes: current.processes.map(process => ({ ...process, cpuPercent: process.cpuPercent / 2 })) } }));
+  expect(screen.getByRole("textbox", { name: "Filter processes" })).toBe(input);
+  expect(input).toHaveFocus();
+  expect(input).toHaveValue("app-1");
+  expect(input.selectionStart).toBe(3);
+  expect(input.selectionEnd).toBe(3);
+});

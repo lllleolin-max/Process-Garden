@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
@@ -23,8 +23,12 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
   const [page, setPage] = useState(0);
   const scroll = useRef<HTMLDivElement>(null);
   const rows = useMemo(() => state.snapshot ? queryProcesses(state.snapshot.processes, query, sort, ascending, state.locale) : [], [state.snapshot, query, sort, ascending, state.locale]);
-  if (!overlay.present || !state.snapshot) return null;
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  useEffect(() => {
+    // Commit the visible clamp so a later sample cannot resurrect a stale page.
+    if (state.snapshot) setPage(previous => Math.min(previous, pageCount - 1));
+  }, [pageCount, state.snapshot]);
+  if (!overlay.present || !state.snapshot) return null;
   const currentPage = Math.min(page, pageCount - 1);
   const shown = rows.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
   const missing = Math.max(0, state.snapshot.processCount - state.snapshot.processes.length);
