@@ -3,6 +3,7 @@ mod icons;
 mod models;
 mod power;
 pub mod process_io;
+pub mod network;
 
 #[cfg(not(test))]
 use collector::SystemCollector;
