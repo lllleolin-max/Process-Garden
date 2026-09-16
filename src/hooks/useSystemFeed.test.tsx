@@ -35,6 +35,24 @@ afterEach(() => {
 });
 
 describe("system sampling lifecycle", () => {
+  it.each([0, -1000])("does not declare recovery for a rejected snapshot with timestamp offset %i", async offset => {
+    const before = useAppStore.getState();
+    useFeedHealth.setState({ failed: true, lastSuccess: before.snapshot.timestamp });
+    invoke.mockResolvedValueOnce({ ...before.snapshot, timestamp: before.snapshot.timestamp + offset });
+    const next = deferred();
+    invoke.mockReturnValue(next.promise);
+    const hook = renderHook(() => useSystemFeed());
+    await act(() => vi.dynamicImportSettled());
+    expect(useAppStore.getState().snapshot).toBe(before.snapshot);
+    expect(useAppStore.getState().history).toBe(before.history);
+    expect(useFeedHealth.getState()).toEqual({ failed: true, stalled: false, lastSuccess: before.snapshot.timestamp });
+    await act(() => vi.advanceTimersByTimeAsync(before.samplingMs));
+    const recovered = { ...before.snapshot, timestamp: Date.now() };
+    await act(async () => next.resolve(recovered));
+    expect(useFeedHealth.getState()).toEqual({ failed: false, stalled: false, lastSuccess: recovered.timestamp });
+    hook.unmount();
+  });
+
   it("marks a pending request as stalled without starting another request", async () => {
     const request = deferred();
     invoke.mockReturnValue(request.promise);

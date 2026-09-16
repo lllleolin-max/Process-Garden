@@ -55,8 +55,15 @@ export function useSystemFeed() {
             if (!canIngest()) return;
             const snapshot = await invoke<SystemSnapshot>("sample_system");
             if (canIngest()) {
+              const previous = useAppStore.getState().snapshot;
               ingestSnapshot(snapshot, "native");
-              useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: snapshot.timestamp });
+              // A resolved IPC request is not necessarily a newer observation.
+              // Rejected duplicate/late snapshots must not clear a stale warning.
+              if (useAppStore.getState().snapshot === snapshot && snapshot !== previous) {
+                useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: snapshot.timestamp });
+              } else {
+                useFeedHealth.setState({ failed: true, stalled: false });
+              }
             }
             return;
           } catch {
