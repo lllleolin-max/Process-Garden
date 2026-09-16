@@ -110,7 +110,7 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
                 memory_bytes: process.memory(),
                 started_at: process.start_time(),
                 status: process_status(cpu_percent),
-                thread_count: threads.get(&pid.as_u32()).copied().unwrap_or(0),
+                thread_count: threads.get(&pid.as_u32()).copied(),
                 executable_path: process.exe().map(|path| path.to_string_lossy().into_owned()),
             }
         })

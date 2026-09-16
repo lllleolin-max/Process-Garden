@@ -25,7 +25,8 @@ pub struct ProcessSnapshot {
     pub memory_bytes: u64,
     pub started_at: u64,
     pub status: &'static str,
-    pub thread_count: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thread_count: Option<usize>,
     pub executable_path: Option<String>,
 }
 
@@ -47,6 +48,23 @@ pub struct SystemSnapshot {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn missing_process_threads_are_not_serialized_as_zero() {
+        let mut process = ProcessSnapshot {
+            pid: 42, parent_pid: None, name: "fixture".into(),
+            cpu_percent: 0.0, memory_bytes: 0, started_at: 1,
+            status: "idle", thread_count: None, executable_path: None,
+        };
+        let missing = serde_json::to_value(&process).expect("snapshot serializes");
+        assert!(missing.get("threadCount").is_none());
+        process.thread_count = Some(7);
+        let known = serde_json::to_value(&process).expect("snapshot serializes");
+        assert_eq!(known["threadCount"], 7);
+        process.thread_count = Some(0);
+        let zero = serde_json::to_value(&process).expect("snapshot serializes");
+        assert_eq!(zero["threadCount"], 0);
+    }
 
     #[test]
     fn serializes_frontend_field_names() {
