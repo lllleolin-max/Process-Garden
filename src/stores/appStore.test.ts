@@ -60,6 +60,26 @@ describe("snapshot continuity", () => {
     expect(useAppStore.getState().history).toHaveLength(120);
     expect(useAppStore.getState().history.at(-1)).toEqual(toObservation(useAppStore.getState().snapshot));
   });
+
+  it.each(["exit", "reuse", "collector"])("clears selection on %s rather than silently selecting another application", change => {
+    const snapshot = useAppStore.getState().snapshot;
+    const selected = snapshot.processes[0];
+    useAppStore.setState({ selectedPid: selected.pid, collector: "native" });
+    const processes = change === "exit" ? snapshot.processes.slice(1)
+      : snapshot.processes.map(process => process.pid === selected.pid && change === "reuse"
+        ? { ...process, startedAt: process.startedAt + 1 } : process);
+    useAppStore.getState().ingestSnapshot({ ...snapshot, timestamp: snapshot.timestamp + 1000, processes }, change === "collector" ? "demo" : "native");
+    expect(useAppStore.getState().selectedPid).toBeNull();
+  });
+
+  it("retains the selected lifetime through reordering and equivalent start-time units", () => {
+    const snapshot = useAppStore.getState().snapshot;
+    const selected = snapshot.processes[0];
+    useAppStore.setState({ selectedPid: selected.pid, collector: "native" });
+    const processes = [...snapshot.processes].reverse().map(process => ({ ...process, startedAt: process.startedAt * 1000 }));
+    useAppStore.getState().ingestSnapshot({ ...snapshot, timestamp: snapshot.timestamp + 1000, processes }, "native");
+    expect(useAppStore.getState().selectedPid).toBe(selected.pid);
+  });
 });
 
 describe("saved preferences", () => {

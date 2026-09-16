@@ -6,6 +6,7 @@ import { normalizeProcessName, sanitizeOrganismStyleOverrides, type OrganismStyl
 import type { AppLocale } from "../i18n/config";
 import type { ProcessEvent, SystemSnapshot, SystemObservation } from "../types/system";
 import { toObservation } from "../data/observation";
+import { processIdentity } from "../animation/processIdentity";
 import type { ThemeId, ThemeManifest } from "../types/theme";
 
 export type DisplayMode = "windowed" | "fullscreen" | "wallpaper";
@@ -208,10 +209,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     const demoEvent = collector === "demo" && sameCollector ? deriveDemoEvent(state.snapshot, snapshot) : null;
     const newEvents = [...lifecycleEvents, ...(demoEvent ? [demoEvent] : [])];
     const previousEvents = sameCollector ? state.events : [];
+    const previousSelection = state.snapshot.processes.find(process => process.pid === state.selectedPid);
+    const nextSelection = snapshot.processes.find(process => process.pid === state.selectedPid);
+    // Selection belongs to a lifetime, not a reusable PID or the next top row.
+    const selectedPid = sameCollector && previousSelection && nextSelection
+      && processIdentity(previousSelection) === processIdentity(nextSelection) ? nextSelection.pid : null;
     return {
       snapshot,
       collector,
-      selectedPid: state.selectedPid === null || snapshot.processes.some((process) => process.pid === state.selectedPid) ? state.selectedPid : (snapshot.processes[0]?.pid ?? null),
+      selectedPid,
       history: sameCollector ? [...state.history.slice(-119), toObservation(snapshot)] : [toObservation(snapshot)],
       events: newEvents.length ? [...newEvents, ...previousEvents].slice(0, 80) : previousEvents
     };
