@@ -20,6 +20,22 @@ Verdict: NOT READY for release or Task Manager replacement acceptance.
 
 ## Required follow-up
 
+### Superseding rebuild at ecd8534
+
+The isolated worktree was rebuilt using `tauri build --no-bundle --ci` with
+locked/offline Cargo dependencies and the `cargo-target-coverage` directory.
+Release compilation completed in 50.01 seconds after frontend bundling. The
+current EXE at the path above is 79,339,468 bytes, SHA256
+`1CE94E911BCB6D3BA412893FBE9381FF4ACBF7253E08BCBECF577B0208DA2658`.
+Read-only Authenticode inspection reports NotSigned. The actual embedded manifest
+validator passes (single manifest, asInvoker, longPathAware, Common Controls v6).
+This supersedes the original EXE/hash and closes the original manifest warning
+listed below; see the separate manifest diagnosis for the project-scoped repair.
+The previously generated NSIS installer was not rebuilt in this run and does not
+contain these latest frontend changes. No EXE/installer execution, installation,
+signing or release publication occurred. Log: `%TEMP%/process-garden-current-native-build.log`.
+Runtime/visual/performance and complete capability acceptance remain open.
+
 1. Investigate the GNU linker warning: `.rsrc merge failure: multiple non-default
    manifests`. A successful exit code is not proof of a correct embedded manifest.
 2. Validate actual packaged command invocation, selected-process I/O, permissions,
