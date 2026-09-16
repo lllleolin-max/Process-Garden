@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore } from "../stores/appStore";
 import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
@@ -19,11 +19,12 @@ function NetworkReadings() {
   const adapter = adapters?.find(row => row.id === selected) ?? preferred;
   useEffect(() => { if (adapter) setSelected(adapter.id); }, [adapter?.id]);
   useEffect(() => { setSelected(""); }, [collector]);
+  const numberFormat = useMemo(() => new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }), [locale]);
   const formatRate = useCallback((value: number) => {
     const units = ["B/s", "KiB/s", "MiB/s", "GiB/s"];
     const index = value > 0 ? Math.min(3, Math.max(0, Math.floor(Math.log(value) / Math.log(1024)))) : 0;
-    return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value / 1024 ** index)} ${units[index]}`;
-  }, [locale]);
+    return `${numberFormat.format(value / 1024 ** index)} ${units[index]}`;
+  }, [numberFormat]);
   return <div className="network-readings">
     <p>{status} · {zh ? "按接口统计，非互联网总流量" : "Per interface, not total Internet traffic"}</p>
     {!adapters ? <p>{zh ? "网络接口数据不可用" : "Network interface data unavailable"}</p>

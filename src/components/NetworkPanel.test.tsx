@@ -58,3 +58,31 @@ it("breaks adapter history across failures, disconnects, resets and type changes
     expect(networkHistory(history.slice(0, 2), row, "receivedBytesPerSecond")).toEqual([]);
   }
 });
+
+it("preserves chart nodes on samples but remounts on adapter and collector changes", () => {
+  const rows = [row, { ...row, id: "other", name: "Other" }];
+  const view = setup(rows); view.toggle(true);
+  const line = screen.getByRole("region", { name: "Receive rate" }).querySelector("polyline");
+  const select = screen.getByRole("combobox");
+  select.focus();
+  act(() => useAppStore.setState({ snapshot: { ...initial.snapshot, network: rows.map(item => ({ ...item, receivedBytesPerSecond: 10 })) } }));
+  expect(screen.getByRole("region", { name: "Receive rate" }).querySelector("polyline")).toBe(line);
+  expect(select).toHaveFocus();
+  fireEvent.change(select, { target: { value: "other" } });
+  const otherLine = screen.getByRole("region", { name: "Receive rate" }).querySelector("polyline");
+  expect(otherLine).not.toBe(line);
+  act(() => useAppStore.setState({ collector: "demo" }));
+  expect(screen.getByRole("region", { name: "Receive rate" }).querySelector("polyline")).not.toBe(otherLine);
+  expect(select).toHaveValue(row.id);
+});
+
+it("commits selection fallback after removal and does not resurrect an old adapter selection", () => {
+  const rows = [row, { ...row, id: "other", name: "Other" }];
+  const view = setup(rows); view.toggle(true);
+  const select = screen.getByRole("combobox");
+  fireEvent.change(select, { target: { value: "other" } });
+  act(() => useAppStore.setState({ snapshot: { ...initial.snapshot, network: [row] } }));
+  expect(select).toHaveValue(row.id);
+  act(() => useAppStore.setState({ snapshot: { ...initial.snapshot, network: rows } }));
+  expect(select).toHaveValue(row.id);
+});

@@ -71,6 +71,13 @@ Logs: `%TEMP%/process-garden-network-isolation.log` and
 
 ## Primary sources
 
+Frontend continuity follow-up: two component regressions verify ordinary telemetry
+preserves chart DOM/focus, switching adapter/collector remounts the curve identity,
+and a removed selection does not return automatically when the adapter reappears.
+Rate number formatting now reuses one Intl formatter per locale instead of
+constructing it per animation draw. Full local verification: 396 frontend tests,
+type checking and production build passed. No browser/hardware FPS claim.
+
 - [GetIfTable2](https://learn.microsoft.com/en-us/windows/win32/api/netioapi/nf-netioapi-getiftable2): interface enumeration, error return and allocation ownership.
 - [MIB_IF_ROW2](https://learn.microsoft.com/en-us/windows/win32/api/netioapi/ns-netioapi-mib_if_row2): interface identity, operational state and byte counters.
 
