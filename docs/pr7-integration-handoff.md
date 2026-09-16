@@ -284,6 +284,16 @@ handoff. No such action was performed during this audit.
 
 ### Latest network and motion-formatting handoff — 2026-09-16
 
+GPU foundation follow-up: gpu.rs adds a raw local provider reader, NOT a total GPU
+percentage or UI feature yet. The validated array reader moved out of disk.rs into
+performance_counters.rs; merge that module and both lib.rs declarations together
+or disk compilation will fail. Native GPU probe: 700 engine / 3 dedicated-memory /
+3 shared-memory counter instances, not device counts; 494.246ms initialization,
+1.409ms next sample (debug, single observation). Existing native disk probe also
+passed after extraction. Library 42 passed / 10 ignored; non-test cargo check
+passed. See docs/gpu-collection.md for aggregation/identity and integration gates.
+No shared-worktree, driver, counter-configuration, privilege or artwork changes.
+
 New overlap observed read-only in the shared worktree: collector.rs/models.rs and
 types/system.ts now add cpu_model/cpuModel (plus a native/model serialization test).
 Preserve that field alongside this branch's cpu_core_percents and network schema;

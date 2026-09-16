@@ -6,6 +6,8 @@ pub mod process_io;
 pub mod network;
 pub mod disk;
 pub mod disk_worker;
+mod performance_counters;
+pub mod gpu;
 
 #[cfg(not(test))]
 use collector::SystemCollector;

@@ -1,0 +1,67 @@
+# GPU monitoring: raw acquisition foundation
+
+Status: local PDH reader and read-only host probe pass. No GPU aggregation,
+background service, IPC or frontend is connected yet; GPU monitoring is not done.
+
+## Current implementation
+
+`gpu.rs` opens language-neutral local wildcard counters for GPU Engine utilization
+and GPU Adapter Memory Dedicated/Shared Usage. It returns separate raw instance
+maps. Failure of a counter is null; a successful empty map and an observed zero
+remain different. It does not sum adapters, processes or engine categories.
+
+Rate observations are suppressed for the first sample and after collection failure
+or a gap over 15 seconds. Memory counters are usage gauges and do not require an
+invented rate baseline. Query ownership closes all counter handles; no unsafe Send
+implementation, privilege elevation, driver setting changes or counter repair.
+
+The disk reader's validated PDH array routine has moved to
+`performance_counters.rs` and is shared by disk and GPU. The existing 4 MiB buffer
+bound, alignment, per-item status checks, bounded UTF-16 identities, duplicate
+rejection and fresh size queries on buffer races are retained. It uses NOCAP100
+and preserves raw observations, rather than concealing an unexplained value by
+silently clamping it. GPU instance names may include PIDs and adapter identities;
+keep them local and do not use a PID alone as process-lifetime attribution.
+
+## Aggregation and integration gates
+
+Microsoft describes Task Manager's overall GPU percentage as the busiest engine,
+not the sum of independent engines. That rule does not itself prove how to group
+the raw per-process/context PDH instances. Required before a total-usage display:
+
+- Parse and validate instance identities; distinguish adapter LUID, physical index,
+  engine ID/type and process scope. Unknown formats must not be silently grouped.
+- Identify aggregate instances, duplicates, virtual/software adapters and engines
+  sharing hardware. Validate aggregation against controlled workloads and Windows.
+- Map to real adapter names/capacity with verified device identities; do not call
+  the number of returned memory-counter instances the number of installed GPUs.
+- Reuse bounded demand-driven worker/session ownership, without putting provider
+  initialization under CPU/process locks or on the UI thread.
+- Add IPC, schema/history validation, adapter/engine views and per-process lifetime
+  safety. Handle unsupported drivers, hotplug, sleep and provider failures honestly.
+- Verify overhead, both-theme visuals, actual frame pacing and native UI behavior.
+
+## Evidence — 2026-09-16
+
+- Rust library: 42 passed / 10 ignored. Non-test locked/offline cargo check passed.
+- Explicit GPU native probe passed: 700 engine instances, 3 dedicated-memory and
+  3 shared-memory instances. These are counter-instance counts, not GPU counts.
+- Debug single observation: query open 494.246ms; next collect/format 1.409ms after
+  1.1 seconds. No aggregation or controlled GPU workload was performed. This is
+  not a performance distribution or proof of Task Manager numerical parity.
+- After shared-reader extraction, the existing native disk probe also passed:
+  one physical disk; second collect/format 0.379ms. Disk semantics are unchanged.
+- Logs: `%TEMP%/process-garden-gpu-reader-tests.log`,
+  `%TEMP%/process-garden-gpu-native-probe.log`,
+  `%TEMP%/process-garden-gpu-reader-check.log`, and
+  `%TEMP%/process-garden-shared-pdh-disk-probe.log`. No instance names/PIDs logged.
+
+## Primary references
+
+- [Microsoft: GPUs in Task Manager](https://devblogs.microsoft.com/directx/gpus-in-the-task-manager/)
+- [Language-neutral PDH registration](https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhaddenglishcounterw)
+- [Wildcard formatted arrays](https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhgetformattedcounterarrayw)
+
+Counter path availability above was verified on this host, not assumed to exist
+on every Windows installation. The official blog's indexed excerpt confirms the
+busiest-engine rule; fetching the complete article returned HTTP 403 in this run.
