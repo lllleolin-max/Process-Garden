@@ -499,6 +499,16 @@ with no duplicates/type conflicts/unknown or out-of-range sums. This does not
 prove controlled-workload parity, physical GPU enumeration or visual acceptance.
 # Network continuity follow-up (2026-09-17)
 
+Read-only service acquisition started: new services.rs module, one pub mod line
+in lib.rs and Win32_System_Services feature in existing windows-sys dependency.
+No command/UI/service controls yet. IMPORTANT overlap with integration worktree:
+merge these two native registration/dependency additions additively, preserving
+its pending termination commands and other features. Do not replace lib.rs or
+Cargo.toml wholesale. 312 accessible services in explicit native probe; 58 native
+tests passed / 13 ignored, probe separately passed. See service-collection.md for
+permission omissions, PID validity, bounds and remaining worker/UI requirements.
+Prior checkpoint CI 35123689088 (71cfeb0) completed successfully before this change.
+
 Logical CPU stale-state follow-up: CpuCorePanel now consumes snapshot animation
 state, stopping both metric and curve transitions on stale/paused observations.
 Each core region references the shared status as its accessible description.

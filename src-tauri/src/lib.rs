@@ -9,6 +9,7 @@ pub mod disk_worker;
 mod performance_counters;
 mod provider_worker;
 pub mod gpu;
+pub mod services;
 
 #[cfg(not(test))]
 use collector::SystemCollector;
