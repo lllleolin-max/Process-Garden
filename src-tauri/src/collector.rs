@@ -9,6 +9,12 @@ use sysinfo::{ProcessesToUpdate, System};
 use crate::models::{ProcessSnapshot, SystemSnapshot};
 use crate::power::PowerSampler;
 
+// sysinfo 0.36 reports process CPU in logical-core units (one busy core =
+// 100%). Expose the same whole-machine scale as global_cpu_usage instead.
+fn machine_cpu_percent(core_percent: f32, logical_cpu_count: usize) -> f32 {
+    (core_percent / logical_cpu_count.max(1) as f32).clamp(0.0, 100.0)
+}
+
 fn process_status(cpu_percent: f32) -> &'static str {
     if cpu_percent > 35.0 {
         "stressed"
@@ -76,20 +82,24 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
     system.refresh_memory();
     system.refresh_processes(ProcessesToUpdate::All, true);
     let threads = thread_counts();
+    let logical_cpu_count = system.cpus().len();
 
     let mut processes = system
         .processes()
         .iter()
-        .map(|(pid, process)| ProcessSnapshot {
-            pid: pid.as_u32(),
-            parent_pid: process.parent().map(|parent| parent.as_u32()),
-            name: process.name().to_string_lossy().into_owned(),
-            cpu_percent: process.cpu_usage(),
-            memory_bytes: process.memory(),
-            started_at: process.start_time(),
-            status: process_status(process.cpu_usage()),
-            thread_count: threads.get(&pid.as_u32()).copied().unwrap_or(0),
-            executable_path: process.exe().map(|path| path.to_string_lossy().into_owned()),
+        .map(|(pid, process)| {
+            let cpu_percent = machine_cpu_percent(process.cpu_usage(), logical_cpu_count);
+            ProcessSnapshot {
+                pid: pid.as_u32(),
+                parent_pid: process.parent().map(|parent| parent.as_u32()),
+                name: process.name().to_string_lossy().into_owned(),
+                cpu_percent,
+                memory_bytes: process.memory(),
+                started_at: process.start_time(),
+                status: process_status(cpu_percent),
+                thread_count: threads.get(&pid.as_u32()).copied().unwrap_or(0),
+                executable_path: process.exe().map(|path| path.to_string_lossy().into_owned()),
+            }
         })
         .collect::<Vec<_>>();
 
@@ -115,7 +125,7 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
         memory_total_bytes: system.total_memory(),
         process_count: system.processes().len(),
         thread_count: threads.values().sum(),
-        logical_cpu_count: system.cpus().len(),
+        logical_cpu_count,
         uptime_seconds: System::uptime(),
         power,
         processes,
@@ -125,6 +135,18 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn process_cpu_uses_whole_machine_capacity() {
+        assert_eq!(machine_cpu_percent(100.0, 8), 12.5);
+        assert_eq!(machine_cpu_percent(800.0, 8), 100.0);
+        assert_eq!(machine_cpu_percent(0.0, 8), 0.0);
+        assert_eq!(machine_cpu_percent(50.0, 1), 50.0);
+        assert_eq!(machine_cpu_percent(50.0, 0), 50.0);
+        assert_eq!(machine_cpu_percent(900.0, 8), 100.0);
+        assert_eq!(machine_cpu_percent(-1.0, 8), 0.0);
+        assert_eq!(process_status(machine_cpu_percent(100.0, 8)), "active");
+    }
 
     #[test]
     fn maps_cpu_load_to_stable_lifecycle_status() {
@@ -159,6 +181,13 @@ mod tests {
         assert!(!snapshot.processes.is_empty());
         assert_eq!(snapshot.processes.len(), snapshot.process_count);
         let system = collector.system.lock().expect("collector lock is available");
+        for process in &snapshot.processes {
+            let raw = &system.processes()[&sysinfo::Pid::from_u32(process.pid)];
+            let expected_cpu = machine_cpu_percent(raw.cpu_usage(), snapshot.logical_cpu_count);
+            assert_eq!(process.cpu_percent, expected_cpu);
+            assert_eq!(process.status, process_status(expected_cpu));
+            assert!((0.0..=100.0).contains(&process.cpu_percent));
+        }
         let mut expected = system.processes().keys().map(|pid| pid.as_u32()).collect::<Vec<_>>();
         let mut returned = snapshot.processes.iter().map(|process| process.pid).collect::<Vec<_>>();
         expected.sort_unstable();
