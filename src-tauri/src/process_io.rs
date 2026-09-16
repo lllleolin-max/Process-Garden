@@ -112,6 +112,46 @@ mod tests {
         assert!(read_process_io(0, None).is_err(), "an invalid query must not become an idle sample");
     }
 
+    #[cfg(windows)]
+    #[test]
+    #[ignore = "manual controlled own-process IO and host-dependent query profile; run alone"]
+    fn controlled_file_io_and_query_cost() {
+        use std::{fs::OpenOptions, io::{Read, Seek, SeekFrom, Write}, os::windows::fs::OpenOptionsExt};
+        use windows_sys::Win32::Storage::FileSystem::FILE_FLAG_DELETE_ON_CLOSE;
+        let pid = std::process::id();
+        let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
+        let path = std::env::temp_dir().join(format!("process-garden-io-test-{pid}-{nonce}.tmp"));
+        // Never truncate existing files; Windows deletes only this newly
+        // created fixture when its handle closes, including during unwinding.
+        let mut file = OpenOptions::new().read(true).write(true).create_new(true)
+            .custom_flags(FILE_FLAG_DELETE_ON_CLOSE).open(&path).expect("create dedicated fixture");
+        let payload = vec![0x5a; 256 * 1024];
+        let before = read_process_io(pid, None).unwrap();
+        file.write_all(&payload).unwrap();
+        file.sync_all().unwrap();
+        let after_write = read_process_io(pid, Some(before.creation_ticks)).unwrap();
+        assert!(after_write.written_bytes - before.written_bytes >= payload.len() as u64);
+        file.seek(SeekFrom::Start(0)).unwrap();
+        let mut received = vec![0; payload.len()];
+        file.read_exact(&mut received).unwrap();
+        let after_read = read_process_io(pid, Some(before.creation_ticks)).unwrap();
+        assert_eq!(received, payload);
+        assert!(after_read.read_bytes - after_write.read_bytes >= payload.len() as u64);
+        drop(file);
+        assert!(!path.exists(), "dedicated fixture was deleted on close");
+
+        let mut durations = Vec::with_capacity(128);
+        for _ in 0..128 {
+            let start = Instant::now();
+            read_process_io(pid, Some(before.creation_ticks)).unwrap();
+            durations.push(start.elapsed().as_secs_f64() * 1000.0);
+        }
+        durations.sort_by(f64::total_cmp);
+        println!("own_process_io: read_delta={}B write_delta={}B samples=128 query_ms median={:.4} p95={:.4}",
+            after_read.read_bytes - after_write.read_bytes,
+            after_write.written_bytes - before.written_bytes, durations[64], durations[121]);
+    }
+
     fn sample(at: Instant, read: u64, written: u64) -> IoCounterSample {
         IoCounterSample { pid: 42, creation_ticks: 123, observed_at: at, read_bytes: read, written_bytes: written }
     }

@@ -28,6 +28,18 @@ The complete Rust library suite passed 24 tests with four manual tests ignored.
 Controlled file-I/O deltas, fault injection and query-overhead profiling are still
 required; own-process reads alone do not prove disk measurement equivalence.
 
+Controlled fixture follow-up (Windows, debug test binary, 2026-09-16): an isolated
+manual test wrote and read back a 256 KiB create-new temporary file. Observed
+write/read deltas were each 262,144 bytes. DELETE_ON_CLOSE removed the fixture
+and the test asserted its absence. It then measured 128 own-process read-only
+queries: median 0.0014 ms, p95 0.0015 ms. This establishes one controlled process
+I/O path, not physical-disk throughput, cross-process overhead, failure injection
+or a production performance guarantee. The test is ignored by default because
+live process-wide counters must be measured without concurrent tests.
+
+Reproduce: `cargo test --locked --offline --lib process_io::tests::controlled_file_io_and_query_cost -- --ignored --exact --test-threads=1 --nocapture`
+(run from src-tauri, with an isolated target directory for concurrent work).
+
 ## Verified local dependency behavior
 
 The installed sysinfo 0.36.1 Windows implementation uses GetProcessIoCounters
