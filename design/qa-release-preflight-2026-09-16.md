@@ -20,6 +20,20 @@ Verdict: NOT READY for release or Task Manager replacement acceptance.
 
 ## Required follow-up
 
+### Superseding network + table-motion rebuild at 3623cfe
+
+The isolated branch now builds the network collector and row-order/numeric-motion
+changes together. `tauri build --no-bundle --ci -- --locked --offline`, using
+`cargo-target-coverage`, completed successfully; release compilation took 1m 21s.
+Frontend production bundling also completed. Current executable size: 79,393,675
+bytes; SHA256: `08A9944175883CB4D1F62709BC041542B5C714DE6F53AA91C492DB4D36A30686`.
+Read-only signature inspection: NotSigned. Actual embedded manifest guard: PASS
+(one application manifest, asInvoker, longPathAware, Common Controls v6).
+This replaces the earlier EXE/hash at the same local path, not the old NSIS
+installer. No program execution, installation, signing or release publication.
+Log: `%TEMP%/process-garden-network-motion-native-build.log`. Runtime network IPC,
+visual/performance, wallpaper and full Task Manager acceptance remain unverified.
+
 ### Superseding rebuild at ecd8534
 
 The isolated worktree was rebuilt using `tauri build --no-bundle --ci` with
