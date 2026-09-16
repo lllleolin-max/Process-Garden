@@ -27,7 +27,7 @@ export interface SystemSnapshot {
   memoryUsedBytes: number;
   memoryTotalBytes: number;
   processCount: number;
-  threadCount: number;
+  threadCount?: number;
   logicalCpuCount: number;
   uptimeSeconds: number;
   power: PowerSnapshot;

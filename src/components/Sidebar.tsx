@@ -5,6 +5,7 @@ import { useAppStore } from "../stores/appStore";
 import { MetricCard } from "./MetricCard";
 import { PowerMetric } from "./PowerMetric";
 import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
+import { threadHistory } from "../data/threadHistory";
 
 export function Sidebar() {
   const snapshotStatus = useSnapshotStatus();
@@ -44,10 +45,10 @@ export function Sidebar() {
       />
       <MetricCard
         label={t("metrics.threads")}
-        value={new Intl.NumberFormat(locale).format(snapshot.threadCount)}
+        value={snapshot.threadCount === undefined ? "—" : new Intl.NumberFormat(locale).format(snapshot.threadCount)}
         detail={snapshotStatus}
         icon={Workflow}
-        values={history.slice(-36).map((item) => item.threadCount)}
+        values={threadHistory(history)}
         color="var(--color-warning)"
       />
       <div className="uptime-card">

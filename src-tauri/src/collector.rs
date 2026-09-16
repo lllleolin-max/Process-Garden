@@ -33,10 +33,10 @@ fn process_status(cpu_percent: f32) -> &'static str {
 }
 
 #[cfg(windows)]
-fn thread_counts() -> HashMap<u32, usize> {
+fn thread_counts() -> Option<HashMap<u32, usize>> {
     use std::{mem::size_of, ptr};
     use windows_sys::Win32::{
-        Foundation::{CloseHandle, INVALID_HANDLE_VALUE},
+        Foundation::{CloseHandle, GetLastError, ERROR_NO_MORE_FILES, INVALID_HANDLE_VALUE},
         System::Diagnostics::ToolHelp::{
             CreateToolhelp32Snapshot, Thread32First, Thread32Next, THREADENTRY32,
             TH32CS_SNAPTHREAD,
@@ -46,22 +46,29 @@ fn thread_counts() -> HashMap<u32, usize> {
     let mut counts = HashMap::new();
     let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0) };
     if snapshot == INVALID_HANDLE_VALUE {
-        return counts;
+        return None;
     }
     let mut entry: THREADENTRY32 = unsafe { std::mem::zeroed() };
     entry.dwSize = size_of::<THREADENTRY32>() as u32;
     let mut has_entry = unsafe { Thread32First(snapshot, ptr::addr_of_mut!(entry)) } != 0;
     while has_entry {
+        if (entry.dwSize as usize) < std::mem::offset_of!(THREADENTRY32, th32OwnerProcessID) + size_of::<u32>() {
+            unsafe { CloseHandle(snapshot) };
+            return None;
+        }
         *counts.entry(entry.th32OwnerProcessID).or_insert(0) += 1;
+        entry.dwSize = size_of::<THREADENTRY32>() as u32;
         has_entry = unsafe { Thread32Next(snapshot, ptr::addr_of_mut!(entry)) } != 0;
     }
+    // Capture immediately: CloseHandle must not replace the enumeration error.
+    let complete = unsafe { GetLastError() } == ERROR_NO_MORE_FILES;
     unsafe { CloseHandle(snapshot) };
-    counts
+    complete.then_some(counts)
 }
 
 #[cfg(not(windows))]
-fn thread_counts() -> HashMap<u32, usize> {
-    HashMap::new()
+fn thread_counts() -> Option<HashMap<u32, usize>> {
+    None
 }
 
 #[derive(Clone)]
@@ -110,7 +117,7 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
                 memory_bytes: process.memory(),
                 started_at: process.start_time(),
                 status: process_status(cpu_percent),
-                thread_count: threads.get(&pid.as_u32()).copied(),
+                thread_count: threads.as_ref().and_then(|counts| counts.get(&pid.as_u32()).copied()),
                 executable_path: process.exe().map(|path| path.to_string_lossy().into_owned()),
             }
         })
@@ -137,7 +144,7 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
         memory_used_bytes: system.used_memory(),
         memory_total_bytes: system.total_memory(),
         process_count: system.processes().len(),
-        thread_count: threads.values().sum(),
+        thread_count: threads.as_ref().map(|counts| counts.values().sum()),
         logical_cpu_count,
         uptime_seconds: System::uptime(),
         power,

@@ -38,7 +38,8 @@ pub struct SystemSnapshot {
     pub memory_used_bytes: u64,
     pub memory_total_bytes: u64,
     pub process_count: usize,
-    pub thread_count: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thread_count: Option<usize>,
     pub logical_cpu_count: usize,
     pub uptime_seconds: u64,
     pub power: PowerReading,
@@ -74,7 +75,7 @@ mod tests {
             memory_used_bytes: 3,
             memory_total_bytes: 4,
             process_count: 5,
-            thread_count: 6,
+            thread_count: Some(6),
             logical_cpu_count: 8,
             uptime_seconds: 7,
             power: PowerReading::default(),
