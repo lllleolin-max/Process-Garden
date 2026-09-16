@@ -24,3 +24,9 @@ it("does not cap a large received snapshot during filtering or sorting", () => {
   expect(queryProcesses(large, "", "name", true, "en-US")).toHaveLength(5000);
   expect(queryProcesses(large, "worker-5000", "name", true, "en-US").map(p => p.pid)).toEqual([5000]);
 });
+
+it.each(["cpuPercent", "memoryBytes", "threadCount"] as const)("keeps invalid %s after real zero in both sort directions", metric => {
+  const readings = [NaN, Infinity, -1, 0, 10].map((value, index) => ({ ...processes[0], pid: index + 1, [metric]: value }));
+  expect(queryProcesses(readings, "", metric, true, "en-US").map(p => p.pid)).toEqual([4, 5, 1, 2, 3]);
+  expect(queryProcesses(readings, "", metric, false, "en-US").map(p => p.pid)).toEqual([5, 4, 1, 2, 3]);
+});

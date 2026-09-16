@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { useOverlay } from "../hooks/useOverlay";
 import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
 import { useAppStore } from "../stores/appStore";
-import { queryProcesses, type ProcessSort } from "../data/processTable";
+import { isObservedMetric, queryProcesses, type ProcessSort } from "../data/processTable";
 import { processIdentity } from "../animation/processIdentity";
 import { formatBytes, formatPercent } from "../i18n/formatters";
 import { ProcessIcon } from "./ProcessIcon";
@@ -54,7 +54,7 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
       {missing > 0 && <p className="process-list-warning" role="status">{t("processList.partial", { count: missing })}</p>}
       <div className="process-list-scroll" ref={scroll} tabIndex={0} aria-label={t("processList.title")}>
         <table><caption className="sr-only">{t("processList.title")}</caption><thead><tr>{columns.map(column => <th key={column.key} scope="col" aria-sort={sort === column.key ? ascending ? "ascending" : "descending" : "none"}><button onClick={() => { setSort(column.key); setAscending(sort === column.key ? !ascending : column.key === "name" || column.key === "pid"); turnPage(0); }}>{column.label}<span aria-hidden="true">{sort === column.key ? ascending ? " ↑" : " ↓" : ""}</span></button></th>)}<th scope="col">{t("inspector.path")}</th></tr></thead>
-          <tbody>{shown.map(process => <tr key={processIdentity(process)} className={process.pid === state.selectedPid ? "selected" : undefined}><td><button className="process-list-select" aria-label={t("processList.inspect", { name: process.name, pid: process.pid })} onClick={() => inspectProcess(process)}><ProcessIcon process={process} /><span>{process.name}</span></button></td><td>{process.pid}</td><td>{Number.isFinite(process.cpuPercent) ? formatPercent(process.cpuPercent, state.locale, 1) : "—"}</td><td>{Number.isFinite(process.memoryBytes) ? formatBytes(process.memoryBytes, state.locale) : "—"}</td><td>{process.threadCount ?? "—"}</td><td className="process-list-path" title={process.executablePath}>{process.executablePath || "—"}</td></tr>)}</tbody>
+          <tbody>{shown.map(process => <tr key={processIdentity(process)} className={process.pid === state.selectedPid ? "selected" : undefined}><td><button className="process-list-select" aria-label={t("processList.inspect", { name: process.name, pid: process.pid })} onClick={() => inspectProcess(process)}><ProcessIcon process={process} /><span>{process.name}</span></button></td><td>{process.pid}</td><td>{isObservedMetric(process.cpuPercent) ? formatPercent(process.cpuPercent, state.locale, 1) : "—"}</td><td>{isObservedMetric(process.memoryBytes) ? formatBytes(process.memoryBytes, state.locale) : "—"}</td><td>{isObservedMetric(process.threadCount) ? process.threadCount : "—"}</td><td className="process-list-path" title={process.executablePath}>{process.executablePath || "—"}</td></tr>)}</tbody>
         </table>{!rows.length && <p className="process-list-empty">{t(query.trim() ? "processList.noMatches" : "processList.noData")}</p>}
       </div>
       <footer><button className="process-list-control" disabled={currentPage === 0} onClick={() => turnPage(currentPage - 1)}>{t("processList.previous")}</button><span>{t("processList.page", { page: currentPage + 1, pages: pageCount })}</span><button className="process-list-control" disabled={currentPage + 1 >= pageCount} onClick={() => turnPage(currentPage + 1)}>{t("processList.next")}</button></footer>
