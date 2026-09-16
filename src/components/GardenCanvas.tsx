@@ -1168,7 +1168,7 @@ export function GardenCanvas() {
         occupied.push({ x: box.x - 4, y: box.y - 4, width: box.width + 8, height: box.height + 8 });
         visibleLabelKeys.add(key);
         const visible = labelMotion.update(key, box, staticFrame ? 0 : deltaMs,
-          settleStaticState || viewportChanged || live.reducedMotion || (staticFrame && focusOrSearchChanged));
+          settleStaticState || viewportChanged || live.reducedMotion || (staticFrame && focusOrSearchChanged), { width, height });
         placedLabels.push({ node, label, box: visible, focused });
       });
       labelMotion.retain(visibleLabelKeys);

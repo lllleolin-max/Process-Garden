@@ -4,6 +4,24 @@ import { placeSceneLabel } from "./sceneLayout";
 
 const box = { x: 100, y: 100, width: 110, height: 34 };
 describe("label motion", () => {
+  it("keeps a widening label inside the viewport during its transition", () => {
+    const motion = new LabelMotion();
+    const bounds = { width: 740, height: 422 };
+    motion.update("1", { ...box, x: 625, width: 105 }, 0, false, bounds);
+    const visible = motion.update("1", { ...box, x: 572, width: 158 }, 16, false, bounds);
+    expect(visible.x + visible.width).toBeLessThanOrEqual(730);
+    expect(visible.width).toBe(158);
+  });
+
+  it("confines retained positions after shrink and keeps undersized views finite", () => {
+    const motion = new LabelMotion();
+    motion.update("1", { ...box, x: 600, y: 280 }, 0, false);
+    const visible = motion.update("1", { ...box, x: 200, y: 90 }, 0, false, { width: 360, height: 230 });
+    expect(visible.x + visible.width).toBeLessThanOrEqual(350);
+    expect(visible.y + visible.height).toBeLessThanOrEqual(160);
+    expect(motion.update("1", box, 16, false, { width: 40, height: 90 })).toEqual({ ...box, x: 10, y: 70 });
+  });
+
   it("keeps an unobstructed side after another candidate becomes clear", () => {
     const node = { pid: 1, x: 300, y: 200, radius: 25 };
     const bounds = { width: 740, height: 422, coreRadius: 49 };
