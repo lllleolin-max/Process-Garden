@@ -1,5 +1,11 @@
 # Complete thread-enumeration semantics
 
+UI follow-up: Sidebar component tests verify a missing latest enumeration shows
+a dash and an empty SVG polyline, then recovery starts a single-point new tail
+rather than connecting to the pre-gap observation. A separately observed zero
+still displays zero with a valid chart point. Focused helper/component run:
+three tests pass. This verifies rendered DOM/SVG state, not pixel-level motion.
+
 Toolhelp enumeration now returns an optional table. Invalid snapshot handles,
 undersized thread entries or enumeration termination other than
 ERROR_NO_MORE_FILES yield missing data rather than a partial total. Last error
