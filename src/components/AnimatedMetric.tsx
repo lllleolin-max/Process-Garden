@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { decideAnimationFrame } from "../animation/frameRate";
+import { requestMetricFrame } from "../animation/metricFrames";
 import { useAppStore } from "../stores/appStore";
 import "./AnimatedMetric.css";
 
@@ -16,29 +17,32 @@ export function AnimatedMetric({ value, format, active = true }: { value: number
       if (node.current && node.current.textContent !== text) node.current.textContent = text;
     };
     const from = displayed.current;
+    // MediaQueryList.matches stays live; do not allocate a new query per frame.
+    const motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     const changedSource = previousCollector.current !== collector;
     previousCollector.current = collector;
     if (!active || changedSource || disabled || document.hidden || !Number.isFinite(from) || !Number.isFinite(value)
-      || from === value || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      || from === value || motionPreference?.matches) {
       draw(value); return;
     }
-    let frame = 0, start: number | null = null, last = 0;
+    let cancelFrame = () => {};
+    let start: number | null = null, last = 0;
     const animate = (now: number) => {
       start ??= now;
       const progress = Math.min(1, (now - start) / 320);
-      if (progress === 1 || document.hidden || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { draw(value); return; }
+      if (progress === 1 || document.hidden || motionPreference?.matches) { draw(value); return; }
       const decision = decideAnimationFrame(last, now, useAppStore.getState().animationFps);
       if (decision.render) {
         last = decision.alignedTime;
         draw(from + (value - from) * (1 - (1 - progress) ** 3));
       }
-      frame = requestAnimationFrame(animate);
+      cancelFrame = requestMetricFrame(animate);
     };
-    const hide = () => { if (document.hidden) { cancelAnimationFrame(frame); draw(value); } };
+    const hide = () => { if (document.hidden) { cancelFrame(); draw(value); } };
     draw(from);
-    frame = requestAnimationFrame(animate);
+    cancelFrame = requestMetricFrame(animate);
     document.addEventListener("visibilitychange", hide);
-    return () => { cancelAnimationFrame(frame); document.removeEventListener("visibilitychange", hide); };
+    return () => { cancelFrame(); document.removeEventListener("visibilitychange", hide); };
   }, [value, format, active, disabled, collector]);
   const label = Number.isFinite(value) ? format(value) : "—";
   // Assistive technology receives the real observation, not intermediate frames.

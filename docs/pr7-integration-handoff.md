@@ -300,6 +300,21 @@ Only the visible 50 rows mount numeric effects. Nine added motion tests bring
 full local verify to 415 tests plus typecheck/build. This is not hardware-FPS or
 power-consumption evidence; actual visual QA is still unavailable.
 
+Shared numeric frame scheduling follow-up: AnimatedMetric now imports
+animation/metricFrames.ts, which coalesces pending transitions into one browser
+requestAnimationFrame callback. Keep this file with AnimatedMetric during merge.
+Consumers still independently cancel, receive the same frame timestamp, enforce
+their existing 30/60/120 write budget and stop at their own target. Work scheduled
+inside a callback waits until the next frame; one failing consumer does not starve
+siblings. Cancelling the final consumer removes the pending browser callback.
+The 1500-process test still mounts only 100 numeric labels on the visible 50-row
+page, now with ONE pending browser callback instead of 100. MediaQueryList is
+reused per transition and its live matches property detects reduced-motion changes
+without querying again every frame. Six new regressions; full verify: 421 tests,
+typecheck and build passed. This proves scheduling/allocation reductions, not
+measured hardware-FPS, CPU, battery or native visual acceptance. Existing EXE
+evidence at 3623cfe predates this scheduler change.
+
 - Shared worktree remains read-only, including its new AGENTS.md, generated
   artwork, lifecycle modules and process-termination UI. Nothing was staged there.
 - Merge network.rs, collector.rs, models.rs, lib.rs, Cargo feature additions,

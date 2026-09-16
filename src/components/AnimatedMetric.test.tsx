@@ -112,3 +112,28 @@ it("does not write repeated rounded labels while retaining the final observation
   expect(visibleText(view.container)).toBe("20%");
   expect(frames.size).toBe(0);
 });
+
+it("reuses the live motion preference query instead of allocating it every frame", () => {
+  let id = 0;
+  const frames = new Map<number, FrameRequestCallback>();
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; });
+  vi.stubGlobal("cancelAnimationFrame", (key: number) => frames.delete(key));
+  vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  const preference = { matches: false };
+  const matchMedia = vi.fn(() => preference);
+  vi.stubGlobal("matchMedia", matchMedia);
+  useAppStore.setState({ paused: false, reducedMotion: false, displayMode: "windowed", animationFps: 120 });
+  const format = (value: number) => value.toFixed(1);
+  const view = render(<AnimatedMetric value={0} format={format} />);
+  matchMedia.mockClear();
+  view.rerender(<AnimatedMetric value={100} format={format} />);
+  const tick = (now: number) => act(() => { const pending = [...frames.values()]; frames.clear(); pending.forEach(callback => callback(now)); });
+  for (let index = 0; index < 20; index++) tick(1000 + index * 1000 / 120);
+  expect(matchMedia).toHaveBeenCalledTimes(1);
+  expect(Number(visibleText(view.container))).toBeLessThan(100);
+  preference.matches = true;
+  tick(1200);
+  expect(visibleText(view.container)).toBe("100.0");
+  expect(frames.size).toBe(0);
+  expect(matchMedia).toHaveBeenCalledTimes(1);
+});

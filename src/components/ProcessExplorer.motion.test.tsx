@@ -36,7 +36,7 @@ it.each([30, 60, 120] as const)("smooths held-row readings at %i Hz and settles 
   sample(100);
   expect(visible(before[2])).toHaveTextContent(/^0%$/);
   expect(before[2].querySelector(".animated-metric-observation")).toHaveTextContent(/^100%$/);
-  expect(frames.size).toBe(2);
+  expect(frames.size).toBe(1);
   tick(1000); tick(1160);
   expect(parseFloat(visible(before[2]).textContent!)).toBeGreaterThan(0);
   expect(parseFloat(visible(before[2]).textContent!)).toBeLessThan(100);
@@ -88,15 +88,16 @@ it("animates only the visible 50 rows and cancels their work when paging", () =>
   tick(0); tick(16);
   fireEvent.click(screen.getByRole("button", { name: "Keep row order" }));
   sample(100);
-  // Exactly two numeric transitions per mounted row, never 3000 for all records.
-  expect(frames.size).toBe(100);
+  // Two transitions per mounted row share one browser callback, never 3000
+  // transitions for all received records or 100 independent browser callbacks.
+  expect(frames.size).toBe(1);
   expect(view.container.querySelectorAll(".animated-metric-observation")).toHaveLength(100);
   fireEvent.click(screen.getByRole("button", { name: "Next" }));
   expect(frames.size).toBe(0);
   expect(screen.getByText("Page 2 of 30")).toBeInTheDocument();
   expect(visible(cells()[2])).toHaveTextContent(/^100%$/);
   sample(50, 4096);
-  expect(frames.size).toBe(100);
+  expect(frames.size).toBe(1);
   view.unmount();
   expect(frames.size).toBe(0);
 });
