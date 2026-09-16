@@ -112,6 +112,12 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+Icon follow-up: pause now disables the crossfade, like reduced motion, without
+hiding an already loaded native icon. Regressions check both preference toggles
+and application/source changes retaining the correct initials until the new icon
+loads. Full local verification: 365 tests, type checking and build passed.
+Actual composited transition and system media-query behavior still require visual QA.
+
 ProcessIcon now keeps its initials underneath the image until the current source
 fires load, then crossfades over 160 ms. Failed sources keep the fallback; ordinary
 sampling preserves the same loaded image node. Merge ProcessIcon.css with the
