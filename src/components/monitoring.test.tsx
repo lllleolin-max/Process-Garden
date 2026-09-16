@@ -178,7 +178,7 @@ describe("monitoring motion and feedback", () => {
     vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText: vi.fn().mockRejectedValue(new Error("denied")) } });
     render(<Inspector />);
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Copy process summary" })));
-    expect(screen.getByRole("status")).toHaveTextContent("Could not copy");
+    expect(screen.getByText(/Could not copy/)).toHaveAttribute("role", "status");
     fireEvent.keyDown(screen.getByRole("tab", { name: "Overview" }), { key: "ArrowRight" });
     expect(screen.getByRole("tab", { name: "Threads" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: "Threads" })).toHaveFocus();

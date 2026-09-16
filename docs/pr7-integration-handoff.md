@@ -499,6 +499,16 @@ with no duplicates/type conflicts/unknown or out-of-range sums. This does not
 prove controlled-workload parity, physical GPU enumeration or visual acceptance.
 # Network continuity follow-up (2026-09-17)
 
+Process I/O follow-up: same PID/start-time/source observations now remain visible
+through pause, error, watchdog and renewed baseline, explicitly not live and with
+metric/curve animation disabled. Changed lifetime/source clears immediately;
+recovery starts fresh history. 482 frontend tests/typecheck/build pass, including
+retained DOM, bilingual accessible descriptions, animation cancellation and PID
+reuse isolation. No native source changes; existing EXE predates these frontend
+patches. Actual desktop rendering and exact sub-second identity limitations remain
+open (see process-io-collection.md). A clipboard test now locates its own feedback
+rather than assuming there is only one status region in the whole Inspector.
+
 NetworkPanel.tsx/.css/.test.tsx now retain the last successful same-collector
 interface table and history when network is null (query unavailable). Empty arrays
 remain authoritative removals. Stale/paused values explicitly say not live and stop

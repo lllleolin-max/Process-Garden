@@ -7,10 +7,13 @@ remain open. This is process I/O, not physical-disk telemetry.
 Inspector overview now mounts ProcessIo for the selected lifetime. useProcessIo
 queries only native/windowed/visible/unpaused state, one request at a time across
 selection/remounts, one second after the previous response. A five-second watchdog
-clears stalled readings without launching overlapping work; late responses are
+marks retained readings stale without launching overlapping work; late responses are
 discarded. Pause/hide/reopen/selection changes get fresh sessions. Normal query
-failures retain the native session's pinned identity while clearing displayed
-rates/history. Invalid payloads are not displayed. History is bounded to 36 samples.
+failures retain the native session's pinned identity and last successful displayed
+rates/history, explicitly labelled not live with interpolation stopped. Baseline
+and pause retain that same-lifetime layout; source/PID/start-time changes clear it.
+Recovery starts a fresh history tail, never bridging an unknown interval.
+Invalid payloads are not displayed. History is bounded to 36 samples.
 English/Chinese states distinguish baseline, live, paused, unavailable and error.
 
 Frontend verification: full npm verify passed 316 tests, typecheck and build;
@@ -36,7 +39,7 @@ reads creation FILETIME plus I/O counters from that handle. Optional exact
 creation tokens reject a changed lifetime. Handles close through Drop, including
 all failure paths. API failures return errors rather than cached/zero samples.
 The command integration passes failures to `IoRateTracker::observe(None)` and
-resets target/session baselines; the frontend must also clear failed displayed rates.
+resets target/session baselines; the frontend labels any retained display not live.
 No process memory is read and no privileges are changed.
 
 Primary API contracts:

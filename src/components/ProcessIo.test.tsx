@@ -55,6 +55,11 @@ it("morphs displayed rates while exposing the actual value and clears errors imm
   tick(1000); tick(1160);
   expect(visible.textContent).not.toBe("0 B/s");
   expect(visible.textContent).not.toBe("1 KiB/s");
+  read.mockReturnValue({ status: "error", stale: true, rates: { readBytesPerSecond: 1024, writtenBytesPerSecond: 0 }, history: [] });
+  publish();
+  expect(visible).toHaveTextContent("1 KiB/s");
+  expect(frames.size).toBe(0);
+  expect(screen.getByRole("status")).toHaveTextContent("not live");
   read.mockReturnValue({ status: "error", rates: null, history: [] });
   publish();
   view.rerender(<ProcessIo pid={42} startedAt={1800000000} />);
@@ -72,4 +77,19 @@ it("ignores parent rerenders with unchanged process props but responds to its ow
   read.mockReturnValue({ status: "live", rates: { readBytesPerSecond: 25, writtenBytesPerSecond: 0 }, history: [] });
   publish();
   expect(view.container.querySelector(".animated-metric-observation")).toHaveTextContent("25 B/s");
+});
+
+it("keeps retained curve nodes and describes stale values in both languages", () => {
+  useAppStore.setState({ locale: "en-US", reducedMotion: true });
+  const rates = { readBytesPerSecond: 8, writtenBytesPerSecond: 16 };
+  read.mockReturnValue({ status: "live", rates, history: [rates], stale: false });
+  const view = render(<ProcessIo pid={42} startedAt={1800000000} />);
+  const line = view.container.querySelector("polyline");
+  read.mockReturnValue({ status: "error", rates, history: [rates], stale: true });
+  publish();
+  expect(view.container.querySelector("polyline")).toBe(line);
+  expect(screen.getByRole("region", { name: "Process I/O" })).toHaveAccessibleDescription(/not live/);
+  expect(view.container.querySelector(".animated-metric-observation")).toHaveTextContent("8 B/s");
+  act(() => useAppStore.setState({ locale: "zh-CN" }));
+  expect(screen.getByRole("status")).toHaveTextContent("显示上次采样（非实时）");
 });

@@ -1,5 +1,12 @@
 # Current QA index
 
+- Process I/O continuity: same-lifetime stale snapshots remain visible through
+  pause/errors/baseline with explicit bilingual not-live status and stopped
+  interpolation. Changed PID/start-time/source clears immediately; fresh data
+  starts a new history segment. Automated PASS: 482 tests/typecheck/build;
+  retained chart identity, accessible status, cancellation and PID reuse covered.
+  Native visual/AT/hardware FPS acceptance remains NOT READY; no new EXE built.
+
 - Network continuity (2026-09-17): against the no-flash and factual-state brief,
   failed interface queries retain the last successful same-source table/history,
   selection, chart nodes and focus. Status explicitly says unavailable/not live;

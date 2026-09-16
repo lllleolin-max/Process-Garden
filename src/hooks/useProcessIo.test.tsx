@@ -57,7 +57,7 @@ it.each(["unmount", "hide", "pause"])("does not start native I/O when %s happens
   if (change !== "unmount") expect(view.result.current.status).toBe("paused");
 });
 
-it("shows baseline, observed zero, failure, then fresh recovery without retaining old curves", async () => {
+it("retains explicitly stale rates through failure/baseline, then starts fresh history", async () => {
   invoke.mockResolvedValueOnce(null).mockResolvedValueOnce({ readBytesPerSecond: 0, writtenBytesPerSecond: 20 })
     .mockRejectedValueOnce(new Error("denied")).mockResolvedValueOnce(null).mockResolvedValue({ readBytesPerSecond: 4, writtenBytesPerSecond: 5 });
   const view = renderHook(() => useProcessIo(42, 1_800_000_000));
@@ -65,10 +65,31 @@ it("shows baseline, observed zero, failure, then fresh recovery without retainin
   await advance(); expect(view.result.current.rates?.readBytesPerSecond).toBe(0);
   expect(view.result.current.history).toHaveLength(1);
   const session = invoke.mock.calls[0][1].session;
-  await advance(); expect(view.result.current).toEqual({ status: "error", rates: null, history: [] });
+  const previous = view.result.current;
+  await advance(); expect(view.result.current).toMatchObject({ status: "error", stale: true, rates: previous.rates, history: previous.history });
   await advance(); expect(view.result.current.status).toBe("baseline");
+  expect(view.result.current.stale).toBe(true);
+  expect(view.result.current.history).toBe(previous.history);
   expect(invoke.mock.calls[3][1].session).toBe(session);
   await advance(); expect(view.result.current.history).toHaveLength(1);
+  expect(view.result.current.stale).toBe(false);
+});
+
+it("retains on pause but clears across PID reuse and data source changes", async () => {
+  const rates = { readBytesPerSecond: 8, writtenBytesPerSecond: 16 };
+  invoke.mockResolvedValue(rates);
+  const view = renderHook(({ startedAt }) => useProcessIo(42, startedAt), { initialProps: { startedAt: 1800000000 } });
+  await settle();
+  act(() => useAppStore.setState({ paused: true }));
+  expect(view.result.current).toMatchObject({ status: "paused", stale: true, rates });
+  view.rerender({ startedAt: 1800000001 });
+  expect(view.result.current.rates).toBeNull();
+  expect(view.result.current.history).toEqual([]);
+  act(() => useAppStore.setState({ paused: false }));
+  await settle();
+  expect(view.result.current.rates).toEqual(rates);
+  act(() => useAppStore.setState({ demoMode: true }));
+  expect(view.result.current).toMatchObject({ status: "unavailable", rates: null, history: [], stale: false });
 });
 
 it("stops when hidden or paused and resumes with a new session", async () => {
