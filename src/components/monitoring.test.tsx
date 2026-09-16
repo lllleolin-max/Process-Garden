@@ -71,6 +71,10 @@ describe("monitoring motion and feedback", () => {
     expect(view.container.querySelector("polyline")).toHaveAttribute("points", "");
     expect(view.container.querySelector("circle")).toBeNull();
     view.rerender(<Sparkline values={[NaN, 12, Infinity]} />);
+    expect(view.container.querySelector("circle")).toBeNull();
+    expect(view.container.querySelector("polyline")).toHaveAttribute("points", "");
+    // Only a valid latest observation gets a tip; never resurrect a pre-gap value.
+    view.rerender(<Sparkline values={[NaN, 12]} />);
     expect(view.container.querySelector("circle")).toHaveAttribute("cx", "160.0");
     expect(view.container.innerHTML).not.toMatch(/NaN|Infinity/);
     view.rerender(<Sparkline values={[10, 5]} />);
