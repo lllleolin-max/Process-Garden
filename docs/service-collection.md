@@ -1,7 +1,8 @@
 # Windows service observation
 
 Native acquisition module: `src-tauri/src/services.rs`, with independent bounded
-worker and registered `sample_services(session)` desktop command. No UI yet.
+worker and registered `sample_services(session)` desktop command. ServicePanel
+is now mounted as an initially collapsed sidebar section.
 No start/stop/delete/configure calls, remote host,
 administrator request, or executable-path/account enumeration.
 
@@ -54,5 +55,13 @@ state/PID combinations. Future state codes are retained with an explicit unknown
 label. useServiceReadings reuses the serialized native sampler at 5-second
 post-response intervals and history limit 1 (not 36 copies of metadata). Tests
 cover errors retaining explicitly stale rows, pause, empty recovery and source
-clear. Full frontend verify: 500 tests/typecheck/build pass. No visible service
-view mounts this hook yet; do not claim UI delivery or actual IPC acceptance.
+clear. Full frontend verify at client-only checkpoint: 500 tests/typecheck/build.
+
+UI follow-up: ServicePanel mounts the hook only while expanded and windowed;
+12-item pages cover all received rows, name/display-name/PID search and name/state
+ordering are available. Stable case-insensitive service-name keys retain row DOM
+on updates; stale status describes the list and filter focus remains unchanged.
+No fake demo services, start/stop buttons or unsafe PID navigation. Both languages
+disclose permission omissions, driver exclusion and PID lifetime limitations.
+502 frontend tests/typecheck/build pass. Actual browser layout, native desktop IPC
+and real service-state changes remain unverified; component tests use fixtures.

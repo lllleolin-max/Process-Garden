@@ -1,0 +1,11 @@
+.service-panel { padding: 10px 11px; border-bottom: 1px solid var(--color-border); font-size: 11px; }
+.service-panel summary { cursor: pointer; padding-block: 4px; }
+.service-readings p { color: var(--color-text-muted); margin: 8px 0; }
+.service-readings label { display: grid; gap: 5px; margin-block: 8px; }
+.service-readings input, .service-readings select, .service-readings button { min-width: 0; font: inherit; color: var(--color-text); background: var(--color-background-elevated); border: 1px solid var(--color-border); padding: 5px; }
+.service-panel :is(summary,input,select,button):focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.service-readings ul { list-style: none; margin: 0; padding: 0; }
+.service-readings li { display: grid; gap: 4px; padding: 9px 0; border-top: 1px solid var(--color-border); overflow-wrap: anywhere; }
+.service-readings code { font: inherit; color: var(--color-text-muted); }
+.service-readings nav { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; }
+.service-readings button:disabled { opacity: .45; cursor: default; }

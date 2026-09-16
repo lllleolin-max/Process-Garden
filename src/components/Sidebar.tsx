@@ -8,6 +8,7 @@ import { CpuCorePanel } from "./CpuCorePanel";
 import { NetworkPanel } from "./NetworkPanel";
 import { DiskPanel } from "./DiskPanel";
 import { GpuPanel } from "./GpuPanel";
+import { ServicePanel } from "./ServicePanel";
 import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
 import { threadHistory } from "../data/threadHistory";
 import { useCallback } from "react";
@@ -55,6 +56,7 @@ export function Sidebar() {
       <NetworkPanel />
       <DiskPanel />
       <GpuPanel />
+      <ServicePanel />
       <PowerMetric />
       <MetricCard
         label={t("metrics.processes")}
