@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useAppStore } from "../stores/appStore";
 import { useDiskReadings } from "../hooks/useDiskReadings";
 import { diskFields, diskHistory } from "../data/diskReadings";
@@ -11,6 +11,7 @@ function DiskReadings() {
   const locale = useAppStore(s => s.locale);
   const zh = locale === "zh-CN";
   const state = useDiskReadings();
+  const statusId = useId();
   const [selected, setSelected] = useState("");
   const disk = state.rows.find(row => row.id === selected) ?? state.rows[0];
   useEffect(() => { setSelected(disk?.id ?? ""); }, [disk?.id, state.session]);
@@ -30,17 +31,17 @@ function DiskReadings() {
     error: zh ? "磁盘数据暂不可用，正在重试" : "Disk data unavailable; retrying",
     empty: zh ? "未发现可用的物理磁盘实例" : "No physical disk instances found",
   }[state.status];
-  return <div className="disk-readings">
-    <p role="status">{message}</p>
+  return <div className="disk-readings" data-stale={state.stale || undefined}>
+    <p id={statusId} role="status">{message}{state.stale && (zh ? " · 显示上次采样（非实时）" : " · Showing the last sample (not live)")}</p>
     {disk && <>
       <label>{zh ? "物理磁盘" : "Physical disk"}<select value={disk.id} onChange={event => setSelected(event.target.value)}>
         {state.rows.map(row => <option key={row.id} value={row.id}>{row.id}</option>)}
       </select></label>
       <p>{zh ? "系统计数器实例；非卷容量，也非单个进程 I/O" : "System counter instance; not volume capacity or per-process I/O"}</p>
       <div key={`${state.session}:${disk.id}`}>
-        {diskFields.map((field, index) => <section key={field} aria-label={labels[index]}>
-          <div><span>{labels[index]}</span><strong><AnimatedMetric value={disk[field] ?? NaN} format={index === 2 ? formatActivity : formatRate} /></strong></div>
-          <Sparkline values={diskHistory(state.history, disk.id, field)} height={32} scale={index === 2 ? "percent" : "auto"}
+        {diskFields.map((field, index) => <section key={field} aria-describedby={statusId} aria-label={labels[index]}>
+          <div><span>{labels[index]}</span><strong><AnimatedMetric active={!state.stale} value={disk[field] ?? NaN} format={index === 2 ? formatActivity : formatRate} /></strong></div>
+          <Sparkline active={!state.stale} values={diskHistory(state.history, disk.id, field)} height={32} scale={index === 2 ? "percent" : "auto"}
             color={index === 1 ? "var(--color-tertiary)" : "var(--color-primary)"} />
         </section>)}
       </div>

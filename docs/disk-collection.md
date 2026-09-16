@@ -39,6 +39,14 @@ wildcard handle; this is not individual counter registration via expanded paths.
 
 ## Integration gates
 
+2026-09-17 continuity update: errors, timeout, pause and resume warmup preserve
+last received rows/history/session for stable layout, with explicit `stale: true`
+and bilingual "not live" disclosure. Interpolation stops, curves dim, text stays
+readable, and regions reference status for assistive technology. Fresh recovery
+starts history after the gap; demo/unavailable source changes clear native data.
+This replaces the earlier empty-on-every-error presentation without changing
+native sampling semantics. Full frontend validation: 479 tests/typecheck/build.
+
 The bounded thread/admission/channel implementation now lives in
 `provider_worker.rs`, shared with GPU. Disk and GPU still own separate worker
 instances and native handles; neither serializes on the other provider. Disk

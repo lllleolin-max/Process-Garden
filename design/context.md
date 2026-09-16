@@ -11,6 +11,9 @@ per-engine observed sums from validated overall GPU utilization, and disclose th
 unmatched device names. Pause demand when hidden/collapsed/non-windowed.
 Success includes stable selection/focus/DOM nodes during valid sampling, bounded
 history, independent disk/GPU requests, bilingual and reduced-motion behavior.
+Transient failures and pause should retain the last native layout, explicitly
+label retained values as not live, stop their interpolation and avoid carrying
+history over missing intervals. Source changes must clear retained native data.
 Complete device mapping/hotplug, controlled workload parity, actual desktop IPC and hardware frame
 pacing remain required before complete GPU/Task Manager replacement acceptance.
 

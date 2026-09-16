@@ -88,3 +88,16 @@ it("does not query demo mode and rejects malformed native data", async () => {
   await settle(); expect(view.result.current.status).toBe("error");
   expect(view.result.current.history).toEqual([]);
 });
+
+it("keeps stale disk layout during errors without bridging the recovered history", async () => {
+  invoke.mockResolvedValue([row]); const view = renderHook(() => useDiskReadings()); await settle(); await advance();
+  const previous = view.result.current;
+  invoke.mockRejectedValueOnce("temporary"); await advance();
+  expect(view.result.current.rows).toBe(previous.rows); expect(view.result.current.history).toBe(previous.history);
+  expect(view.result.current).toMatchObject({ status: "error", stale: true, session: previous.session });
+  await advance(); expect(view.result.current.stale).toBe(false); expect(view.result.current.history).toHaveLength(1);
+  act(() => useAppStore.setState({ paused: true }));
+  expect(view.result.current.rows).toEqual([row]); expect(view.result.current.stale).toBe(true);
+  act(() => useAppStore.setState({ demoMode: true }));
+  expect(view.result.current.rows).toEqual([]); expect(view.result.current.stale).toBe(false);
+});

@@ -1,5 +1,20 @@
 # Current QA index
 
+- Retained sampling states (2026-09-17), source: user's no-flash sampling request
+  and design/context.md factual continuity/accessibility requirements. Disk/GPU
+  pause, timeout, request failure and resume warmup preserve the last received
+  panel/selection/chart identity, explicitly labelled "not live" in both languages.
+  Old metric/curve interpolation stops; curves dim over 180ms (global reduced-motion
+  override applies). Metric regions reference the status for accessible description.
+  Recovery starts a fresh history segment; switching to demo/unsupported data
+  clears the old native observation rather than carrying it across sources.
+  PASS (automated): 479 tests/typecheck/build; four added retention cases and
+  strengthened 30/60/120 component tests verify cancellation, focus/DOM stability,
+  timeout identity, gap resets and stale accessibility text. Existing curve tests
+  still pass with optional active control. NOT READY for broad visual acceptance:
+  real desktop failure/recovery rendering, hardware frame pacing and manual AT
+  remain unverified. Browser-only demo cannot exercise native retained values.
+
 - GPU device labels (2026-09-17), source: factual identity and continuity criteria
   in design/context.md plus docs/gpu-collection.md. PASS (automated): 475 frontend
   tests/typecheck/build; new validation and label-enrichment tests keep selection,

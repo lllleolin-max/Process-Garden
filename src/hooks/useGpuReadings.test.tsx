@@ -77,3 +77,42 @@ it("rejects malformed payloads, distinguishes empty and does not fabricate demo 
   act(() => useAppStore.setState({ demoMode: false })); await settle(); expect(view.result.current.status).toBe("error");
   await advance(); expect(view.result.current.status).toBe("empty");
 });
+
+it("retains a disclosed last snapshot through failures and pause, then starts fresh history", async () => {
+  invoke.mockResolvedValue(gpuFixture());
+  const view = renderHook(() => useGpuReadings()); await settle(); await advance();
+  const reading = view.result.current.reading; const history = view.result.current.history; const session = view.result.current.session;
+  invoke.mockRejectedValueOnce("temporary failure"); await advance();
+  expect(view.result.current).toMatchObject({ status: "error", stale: true, session });
+  expect(view.result.current.reading).toBe(reading); expect(view.result.current.history).toBe(history);
+  await advance(); expect(view.result.current.stale).toBe(false); expect(view.result.current.history).toHaveLength(1);
+  const resumed = view.result.current.reading;
+  act(() => useAppStore.setState({ paused: true }));
+  expect(view.result.current).toMatchObject({ status: "paused", stale: true, session });
+  expect(view.result.current.reading).toBe(resumed);
+  let release!: (value: unknown) => void;
+  invoke.mockReturnValueOnce(new Promise(resolve => { release = resolve; }));
+  act(() => useAppStore.setState({ paused: false })); await settle();
+  expect(view.result.current).toMatchObject({ status: "baseline", stale: true, session });
+  expect(view.result.current.reading).toBe(resumed);
+  await act(async () => release(gpuFixture()));
+  expect(view.result.current.stale).toBe(false); expect(view.result.current.session).not.toBe(session);
+  expect(view.result.current.history).toHaveLength(1);
+  act(() => useAppStore.setState({ demoMode: true }));
+  expect(view.result.current.reading).toBeNull(); expect(view.result.current.stale).toBe(false);
+});
+
+it("does not change displayed snapshot identity when its next request times out", async () => {
+  invoke.mockResolvedValueOnce(gpuFixture());
+  const view = renderHook(() => useGpuReadings()); await settle();
+  const previous = view.result.current;
+  let release!: (value: unknown) => void;
+  invoke.mockReturnValueOnce(new Promise(resolve => { release = resolve; })).mockResolvedValue(gpuFixture());
+  await advance(); await advance(5000);
+  expect(view.result.current).toMatchObject({ status: "error", stale: true, session: previous.session });
+  expect(view.result.current.reading).toBe(previous.reading);
+  await act(async () => release(gpuFixture()));
+  expect(view.result.current.stale).toBe(true);
+  await advance(); expect(view.result.current.session).not.toBe(previous.session);
+  expect(view.result.current.history).toHaveLength(1); expect(view.result.current.stale).toBe(false);
+});

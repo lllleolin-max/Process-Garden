@@ -5,6 +5,7 @@ import { alignPolylinePoints } from "../animation/polylineMorph";
 import { requestMetricFrame } from "../animation/metricFrames";
 
 interface SparklineProps {
+  active?: boolean;
   values: number[];
   color?: string;
   height?: number;
@@ -16,7 +17,7 @@ function setChangedAttribute(node: SVGElement | null, name: string, value: strin
   if (node && node.getAttribute(name) !== value) node.setAttribute(name, value);
 }
 
-export const Sparkline = memo(function Sparkline({ values, color = "var(--color-primary)", height = 42, fill = true, scale = "auto" }: SparklineProps) {
+export const Sparkline = memo(function Sparkline({ values, color = "var(--color-primary)", height = 42, fill = true, scale = "auto", active = true }: SparklineProps) {
   const lineRef = useRef<SVGPolylineElement>(null);
   const fillRef = useRef<SVGPolygonElement>(null);
   const tipRef = useRef<SVGCircleElement>(null);
@@ -72,7 +73,7 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
     const previous = start.split(" ").map((point) => point.split(",").map(Number));
     const target = points.split(" ").map((point) => point.split(",").map(Number));
     const motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    if (!start || !points || start === points || previous.length < 2 || target.length < 2 || motionDisabled || document.hidden || motionPreference?.matches) {
+    if (!active || !start || !points || start === points || previous.length < 2 || target.length < 2 || motionDisabled || document.hidden || motionPreference?.matches) {
       draw(points);
       return;
     }
@@ -105,7 +106,7 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
       cancelFrame();
       document.removeEventListener("visibilitychange", finishWhenHidden);
     };
-  }, [points, height, motionDisabled]);
+  }, [points, height, motionDisabled, active]);
 
   return (
     <svg className="sparkline" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
@@ -114,4 +115,4 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
       {tip && <circle ref={tipRef} className="sparkline-tip" cx={tip[0]} cy={tip[1]} r="2" fill={color} />}
     </svg>
   );
-}, (previous, next) => previous.scale === next.scale && previous.color === next.color && previous.height === next.height && previous.fill === next.fill && previous.values.length === next.values.length && previous.values.every((value, index) => Object.is(value, next.values[index])));
+}, (previous, next) => previous.active === next.active && previous.scale === next.scale && previous.color === next.color && previous.height === next.height && previous.fill === next.fill && previous.values.length === next.values.length && previous.values.every((value, index) => Object.is(value, next.values[index])));

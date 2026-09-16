@@ -9,7 +9,7 @@ const initial = useAppStore.getState();
 const row = { id: "0 C:", readBytesPerSecond: 0, writeBytesPerSecond: 1024, activePercent: 25 };
 beforeEach(() => {
   mock.calls.mockClear();
-  mock.state = { status: "live", rows: [row], history: [[row]], session: "one" };
+  mock.state = { status: "live", rows: [row], history: [[row]], session: "one", stale: false };
   useAppStore.setState({ locale: "en-US", displayMode: "windowed", reducedMotion: true });
 });
 afterEach(() => { cleanup(); useAppStore.setState(initial, true); });
@@ -51,7 +51,7 @@ it("preserves selection, chart nodes and focus during updates, but resets chart 
 });
 
 it("distinguishes unavailable, empty, baseline and partial readings in both languages", () => {
-  mock.state = { status: "error", rows: [], history: [], session: "one" };
+  mock.state = { status: "error", rows: [], history: [], session: "one", stale: false };
   const view = setup(); view.toggle(true);
   expect(screen.getByRole("status")).toHaveTextContent("unavailable");
   mock.state = { ...mock.state, status: "empty" }; view.rerender(<DiskPanel />);
@@ -63,4 +63,17 @@ it("distinguishes unavailable, empty, baseline and partial readings in both lang
   act(() => useAppStore.setState({ locale: "zh-CN" }));
   expect(screen.getByText("部分指标尚无有效采样")).toBeInTheDocument();
   expect(screen.getByRole("combobox", { name: "物理磁盘" })).toBeInTheDocument();
+});
+
+it("retains focus and chart nodes while clearly labelling stale readings in both languages", () => {
+  const view = setup(); view.toggle(true);
+  const select = screen.getByRole("combobox"); select.focus();
+  const line = screen.getByRole("region", { name: "Read rate" }).querySelector("polyline");
+  mock.state = { ...mock.state, status: "error", stale: true }; view.rerender(<DiskPanel />);
+  expect(select).toHaveFocus(); expect(screen.getByRole("status")).toHaveTextContent("not live");
+  expect(screen.getByRole("region", { name: "Read rate" })).toHaveAccessibleDescription(/not live/);
+  expect(screen.getByRole("region", { name: "Read rate" }).querySelector("polyline")).toBe(line);
+  expect(view.container.querySelector(".disk-readings")).toHaveAttribute("data-stale", "true");
+  act(() => useAppStore.setState({ locale: "zh-CN" }));
+  expect(screen.getByRole("status")).toHaveTextContent("非实时");
 });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { useAppStore } from "../stores/appStore";
 import { useGpuReadings } from "../hooks/useGpuReadings";
 import { gpuHistory } from "../data/gpuReadings";
@@ -11,6 +11,7 @@ function GpuReadings() {
   const locale = useAppStore(s => s.locale);
   const zh = locale === "zh-CN";
   const state = useGpuReadings();
+  const statusId = useId();
   const [selectedAdapter, setAdapter] = useState("");
   const [selectedEngine, setEngine] = useState(0);
   const adapter = state.reading?.adapters.find(row => row.id === selectedAdapter) ?? state.reading?.adapters[0];
@@ -30,8 +31,8 @@ function GpuReadings() {
   const incomplete = state.reading && ([state.reading.engineCoverage, state.reading.dedicatedCoverage, state.reading.sharedCoverage]
     .some(coverage => !coverage.available || coverage.unmappedInstances > 0)
     || !engine || engine.observedPercentSum === null || adapter?.dedicated.bytes === null || adapter?.shared.bytes === null);
-  return <div className="disk-readings">
-    <p role="status">{message}</p>
+  return <div className="disk-readings" data-stale={state.stale || undefined}>
+    <p id={statusId} role="status">{message}{state.stale && (zh ? " · 显示上次采样（非实时）" : " · Showing the last sample (not live)")}</p>
     <p>{zh ? "实验性引擎观测，不是总 GPU 占用率。" : "Experimental engine observations, not total GPU utilization."}</p>
     {adapter && <>
       <label>{zh ? "GPU 计数器实例" : "GPU counter instance"}<select title={adapter.device?.name ?? adapter.id} value={adapter.id} onChange={event => setAdapter(event.target.value)}>
@@ -45,16 +46,16 @@ function GpuReadings() {
         <label>{zh ? "引擎" : "Engine"}<select value={engine.id} onChange={event => setEngine(Number(event.target.value))}>
           {adapter.engines.map(row => <option key={row.id} value={row.id}>{row.id} · {row.engineType ?? (zh ? "类型未知" : "Unknown type")}</option>)}
         </select></label>
-        <section key={`${state.session}:${adapter.id}:${engine.id}`} aria-label={zh ? "引擎观测和" : "Engine observed sum"}>
-          <div><span>{zh ? "引擎观测和" : "Engine observed sum"}</span><strong><AnimatedMetric value={engine.observedPercentSum ?? NaN} format={percent} /></strong></div>
-          <Sparkline values={gpuHistory(state.history, adapter.id, engine.id)} height={32} scale="percent" color="var(--color-primary)" />
+        <section key={`${state.session}:${adapter.id}:${engine.id}`} aria-describedby={statusId} aria-label={zh ? "引擎观测和" : "Engine observed sum"}>
+          <div><span>{zh ? "引擎观测和" : "Engine observed sum"}</span><strong><AnimatedMetric active={!state.stale} value={engine.observedPercentSum ?? NaN} format={percent} /></strong></div>
+          <Sparkline active={!state.stale} values={gpuHistory(state.history, adapter.id, engine.id)} height={32} scale="percent" color="var(--color-primary)" />
         </section>
       </>}
       {(["dedicated", "shared"] as const).map((field, index) => {
         const label = field === "dedicated" ? (zh ? "专用显存使用量" : "Dedicated memory usage") : (zh ? "共享显存使用量" : "Shared memory usage");
-        return <section key={`${state.session}:${adapter.id}:${field}`} aria-label={label}>
-          <div><span>{label}</span><strong><AnimatedMetric value={adapter[field].bytes ?? NaN} format={bytes} /></strong></div>
-          <Sparkline values={gpuHistory(state.history, adapter.id, field)} height={32} scale="auto" color={index ? "var(--color-tertiary)" : "var(--color-secondary)"} />
+        return <section key={`${state.session}:${adapter.id}:${field}`} aria-describedby={statusId} aria-label={label}>
+          <div><span>{label}</span><strong><AnimatedMetric active={!state.stale} value={adapter[field].bytes ?? NaN} format={bytes} /></strong></div>
+          <Sparkline active={!state.stale} values={gpuHistory(state.history, adapter.id, field)} height={32} scale="auto" color={index ? "var(--color-tertiary)" : "var(--color-secondary)"} />
         </section>;
       })}
     </>}

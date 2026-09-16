@@ -1,5 +1,17 @@
 # PR #7 integration handoff — 2026-09-16
 
+## Latest: retain explicitly stale monitor layouts — 2026-09-17
+
+Shared native hook and DiskState add `stale`; include Disk/GPU components and
+fixtures with this change. Temporary errors/pause/warmup preserve last snapshot
+identity and controls, with bilingual not-live status; source changes still clear.
+Recovery resets history instead of bridging an error interval. Sparkline gains
+optional active prop (default true); memo comparison includes it so stale motion
+actually cancels. Disk/GPU pass active=false for stale values, reuse global reduced
+motion overrides and reference status in accessible region descriptions.
+479 frontend tests/typecheck/build pass; no native/source artwork changes in this
+patch. Real desktop error/recovery visual and manual AT acceptance remain open.
+
 ## Latest: optional DXGI device enrichment — 2026-09-17
 
 GPU descriptors match full LUIDs, with software flag and raw-identity fallback.

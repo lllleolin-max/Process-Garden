@@ -81,6 +81,18 @@ Real packaged IPC remains an integration gate.
 
 ## Frontend observations and continuity
 
+Retention follow-up (2026-09-17): temporary request failure, watchdog expiry,
+pause/hide and resume warmup retain the last received layout with `stale: true`.
+The stored snapshot's session stays unchanged until a new response arrives,
+including when the next request token has already rotated after timeout. This
+prevents premature chart remounts. UI says "Showing the last sample (not live)";
+metric/curve interpolation stops and curves are dimmed, without dimming text.
+Each metric region references this status as an accessible description. No zero
+fill or fresh-data claim. Recovery resets history across the gap; source change
+to demo/unavailable clears the retained reading entirely. Disk uses the same
+policy. 479 frontend tests/typecheck/build pass; runtime failure-state visuals and
+manual AT still need native desktop validation.
+
 `GpuPanel` is initially collapsed in the sidebar. Native adapter and engine
 selectors keep all received choices reachable while mounting at most three
 curves: one engine observed sum (fixed 0–100 scale), dedicated memory and shared

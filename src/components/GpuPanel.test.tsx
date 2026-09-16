@@ -9,7 +9,7 @@ vi.mock("../hooks/useGpuReadings", () => ({ useGpuReadings: () => { mock.calls()
 const initial = useAppStore.getState();
 beforeEach(() => {
   mock.calls.mockClear(); const reading = gpuFixture();
-  mock.state = { status: "live", reading, history: [reading], session: "one" };
+  mock.state = { status: "live", reading, history: [reading], session: "one", stale: false };
   useAppStore.setState({ locale: "en-US", displayMode: "windowed", reducedMotion: true });
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial, true); });
@@ -110,5 +110,13 @@ it.each([30, 60, 120] as const)("shares one animation frame at %i Hz and cancels
   expect(parseFloat(visible.textContent!)).toBeGreaterThan(0);
   expect(parseFloat(visible.textContent!)).toBeLessThan(100);
   expect(region.querySelector("polyline")).toBe(line);
+  mock.state = { ...mock.state, status: "error", stale: true }; view.rerender(<GpuPanel />);
+  expect(frames.size).toBe(0);
+  expect(screen.getByRole("status")).toHaveTextContent("not live");
+  expect(region.querySelector("polyline")).toBe(line);
+  expect(visible).toHaveTextContent(/^100%$/);
+  const recovered = gpuFixture();
+  mock.state = { ...mock.state, status: "live", stale: false, reading: recovered, history: [next, recovered] };
+  view.rerender(<GpuPanel />); expect(frames.size).toBe(1);
   view.toggle(false); expect(frames.size).toBe(0);
 });
