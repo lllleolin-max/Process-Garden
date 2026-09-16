@@ -112,6 +112,14 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+ParentProcess navigation now also checks the rendered collector against the live
+store before following a relationship. The regression changes demo to native
+before React commits, retaining identical PID/start-time values, and confirms
+the old click cannot select the parent. Keep this source check alongside the
+existing child/parent lifetime and current-selection checks during integration.
+Local verification after this fix: 328 tests, type checking and production build
+passed. This is navigation protection, not authority for process termination.
+
 ### Packaging coordination
 
 Branch-local NSIS packaging succeeded at `65a4c9a`; see

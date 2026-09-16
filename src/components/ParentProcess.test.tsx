@@ -26,6 +26,18 @@ it("shows an unavailable parent as text instead of an actionable target", () => 
   expect(screen.getByText("PID 999 · 无法确认当前父进程")).toBeInTheDocument();
 });
 
+it("rejects an old click during a collector handover even with matching PID and start time", () => {
+  const parent = { ...initial.snapshot.processes[0], pid: 4, startedAt: 1800000000 };
+  const child = { ...parent, pid: 8, parentPid: 4, startedAt: parent.startedAt + 10 };
+  const snapshot = { ...initial.snapshot, processes: [parent, child] };
+  useAppStore.setState({ collector: "demo", snapshot, selectedPid: child.pid });
+  render(<ParentProcess process={child} processes={snapshot.processes} locale="en-US" />);
+  // The store changes before React has committed the new source's UI.
+  useAppStore.setState({ collector: "native", snapshot, selectedPid: child.pid });
+  fireEvent.click(screen.getByRole("button"));
+  expect(useAppStore.getState().selectedPid).toBe(child.pid);
+});
+
 it.each(["exit", "restart", "reselect", "parent-exit"])("does not follow a stale relationship after %s", change => {
   const parent = { ...initial.snapshot.processes[0], pid: 4, startedAt: 1800000000 };
   const child = { ...parent, pid: 8, parentPid: 4, startedAt: parent.startedAt + 10 };
