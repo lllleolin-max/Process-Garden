@@ -1,5 +1,23 @@
 # Current QA index
 
+- GPU frontend integration (2026-09-16), source: design/context.md GPU brief,
+  docs/gpu-collection.md contract and the user's smooth sampling requirement.
+  PASS (automated): 25 new data/hook/component cases, 473 total tests; typecheck
+  and production build passed. Covers schema bounds/coverage contradictions,
+  null vs zero, baseline/history gaps, 80 reachable engine choices, persistent
+  selection/focus/chart nodes, session changes, independent disk/GPU requests,
+  late replies, collapse/hide/pause/wallpaper and shared-frame motion at simulated
+  30/60/120 settings. Existing disk tests pass after hook extraction.
+  PASS (limited browser): isolated http://127.0.0.1:1437 preview, tab 18, captured
+  inline screenshots of Garden zh-CN and Eldritch en-US unavailable states at
+  1280x720. Sidebar copy wraps inside the panel; theme/language switch and keyboard
+  Return expansion worked. Browser shows native-only availability, not fake GPU
+  readings. Other task's existing 1420 preview was not touched.
+  NOT READY (HIGH, remaining acceptance): real desktop IPC/live GPU curves,
+  device-name mapping, controlled-workload numerical parity, hardware frame pacing
+  and manual assistive-technology/contrast checks are not proven by this run.
+  This is NOT full reference-scene visual acceptance or a replacement release.
+
 - DiskPanel frontend integration (2026-09-16): source is design/context.md factual
   monitoring/reduced-motion requirements and docs/disk-collection.md counter
   contract. Collapsed sidebar panel offers a native disk selector, binary-unit

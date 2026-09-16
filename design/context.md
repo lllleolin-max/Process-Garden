@@ -2,6 +2,18 @@
 
 ## Current objective supersedes the original v1 exclusions
 
+GPU panel brief (2026-09-16): extend factual monitoring without replacing the
+reference scene composition. Initially collapsed sidebar; all returned adapters
+and engines reachable through native selectors, only one engine and two memory
+curves animate at a time. Reuse theme tokens and shared metric animation; no new
+artwork. Show baseline/unknown/partial states honestly, distinguish experimental
+per-engine observed sums from validated overall GPU utilization, and disclose the
+missing device-name mapping. Pause demand when hidden/collapsed/non-windowed.
+Success includes stable selection/focus/DOM nodes during valid sampling, bounded
+history, independent disk/GPU requests, bilingual and reduced-motion behavior.
+Device mapping, controlled workload parity, actual desktop IPC and hardware frame
+pacing remain required before complete GPU/Task Manager replacement acceptance.
+
 The user now requires a complete Task Manager alternative, including safe process
 operations and native wallpaper behavior; the original v1 non-goals below are
 historical planning context, not acceptance limits for the current goal.

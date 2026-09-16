@@ -2,8 +2,8 @@
 
 Status: local PDH reader, identity parsing, per-engine experimental observation
 grouping and independent worker pass host probes. The `sample_gpu({ session })`
-Tauri command is registered and compile-checked, but actual desktop IPC and the
-frontend are not exercised/connected yet. No validated overall GPU percentage;
+Tauri command and demand-driven frontend are connected in code and tested, but
+actual desktop IPC/live GPU curves are not exercised yet. No validated overall GPU percentage;
 GPU monitoring and Task Manager replacement are not done.
 
 ## Independent worker and bridge
@@ -39,7 +39,41 @@ disk worker probe also passes (one instance, second response 0.355ms).
 The GPU native worker probe checks cold baseline, four contiguous readings, a
 renewed-session baseline and that the renewed session then warms up. This is a
 short read-only debug probe, not long-run overhead or controlled workload parity.
-Frontend demand/cancellation/history and real packaged IPC remain integration gates.
+Real packaged IPC remains an integration gate.
+
+## Frontend observations and continuity
+
+`GpuPanel` is initially collapsed in the sidebar. Native adapter and engine
+selectors keep all received choices reachable while mounting at most three
+curves: one engine observed sum (fixed 0–100 scale), dedicated memory and shared
+memory (usage bytes, not capacity). Counter identities are shown honestly until
+device-name mapping is implemented. UI copy labels these values experimental,
+not total GPU utilization; it does not fabricate demo GPU data.
+
+`gpuReadings.ts` validates and projects the native contract, with bounded lists,
+unique IDs, finite/range/count checks and contradictory coverage rejection. Raw
+unknown fields are not retained. Histories are capped at 36 frames and break at
+missing observations/baselines/engine-type changes rather than bridging them.
+Memory gauges can remain available during rate warmup.
+
+`createNativeReadings` extracts the disk hook's existing demand/watchdog/session
+logic. Each provider factory owns its own pending promise, so a stalled GPU
+request does not block disk reads. Neither provider permits overlapping work
+across remounts; timeout/late reply and ordinary-error warmup semantics remain.
+Hidden, paused, collapsed and non-windowed panels stop requesting; resume uses a
+fresh session. Valid samples never clear the panel before replacing its values.
+
+Existing AnimatedMetric/Sparkline motion shares one browser frame and respects
+pause, reduced motion and the global FPS setting. Data updates preserve selected
+IDs, focus and chart nodes; identity/session changes reset histories deliberately.
+
+Evidence: 473 frontend tests, typecheck and production build pass. Twenty-five
+new cases cover contract/history, hook concurrency/cancellation and panel/motion
+behavior. Browser screenshots and interaction verify Garden Chinese/Eldritch
+English unavailable states and keyboard expansion in an isolated preview at
+http://127.0.0.1:1437. No real desktop GPU stream was exercised through the UI;
+hardware FPS, screen-reader behavior and numerical workload parity remain open.
+Full frontend log: `%TEMP%/process-garden-gpu-panel-verify.log`.
 
 ## Current implementation
 
@@ -119,8 +153,9 @@ the raw per-process/context PDH instances. Required before a total-usage display
   the number of returned memory-counter instances the number of installed GPUs.
 - Validate the registered worker/IPC path in the desktop runtime; provider
   initialization is independent of CPU/process locks and the UI thread.
-- Add frontend schema/history validation, adapter/engine views and per-process lifetime
-  safety. Handle unsupported drivers, hotplug, sleep and provider failures honestly.
+- Verify the new frontend schema/history and adapter/engine views with actual
+  desktop IPC; add per-process lifetime safety. Exercise unsupported drivers,
+  hotplug, sleep and provider failures beyond the synthetic tests.
 - Verify overhead, both-theme visuals, actual frame pacing and native UI behavior.
 
 ## Evidence — 2026-09-16

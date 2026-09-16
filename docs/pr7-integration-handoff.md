@@ -1,5 +1,20 @@
 # PR #7 integration handoff — 2026-09-16
 
+## Latest: GPU frontend with bounded shared motion
+
+Sidebar adds GpuPanel after DiskPanel; preserve any other task's Sidebar edits.
+New gpuReadings validator/history, useGpuReadings, and useNativeReadings factory
+are required together. Disk hook now delegates to that factory; its behavior and
+tests remain intact. Each provider owns independent in-flight admission, not one
+global queue across GPU and disk. No i18n JSON, artwork or shared native schema
+edits in this frontend patch. Panel reuses DiskPanel CSS and existing motion.
+
+473 frontend tests, typecheck/build pass; 25 new GPU cases include simulated FPS,
+stable chart identity/focus, unknowns and disk/GPU request independence. Isolated
+preview at 1437 (not the other task's 1420 page) verified Garden Chinese/Eldritch
+English unavailable states and keyboard expansion. Device naming, desktop live
+IPC/curves, workload parity and true hardware FPS remain acceptance gaps.
+
 ## Latest: independent GPU worker and command
 
 GPU now has a managed reader and registered `sample_gpu({ session })` command.
