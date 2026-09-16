@@ -37,6 +37,8 @@ export interface SystemSnapshot {
 export type EventKind = "birth" | "exit" | "spawn" | "network" | "spike" | "io";
 
 export interface ProcessEvent {
+  /** PID + normalized start time; absent on legacy events with unknown lifetime. */
+  processKey?: string;
   id: string;
   timestamp: number;
   kind: EventKind;

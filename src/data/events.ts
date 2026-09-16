@@ -18,16 +18,17 @@ export function deriveProcessEvents(previous: SystemSnapshot, next: SystemSnapsh
         kind: spawned ? "spawn" : "birth",
         processName: process.name,
         pid: process.pid,
+        processKey: processIdentity(process),
         messageKey: spawned ? "events.spawned" : "events.born"
       });
     } else if (old.cpuPercent < 20 && process.cpuPercent >= 35) {
-      events.push({ id: makeId("spike", process.pid), timestamp: next.timestamp, kind: "spike", processName: process.name, pid: process.pid, messageKey: "events.spiked", value: process.cpuPercent });
+      events.push({ id: makeId("spike", process.pid), timestamp: next.timestamp, kind: "spike", processName: process.name, pid: process.pid, processKey: processIdentity(process), messageKey: "events.spiked", value: process.cpuPercent });
     }
   }
 
   for (const process of previous.processes) {
     if (!after.has(processIdentity(process))) {
-      events.push({ id: makeId("exit", process.pid), timestamp: next.timestamp, kind: "exit", processName: process.name, pid: process.pid, messageKey: "events.exited" });
+      events.push({ id: makeId("exit", process.pid), timestamp: next.timestamp, kind: "exit", processName: process.name, pid: process.pid, processKey: processIdentity(process), messageKey: "events.exited" });
     }
   }
 
@@ -43,5 +44,5 @@ export function deriveDemoEvent(previous: SystemSnapshot, next: SystemSnapshot):
   if (previousBucket === nextBucket || next.processes.length === 0) return null;
   const kind = demoKinds[nextBucket % demoKinds.length];
   const process = next.processes[nextBucket % next.processes.length];
-  return { id: `demo-${kind}-${process.pid}-${nextBucket}`, timestamp: next.timestamp, kind, processName: process.name, pid: process.pid, messageKey: demoMessageKeys[kind], value: kind === "spike" ? process.cpuPercent : undefined };
+  return { id: `demo-${kind}-${process.pid}-${nextBucket}`, timestamp: next.timestamp, kind, processName: process.name, pid: process.pid, processKey: processIdentity(process), messageKey: demoMessageKeys[kind], value: kind === "spike" ? process.cpuPercent : undefined };
 }

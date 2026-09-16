@@ -1,4 +1,5 @@
 import type { ProcessEvent, ProcessSnapshot, SystemSnapshot } from "../types/system";
+import { processIdentity } from "../animation/processIdentity";
 
 const GIB = 1024 ** 3;
 const MIB = 1024 ** 2;
@@ -56,7 +57,7 @@ export function makeDemoSnapshot(tick: number): SystemSnapshot {
   };
 }
 
-export const demoEvents: ProcessEvent[] = [
+const initialDemoEvents: ProcessEvent[] = [
   { id: "evt-1", timestamp: Date.now() - 2_000, kind: "spawn", processName: "chrome", pid: 5521, messageKey: "events.spawned" },
   { id: "evt-2", timestamp: Date.now() - 5_000, kind: "network", processName: "node", pid: 7618, messageKey: "events.connected" },
   { id: "evt-3", timestamp: Date.now() - 8_000, kind: "spike", processName: "rust-analyzer", pid: 9902, messageKey: "events.spiked" },
@@ -64,3 +65,8 @@ export const demoEvents: ProcessEvent[] = [
   { id: "evt-5", timestamp: Date.now() - 18_000, kind: "io", processName: "docker", pid: 1954, messageKey: "events.io" },
   { id: "evt-6", timestamp: Date.now() - 25_000, kind: "exit", processName: "spotify-helper", pid: 3341, messageKey: "events.exited" }
 ];
+
+export const demoEvents = initialDemoEvents.map(event => {
+  const process = processSeeds.find(item => item.pid === event.pid);
+  return { ...event, processKey: process ? processIdentity(process) : undefined };
+});
