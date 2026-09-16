@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppStore } from "../stores/appStore";
 import type { SystemSnapshot } from "../types/system";
 import { useSystemFeed } from "./useSystemFeed";
+import { useFeedHealth } from "../stores/feedHealth";
 
 const invoke = vi.hoisted(() => vi.fn());
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
@@ -18,6 +19,7 @@ let hidden = false;
 beforeEach(() => {
   vi.useFakeTimers();
   invoke.mockReset();
+  useFeedHealth.setState({ failed: false, lastSuccess: null });
   hidden = false;
   vi.spyOn(document, "hidden", "get").mockImplementation(() => hidden);
   Object.defineProperty(window, "__TAURI_INTERNALS__", { configurable: true, value: {} });
@@ -45,11 +47,13 @@ describe("system sampling lifecycle", () => {
     expect(useAppStore.getState().history).toBe(before.history);
     expect(useAppStore.getState().events).toBe(before.events);
     expect(useAppStore.getState().collector).toBe("native");
+    expect(useFeedHealth.getState().failed).toBe(true);
     await act(() => vi.advanceTimersByTimeAsync(before.samplingMs));
     expect(invoke).toHaveBeenCalledTimes(2);
     const recovered = { ...before.snapshot, timestamp: Date.now(), cpuPercent: 23 };
     await act(async () => { next.resolve(recovered); });
     expect(useAppStore.getState().snapshot).toBe(recovered);
+    expect(useFeedHealth.getState()).toEqual({ failed: false, lastSuccess: recovered.timestamp });
     expect(useAppStore.getState().collector).toBe("native");
   });
 

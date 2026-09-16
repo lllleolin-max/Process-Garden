@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { makeDemoSnapshot } from "../data/demo";
 import { useAppStore } from "../stores/appStore";
+import { useFeedHealth } from "../stores/feedHealth";
 import type { SystemSnapshot } from "../types/system";
 
 function isTauriRuntime() {
@@ -17,6 +18,7 @@ export function useSystemFeed() {
   const inFlight = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
+    if (demoMode) useFeedHealth.setState({ failed: false, lastSuccess: null });
     if (paused) return;
     let active = true;
     let sampling = false;
@@ -41,11 +43,15 @@ export function useSystemFeed() {
             const { invoke } = await import("@tauri-apps/api/core");
             if (!canIngest()) return;
             const snapshot = await invoke<SystemSnapshot>("sample_system");
-            if (canIngest()) ingestSnapshot(snapshot, "native");
+            if (canIngest()) {
+              ingestSnapshot(snapshot, "native");
+              useFeedHealth.setState({ failed: false, lastSuccess: snapshot.timestamp });
+            }
             return;
           } catch {
             // A native collection failure must not replace real processes with
             // simulated ones. Keep the last observation and retry on schedule.
+            if (canIngest()) useFeedHealth.setState({ failed: true });
             return;
           }
         }

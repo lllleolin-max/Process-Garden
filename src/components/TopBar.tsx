@@ -9,6 +9,7 @@ import i18n from "../i18n/config";
 import { useAppStore } from "../stores/appStore";
 import "../styles/overlays.css";
 import { ProcessExplorer } from "./ProcessExplorer";
+import { FeedHealthNotice } from "./FeedHealthNotice";
 
 export function TopBar() {
   const { t } = useTranslation();
@@ -120,6 +121,7 @@ export function TopBar() {
         </button>
       </nav>
       {displayError && <p className="display-mode-error" role="alert">{t("modes.changeFailed")}</p>}
+      <FeedHealthNotice />
     </header><ProcessExplorer open={processListOpen} onClose={() => setProcessListOpen(false)} /></>
   );
 }
