@@ -112,6 +112,16 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+### Packaging coordination
+
+Branch-local NSIS packaging succeeded at `65a4c9a`; see
+`design/qa-manifest-conflict-2026-09-16.md` for hashes and limitations.
+Merge the Windows manifest, build-support rule, integration tests and artifact
+validator together. Preserve the other task's Cargo features and command
+registrations when resolving Cargo.toml/lib.rs overlaps. This unsigned test
+installer excludes the shared worktree's uncommitted work and is not a release.
+No installation, publication or automatic merge was performed.
+
 ### Coordination checkpoint — 2026-09-16
 
 - The shared `feat/motion-integration` worktree still contains uncommitted theme,
