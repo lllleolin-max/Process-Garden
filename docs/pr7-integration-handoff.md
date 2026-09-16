@@ -25,6 +25,19 @@ files also belong to that task and must not be deleted or silently replaced.
 
 ## Schema and correctness dependencies
 
+- Inspector now includes ParentProcess with observedParent validation. Keep both
+  new modules with the Inspector import/render insertion. This is best-effort
+  current-snapshot navigation, not a historical tree or a termination target
+  validator. It rechecks the selected child and both lifetimes on click, rejects
+  newer reused parent PIDs, and retains focus on the Inspector. Never reuse this
+  heuristic to authorize destructive native actions.
+- ProcessExplorer uses isObservedMetric from processTable for both sorting and
+  display. Preserve the helper import with the row changes: invalid/negative
+  readings stay last and display a dash; observed zero remains a real value.
+- PowerMetric consumes feedHealth.failed; useSystemFeed clears failure only when
+  ingestSnapshot accepts a fresh observation. Retain these together with the
+  timestamp guard, so duplicate/invalid responses cannot advertise recovery.
+
 - History now stores SystemObservation, not complete SystemSnapshot metadata.
   Preserve the toObservation projection in appStore alongside the new observation
   types and chart helper signatures. The current snapshot remains complete.
