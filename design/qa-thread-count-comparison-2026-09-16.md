@@ -32,3 +32,19 @@ coverage and failure semantics, and rerun the complete native suite and end-to-e
 sampling profile. This timing does not establish application CPU usage or frame rate.
 
 API contract: https://learn.microsoft.com/en-us/windows/win32/api/tlhelp32/ns-tlhelp32-processentry32w
+
+## Controlled lifetime fixture
+
+`process_snapshot_tracks_controlled_thread_lifetimes` runs alone with
+`--ignored --test-threads=1 --nocapture`. Eight test-owned threads signal readiness,
+then block on channels. After observation, dropping the channels releases them;
+all are joined before the final count. No unrelated process is manipulated.
+Both API sources reported 5 before, 13 while workers were alive, and 5 after
+joining. Exact +8 and return-to-baseline assertions passed in the release build.
+The test is ignored in the concurrent suite because unrelated test-runner thread
+lifetimes would invalidate exact current-process deltas. Shared snapshot-reading
+code is reused by the timing experiment and this fixture.
+
+The complete release library suite also passed: 17 passed, 3 manual tests ignored.
+System/PID 0 coverage and production error-path validation remain outstanding;
+this fixture does not establish parity across protected/system processes.

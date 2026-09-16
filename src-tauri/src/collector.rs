@@ -297,14 +297,69 @@ mod tests {
     }
 
     #[cfg(windows)]
-    #[test]
-    #[ignore = "manual comparison of native thread-count APIs"]
-    fn compare_thread_count_sources() {
-        use std::{mem::size_of, time::Instant};
+    fn process_snapshot_thread_counts() -> HashMap<u32, usize> {
+        use std::mem::size_of;
         use windows_sys::Win32::{
             Foundation::{CloseHandle, GetLastError, ERROR_NO_MORE_FILES, INVALID_HANDLE_VALUE},
             System::Diagnostics::ToolHelp::{CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS},
         };
+        let handle = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
+        assert_ne!(handle, INVALID_HANDLE_VALUE);
+        let mut entry: PROCESSENTRY32W = unsafe { std::mem::zeroed() };
+        entry.dwSize = size_of::<PROCESSENTRY32W>() as u32;
+        let mut counts = HashMap::new();
+        let mut present = unsafe { Process32FirstW(handle, &mut entry) } != 0;
+        while present {
+            counts.insert(entry.th32ProcessID, entry.cntThreads as usize);
+            present = unsafe { Process32NextW(handle, &mut entry) } != 0;
+        }
+        let complete = unsafe { GetLastError() } == ERROR_NO_MORE_FILES;
+        unsafe { CloseHandle(handle) };
+        assert!(complete);
+        counts
+    }
+
+    #[cfg(windows)]
+    #[test]
+    #[ignore = "run alone with --test-threads=1; exact own-process thread deltas"]
+    fn process_snapshot_tracks_controlled_thread_lifetimes() {
+        use std::sync::mpsc;
+        let pid = std::process::id();
+        let read = || {
+            let process = process_snapshot_thread_counts()[&pid];
+            let walked = thread_counts().expect("complete thread enumeration")[&pid];
+            (process, walked)
+        };
+        let before = read();
+        let (ready_tx, ready_rx) = mpsc::channel();
+        let mut workers = Vec::new();
+        let mut releases = Vec::new();
+        for _ in 0..8 {
+            let (release_tx, release_rx) = mpsc::channel::<()>();
+            let ready = ready_tx.clone();
+            workers.push(std::thread::spawn(move || {
+                ready.send(()).expect("test receives readiness");
+                // Channel disconnection also releases the worker if the test panics.
+                let _ = release_rx.recv();
+            }));
+            releases.push(release_tx);
+        }
+        for _ in 0..8 { ready_rx.recv().expect("worker starts"); }
+        let during = read();
+        drop(releases);
+        for worker in workers { worker.join().expect("worker exits normally"); }
+        let after = read();
+        assert_eq!(before.0, before.1, "baseline APIs agree");
+        assert_eq!(during, (before.0 + 8, before.1 + 8), "both APIs observe every new thread");
+        assert_eq!(after, before, "joined threads are no longer counted");
+        println!("controlled_threads=8 before={before:?} during={during:?} after={after:?}");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    #[ignore = "manual comparison of native thread-count APIs"]
+    fn compare_thread_count_sources() {
+        use std::time::Instant;
         let mut process_times = Vec::new();
         let mut thread_times = Vec::new();
         let mut shared = 0;
@@ -314,19 +369,7 @@ mod tests {
         for iteration in 0..20 {
             let read_process_counts = || {
                 let started = Instant::now();
-                let handle = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
-                assert_ne!(handle, INVALID_HANDLE_VALUE);
-                let mut entry: PROCESSENTRY32W = unsafe { std::mem::zeroed() };
-                entry.dwSize = size_of::<PROCESSENTRY32W>() as u32;
-                let mut counts = HashMap::new();
-                let mut present = unsafe { Process32FirstW(handle, &mut entry) } != 0;
-                while present {
-                    counts.insert(entry.th32ProcessID, entry.cntThreads as usize);
-                    present = unsafe { Process32NextW(handle, &mut entry) } != 0;
-                }
-                let complete = unsafe { GetLastError() } == ERROR_NO_MORE_FILES;
-                unsafe { CloseHandle(handle) };
-                assert!(complete);
+                let counts = process_snapshot_thread_counts();
                 (counts, started.elapsed().as_secs_f64() * 1000.0)
             };
             let read_thread_counts = || {
