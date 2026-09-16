@@ -1,5 +1,18 @@
 # Current QA index
 
+- Child-process navigation (2026-09-16): Inspector now exposes confirmed direct
+  children in eight-row pages with existing native application icons, bilingual
+  labels and a current-snapshot inference disclaimer. Code-level behavior tests
+  cover navigation/focus, pagination, missing/invalid relationships, six stale
+  click scenarios and list shrink/recovery. Full local verify: 357 tests,
+  type checking and production build. Source: design/context.md factual clarity,
+  keyboard/localization requirements and docs/task-manager-replacement.md process
+  relationship workflow. NOT READY for visual acceptance: browser inventory
+  again failed with a service response parse error, so Garden/Eldritch layout,
+  long-name clipping, keyboard reachability and contrast require browser/native
+  verification. This is direct-child traversal, not a full historical tree or
+  process-tree termination implementation. No new artwork was created.
+
 - Inspector CPU/memory readouts now use 320 ms AnimatedMetric transitions with
   stable locale formatters and lifetime-keyed reset. Local verification passed
   61 files / 327 tests, type checking and production build. Regression checks

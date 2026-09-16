@@ -10,6 +10,7 @@ import { ProcessIcon } from "./ProcessIcon";
 import { processHistory } from "../data/processHistory";
 import { processIdentity } from "../animation/processIdentity";
 import { ParentProcess } from "./ParentProcess";
+import { ChildProcesses } from "./ChildProcesses";
 import { ProcessIo } from "./ProcessIo";
 import { isObservedCount, isObservedMetric, isObservedPercent } from "../data/processTable";
 import { AnimatedMetric } from "./AnimatedMetric";
@@ -84,6 +85,7 @@ export function Inspector() {
         <Detail icon={Clock3} label={t("inspector.started")} value={formatDateTime(process.startedAt, state.locale)} />
       </div>
       <ParentProcess process={process} processes={state.snapshot.processes} locale={state.locale} />
+      <ChildProcesses key={selectedLifetime} process={process} processes={state.snapshot.processes} locale={state.locale} />
       <section className="activity-highlights"><h3>{t("inspector.activity")}</h3><p><span className="event-dot network" />{connections ?? "—"} {t("nav.connections").toLowerCase()}</p><p><span className="event-dot spawn" />{threadCount ?? "—"} {t("metrics.threads").toLowerCase()}</p><p><span className="event-dot io" />{memoryLabel} {t("metrics.memory").toLowerCase()}</p></section>
       <section className="path-card"><span><FolderCog size={14} />{t("inspector.path")}</span><code>{process.executablePath ?? t("common.unavailable")}</code></section>
     </aside>

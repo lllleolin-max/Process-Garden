@@ -112,6 +112,15 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+Inspector now includes ChildProcesses.tsx/CSS after ParentProcess: direct children
+are inferred from parent PID/start time in the current snapshot, sorted by PID,
+and paginated eight at a time. No extra sampler/query or process mutation occurs.
+Click revalidates source, selected parent, both lifetimes, live presence and the
+current relationship; navigation retains Inspector focus. Preserve its lifetime
+key when merging other Inspector/termination work. Existing agent-embryo controls
+were not modified. Ten component cases plus full local verification pass (357
+tests, type checking/build); browser/native visual conformance remains open.
+
 Freshness follow-up: nonfinite or future last-success timestamps now make the
 observation stale without scheduling a timer. A system clock rollback must not
 extend apparent freshness. Deadline timers are capped at the browser's signed
