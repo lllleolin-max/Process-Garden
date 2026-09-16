@@ -6,6 +6,8 @@ import { agentEmbryoStage, isAgentProcess } from "../ecology/organisms";
 import { useAppStore } from "../stores/appStore";
 import { Sparkline } from "./Sparkline";
 import { ProcessIcon } from "./ProcessIcon";
+import { processHistory } from "../data/processHistory";
+import { processIdentity } from "../animation/processIdentity";
 
 export function Inspector() {
   const { t } = useTranslation();
@@ -15,11 +17,12 @@ export function Inspector() {
   const copyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const copyRequest = useRef(0);
   const process = state.snapshot.processes.find((item) => item.pid === state.selectedPid);
-  const history = state.history.map((snapshot) => snapshot.processes.find((item) => item.pid === state.selectedPid));
+  const history = process ? processHistory(state.history, process) : [];
+  const selectedLifetime = process ? processIdentity(process) : null;
   useEffect(() => {
     setCopyStatus("idle");
     return () => { clearTimeout(copyTimer.current); copyRequest.current += 1; };
-  }, [state.selectedPid]);
+  }, [state.selectedPid, selectedLifetime]);
   if (!process) return <aside className="inspector panel-surface empty-inspector"><CircleDot size={28} /><p>{t("inspector.selectHint")}</p></aside>;
   const statusKey = process.status === "stressed" ? "stressed" : process.status === "idle" ? "idle" : "running";
   const agentTasks = isAgentProcess(process) ? state.snapshot.processes.filter((item) => item.parentPid === process.pid && item.status !== "dead") : [];
@@ -53,8 +56,8 @@ export function Inspector() {
       </div>
       <div id="inspector-tabpanel" className="inspector-tabpanel" role="tabpanel" aria-labelledby={`inspector-tab-${tab}`} tabIndex={0} key={`${process.pid}-${tab}`}>
       {tab === "overview" && <>
-        <section className="resource-chart"><div className="resource-chart-title"><span><Cpu size={14} />{t("inspector.cpuUsage")}</span><strong>{formatPercent(process.cpuPercent, state.locale, 1)}</strong></div><Sparkline values={history.map((item) => item?.cpuPercent ?? 0).slice(-42)} height={50} /></section>
-        <section className="resource-chart"><div className="resource-chart-title"><span><Activity size={14} />{t("inspector.memoryUsage")}</span><strong>{formatBytes(process.memoryBytes, state.locale)}</strong></div><Sparkline values={history.map((item) => item?.memoryBytes ?? 0).slice(-42)} color="var(--color-tertiary)" height={44} /></section>
+        <section className="resource-chart"><div className="resource-chart-title"><span><Cpu size={14} />{t("inspector.cpuUsage")}</span><strong>{formatPercent(process.cpuPercent, state.locale, 1)}</strong></div><Sparkline key={`${selectedLifetime}-cpu`} values={history.map((item) => item.cpuPercent).slice(-42)} height={50} /></section>
+        <section className="resource-chart"><div className="resource-chart-title"><span><Activity size={14} />{t("inspector.memoryUsage")}</span><strong>{formatBytes(process.memoryBytes, state.locale)}</strong></div><Sparkline key={`${selectedLifetime}-memory`} values={history.map((item) => item.memoryBytes).slice(-42)} color="var(--color-tertiary)" height={44} /></section>
       </>}
       {tab === "threads" && <section className="inspector-tab-summary"><Workflow size={24} /><strong>{process.threadCount ?? t("common.unavailable")}</strong><p>{t("inspector.threadSummary")}</p></section>}
       {tab === "connections" && <section className="inspector-tab-summary"><Network size={24} /><strong>{process.connections ?? t("common.unavailable")}</strong><p>{t("inspector.connectionPrivacy")}</p></section>}
