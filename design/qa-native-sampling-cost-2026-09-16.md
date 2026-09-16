@@ -1,5 +1,36 @@
 # Native sampling cost baseline
 
+## Optimized release baseline
+
+The original isolated release build completed successfully (4m46s first compile)
+and ran the same 24-sample test, with 546–549 processes fully preserved:
+
+| Measurement | Median ms | p95 ms | Maximum ms |
+| --- | ---: | ---: | ---: |
+| Total collection | 167.398 | 183.909 | 208.009 |
+| Process refresh | 96.772 | 110.211 | 130.171 |
+| Thread enumeration | 70.071 | 79.726 | 80.045 |
+| Record conversion / sorting | 0.157 | 0.191 | 0.203 |
+| System CPU / memory | 0.909 | 1.327 | 1.416 |
+| Power | 0.075 | 0.105 | 0.116 |
+| JSON serialization | 0.122 | 0.171 | 0.233 |
+
+Initialization 716.013 ms, payload 115,862–119,220 bytes. These are timings of
+read-only collector calls in an optimized test binary, not an installed-app
+endurance result. Unlike serialization, native enumeration remains expensive
+after optimization. This supports prioritizing enumeration, not a claim of
+comparable before/after performance across changing host loads.
+
+Candidate for controlled comparison: PROCESSENTRY32W.cntThreads is documented
+by Microsoft as the number of execution threads started by the process:
+https://learn.microsoft.com/en-us/windows/win32/api/tlhelp32/ns-tlhelp32-processentry32w
+Evaluate process-snapshot counts against thread walking for correctness and
+timing before replacing the current path. No replacement has been made yet.
+
+The manual test now prints its actual debug/release profile rather than an
+ambiguous reminder to use --release. The baseline above was verified from the
+Cargo output's explicit optimized release build and executable path.
+
 ## Stage-level follow-up
 
 The same collector pipeline now accepts an internal observer. Production passes

@@ -285,7 +285,8 @@ mod tests {
         }
         collect_ms.sort_by(f64::total_cmp);
         serialize_ms.sort_by(f64::total_cmp);
-        println!("profile=debug unless --release; samples=24; idle_between_ms=250; initialization_ms={initialization_ms:.3}");
+        let profile = if cfg!(debug_assertions) { "debug" } else { "release" };
+        println!("profile={profile}; samples=24; idle_between_ms=250; initialization_ms={initialization_ms:.3}");
         println!("collect_ms median={:.3} p95={:.3} max={:.3}", (collect_ms[11] + collect_ms[12]) / 2.0, collect_ms[22], collect_ms[23]);
         println!("serialize_ms median={:.3} p95={:.3} max={:.3}", (serialize_ms[11] + serialize_ms[12]) / 2.0, serialize_ms[22], serialize_ms[23]);
         println!("processes min={} max={}; json_bytes min={} max={}", process_counts.iter().min().unwrap(), process_counts.iter().max().unwrap(), sizes.iter().min().unwrap(), sizes.iter().max().unwrap());
