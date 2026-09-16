@@ -10,6 +10,7 @@ import { ProcessIcon } from "./ProcessIcon";
 import { processHistory } from "../data/processHistory";
 import { processIdentity } from "../animation/processIdentity";
 import { ParentProcess } from "./ParentProcess";
+import { ProcessIo } from "./ProcessIo";
 
 export function Inspector() {
   const { t } = useTranslation();
@@ -61,6 +62,7 @@ export function Inspector() {
       {tab === "overview" && <>
         <section className="resource-chart"><div className="resource-chart-title"><span><Cpu size={14} />{t("inspector.cpuUsage")}</span><strong>{formatPercent(process.cpuPercent, state.locale, 1)}</strong></div><Sparkline key={`${selectedLifetime}-cpu`} values={history.map((item) => item.cpuPercent).slice(-42)} height={50} /></section>
         <section className="resource-chart"><div className="resource-chart-title"><span><Activity size={14} />{t("inspector.memoryUsage")}</span><strong>{formatBytes(process.memoryBytes, state.locale)}</strong></div><Sparkline key={`${selectedLifetime}-memory`} values={history.map((item) => item.memoryBytes).slice(-42)} color="var(--color-tertiary)" height={44} /></section>
+        <ProcessIo key={`${selectedLifetime}-io`} pid={process.pid} startedAt={process.startedAt} />
       </>}
       {tab === "threads" && <section className="inspector-tab-summary"><Workflow size={24} /><strong>{process.threadCount ?? t("common.unavailable")}</strong><p>{t("inspector.threadSummary")}</p></section>}
       {tab === "connections" && <section className="inspector-tab-summary"><Network size={24} /><strong>{process.connections ?? t("common.unavailable")}</strong><p>{t("inspector.connectionPrivacy")}</p></section>}

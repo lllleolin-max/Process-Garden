@@ -68,8 +68,10 @@ exact FILETIME identity and explicit Result failures. Cargo.toml additionally
 enables Win32_System_Threading: merge this feature into, not over, the other task's
 feature list. lib.rs now adds ProcessIoReader managed state and sample_process_io
 to the existing command list: merge these entries without replacing the other
-task's process-operation commands. Frontend integration remains open; the
-single-target reader requires a fresh session after pause/hide/reopen. See
+task's process-operation commands. Inspector now adds ProcessIo in its overview;
+keep ProcessIo and useProcessIo with this command. This small insertion must be
+merged without replacing the other task's Inspector/process-operation work.
+The single-target reader requires a fresh session after pause/hide/reopen. See
 process-io-collection.md for query cost evidence and identity limits. Rate tests
 alone do not validate actual Windows I/O or physical disk throughput.
 

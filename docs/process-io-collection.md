@@ -1,7 +1,22 @@
 # Process I/O collection decision — 2026-09-16
 
-Status: rate-conversion core, on-demand Windows query and desktop command bridge
-implemented; frontend consumption is not connected or accepted as disk telemetry.
+Status: rate-conversion core, on-demand Windows query, desktop command bridge and
+Inspector frontend connected in source; packaged runtime and visual acceptance
+remain open. This is process I/O, not physical-disk telemetry.
+
+Inspector overview now mounts ProcessIo for the selected lifetime. useProcessIo
+queries only native/windowed/visible/unpaused state, one request at a time across
+selection/remounts, one second after the previous response. A five-second watchdog
+clears stalled readings without launching overlapping work; late responses are
+discarded. Pause/hide/reopen/selection changes get fresh sessions. Normal query
+failures retain the native session's pinned identity while clearing displayed
+rates/history. Invalid payloads are not displayed. History is bounded to 36 samples.
+English/Chinese states distinguish baseline, live, paused, unavailable and error.
+
+Frontend verification: full npm verify passed 316 tests, typecheck and build;
+an additional focused stalled-request regression subsequently passed (five hook
+tests total). Native command behavior and actual rendered data still need a
+packaged integration check; mocked invokes do not substitute for that gate.
 
 `sample_process_io` accepts `pid`, Unix-seconds `startedAt` and a nonempty session
 string of at most 64 bytes. It returns null while establishing a baseline, rates
