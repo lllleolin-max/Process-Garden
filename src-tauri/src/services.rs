@@ -41,6 +41,33 @@ mod native {
         String::from_utf16(&source[..end]).map_err(|_| "invalid service UTF-16".into())
     }
 
+    fn append_page(buffer: &[u64], count: u32, rows: &mut BTreeMap<String, ServiceReading>) -> Result<(), String> {
+        if count as usize > std::mem::size_of_val(buffer) / size_of::<ENUM_SERVICE_STATUS_PROCESSW>() {
+            return Err("invalid service count".into());
+        }
+        for index in 0..count as usize {
+            let entry = unsafe { &*buffer.as_ptr().cast::<ENUM_SERVICE_STATUS_PROCESSW>().add(index) };
+            let name = string(buffer, entry.lpServiceName)?;
+            if name.is_empty() { return Err("empty service identity".into()); }
+            let display_name = string(buffer, entry.lpDisplayName)?;
+            let state = entry.ServiceStatusProcess.dwCurrentState;
+            let identity = name.to_lowercase();
+            if rows.contains_key(&identity) { return Err("service enumeration changed during pagination".into()); }
+            if rows.len() >= 65536 { return Err("service enumeration limit exceeded".into()); }
+            rows.insert(identity, ServiceReading { name, display_name, state,
+                process_id: observed_pid(state, entry.ServiceStatusProcess.dwProcessId),
+                service_type: entry.ServiceStatusProcess.dwServiceType });
+        }
+        Ok(())
+    }
+
+    fn page_finished(ok: bool, error: u32, previous: u32, resume: u32, count: u32) -> Result<bool, String> {
+        if ok { return if resume == 0 { Ok(true) } else { Err("inconsistent service completion".into()) }; }
+        if error != ERROR_MORE_DATA { return Err(format!("service enumeration failed: {error}")); }
+        if resume == 0 || resume == previous || count == 0 { return Err("service enumeration made no progress".into()); }
+        Ok(false)
+    }
+
     pub fn enumerate(deadline: Instant) -> Result<Vec<ServiceReading>, String> {
         if Instant::now() >= deadline { return Err("service enumeration expired".into()); }
         let raw = unsafe { OpenSCManagerW(ptr::null(), ptr::null(), SC_MANAGER_ENUMERATE_SERVICE) };
@@ -61,27 +88,12 @@ mod native {
                 std::mem::size_of_val(buffer.as_slice()) as u32, &mut needed, &mut count,
                 &mut resume, ptr::null()) };
             let error = if ok == 0 { unsafe { GetLastError() } } else { 0 };
-            if ok == 0 && error != ERROR_MORE_DATA { return Err(format!("service enumeration failed: {error}")); }
-            if count as usize > std::mem::size_of_val(buffer.as_slice()) / size_of::<ENUM_SERVICE_STATUS_PROCESSW>() {
-                return Err("invalid service count".into());
-            }
-            for index in 0..count as usize {
-                let entry = unsafe { &*buffer.as_ptr().cast::<ENUM_SERVICE_STATUS_PROCESSW>().add(index) };
-                let name = string(&buffer, entry.lpServiceName)?;
-                if name.is_empty() { return Err("empty service identity".into()); }
-                let display_name = string(&buffer, entry.lpDisplayName)?;
-                let state = entry.ServiceStatusProcess.dwCurrentState;
-                let reading = ServiceReading { name: name.clone(), display_name, state,
-                    process_id: observed_pid(state, entry.ServiceStatusProcess.dwProcessId),
-                    service_type: entry.ServiceStatusProcess.dwServiceType };
-                if rows.insert(name.to_lowercase(), reading).is_some() { return Err("service enumeration changed during pagination".into()); }
-                if rows.len() > 65536 { return Err("service enumeration limit exceeded".into()); }
-            }
-            if ok != 0 {
+            let finished = page_finished(ok != 0, error, previous_resume, resume, count)?;
+            append_page(&buffer, count, &mut rows)?;
+            if finished {
                 if Instant::now() >= deadline { return Err("service enumeration expired".into()); }
                 return Ok(rows.into_values().collect());
             }
-            if resume == previous_resume || count == 0 { return Err("service enumeration made no progress".into()); }
         }
         Err("service enumeration page limit exceeded".into())
     }
@@ -89,6 +101,43 @@ mod native {
     #[cfg(test)]
     mod tests {
         use super::*;
+        fn fixture(name: &str) -> Vec<u64> {
+            let mut buffer = vec![0u64; 64];
+            let text: Vec<u16> = name.encode_utf16().chain(Some(0)).collect();
+            assert!(text.len() < 128);
+            unsafe {
+                let pointer = buffer.as_mut_ptr().cast::<u8>().add(128).cast::<u16>();
+                ptr::copy_nonoverlapping(text.as_ptr(), pointer, text.len());
+                buffer.as_mut_ptr().cast::<ENUM_SERVICE_STATUS_PROCESSW>().write(ENUM_SERVICE_STATUS_PROCESSW {
+                    lpServiceName: pointer, lpDisplayName: pointer,
+                    ServiceStatusProcess: SERVICE_STATUS_PROCESS { dwCurrentState: SERVICE_RUNNING, dwProcessId: 42, ..Default::default() }
+                });
+            }
+            buffer
+        }
+        #[test]
+        fn page_status_rejects_errors_and_nonprogress_before_consuming_records() {
+            assert_eq!(page_finished(true, 0, 7, 0, 0), Ok(true));
+            assert_eq!(page_finished(false, ERROR_MORE_DATA, 0, 7, 1), Ok(false));
+            for (ok, error, previous, resume, count) in [(true, 0, 0, 7, 1), (false, 5, 0, 7, 1),
+                (false, ERROR_MORE_DATA, 7, 7, 1), (false, ERROR_MORE_DATA, 7, 0, 1), (false, ERROR_MORE_DATA, 0, 7, 0)] {
+                assert!(page_finished(ok, error, previous, resume, count).is_err());
+            }
+        }
+        #[test]
+        fn pages_preserve_rows_but_reject_changed_identity_and_invalid_buffers() {
+            let mut rows = BTreeMap::new();
+            append_page(&fixture("Alpha"), 1, &mut rows).unwrap();
+            append_page(&fixture("Beta"), 1, &mut rows).unwrap();
+            assert_eq!(rows.len(), 2);
+            assert_eq!(rows["alpha"].process_id, Some(42));
+            assert!(append_page(&fixture("ALPHA"), 1, &mut rows).is_err());
+            assert_eq!(rows["alpha"].name, "Alpha");
+            assert!(append_page(&fixture(""), 1, &mut rows).is_err());
+            assert!(append_page(&[], 1, &mut rows).is_err());
+            assert!(append_page(&[0; 64], 1, &mut rows).is_err());
+            assert!(append_page(&fixture("Gamma"), u32::MAX, &mut rows).is_err());
+        }
         #[test]
         fn invalid_string_pointers_are_rejected() {
             let buffer = [0u64; 2];

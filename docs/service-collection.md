@@ -68,3 +68,11 @@ unknown future codes still visible under All states. Page clamps are committed
 after disappearing records so later growth cannot restore an obsolete page.
 503 frontend tests/typecheck/build pass. Actual browser layout, native desktop IPC
 and real service-state changes remain unverified; component tests use fixtures.
+
+Pagination hardening follow-up: extracted page status and buffer consumption are
+now covered by fixtures. Success with a nonzero resume token, ordinary API errors,
+MORE_DATA with zero/unchanged token or zero rows fail before buffer consumption.
+Multiple distinct pages accumulate; duplicate case-insensitive names cannot
+overwrite the earlier row, malformed counts/null strings/empty names fail. The
+native 312-row probe still passes (2.9205 ms once/debug). This covers specific
+adversarial pages, not every concurrent SCM mutation or production performance.
