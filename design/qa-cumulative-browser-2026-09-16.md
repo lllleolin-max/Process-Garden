@@ -32,3 +32,17 @@ labels and remaining toolbar buttons visible. DOM computed metrics: live/status
 button 73x34 px; source button 64x34 px; both nowrap and flex-shrink 0. The specific
 wrapping defect above is resolved at this viewport. Other language/theme/width
 combinations and the outstanding motion/native gates still need verification.
+
+## English Eldritch follow-up
+
+At 1280x720 switched the UI to English and selected Eldritch. The loading state
+retained the previous scene while showing Preparing theme artwork; after that
+indicator disappeared, the captured scene showed Eldritch creatures/core and
+Gothic headings. The English Demo toolbar label remained single-line, with all
+controls visible. Opened the process dialog: the existing codex filter persisted,
+received focus, showed its matching row, English incomplete-data warning, and
+visible pagination controls. The dialog fit within the viewport.
+
+Restored Chinese Garden via UI and closed this test tab. These observations
+resolve the English/Eldritch layout follow-up only at this viewport, not frame
+pacing, narrow-width accessibility, native sampling or reference-art parity.
