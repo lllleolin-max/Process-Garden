@@ -32,3 +32,38 @@ it.each([30, 60, 120] as const)("continues from displayed values and settles at 
   expect(view.container.textContent).toBe("40.0");
   expect(frames.size).toBe(0);
 });
+
+it.each([30, 60, 120] as const)("bounds DOM writes at %i Hz and releases hidden or unmounted work", fps => {
+  let id = 0;
+  const frames = new Map<number, FrameRequestCallback>();
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; });
+  vi.stubGlobal("cancelAnimationFrame", (key: number) => frames.delete(key));
+  const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  vi.stubGlobal("matchMedia", () => ({ matches: false }));
+  useAppStore.setState({ paused: false, reducedMotion: false, displayMode: "windowed", animationFps: fps });
+  const tick = (now: number) => act(() => { const pending = [...frames.values()]; frames.clear(); pending.forEach(callback => callback(now)); });
+  const format = (value: number) => value.toFixed(1);
+  const view = render(<AnimatedMetric value={0} format={format} />);
+  view.rerender(<AnimatedMetric value={100} format={format} />);
+  const writes = vi.spyOn(view.container.querySelector('[aria-hidden="true"]')!, "textContent", "set");
+  for (let index = 0; index <= 40; index++) tick(1000 + index * 1000 / 120);
+  expect(writes.mock.calls.length).toBeGreaterThanOrEqual(Math.floor(0.32 * fps));
+  expect(writes.mock.calls.length).toBeLessThanOrEqual(Math.ceil(0.32 * fps) + 2);
+  expect(frames.size).toBe(0);
+  view.rerender(<AnimatedMetric value={50} format={format} />);
+  hidden.mockReturnValue(true);
+  act(() => document.dispatchEvent(new Event("visibilitychange")));
+  expect(view.container.textContent).toBe("50.0");
+  expect(frames.size).toBe(0);
+  hidden.mockReturnValue(false);
+  view.rerender(<AnimatedMetric value={NaN} format={format} />);
+  expect(view.container.textContent).toBe("—");
+  expect(frames.size).toBe(0);
+  view.rerender(<AnimatedMetric value={0} format={format} />);
+  expect(view.container.textContent).toBe("0.0");
+  expect(frames.size).toBe(0);
+  view.rerender(<AnimatedMetric value={10} format={format} />);
+  expect(frames.size).toBe(1);
+  view.unmount();
+  expect(frames.size).toBe(0);
+});
