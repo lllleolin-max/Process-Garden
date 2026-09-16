@@ -295,4 +295,70 @@ mod tests {
             println!("stage={stage} median_ms={:.3} p95_ms={:.3} max_ms={:.3}", (values[11] + values[12]) / 2.0, values[22], values[23]);
         }
     }
+
+    #[cfg(windows)]
+    #[test]
+    #[ignore = "manual comparison of native thread-count APIs"]
+    fn compare_thread_count_sources() {
+        use std::{mem::size_of, time::Instant};
+        use windows_sys::Win32::{
+            Foundation::{CloseHandle, GetLastError, ERROR_NO_MORE_FILES, INVALID_HANDLE_VALUE},
+            System::Diagnostics::ToolHelp::{CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS},
+        };
+        let mut process_times = Vec::new();
+        let mut thread_times = Vec::new();
+        let mut shared = 0;
+        let mut equal = 0;
+        let mut own_equal = 0;
+        let mut missing_from_process = 0;
+        for iteration in 0..20 {
+            let read_process_counts = || {
+                let started = Instant::now();
+                let handle = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
+                assert_ne!(handle, INVALID_HANDLE_VALUE);
+                let mut entry: PROCESSENTRY32W = unsafe { std::mem::zeroed() };
+                entry.dwSize = size_of::<PROCESSENTRY32W>() as u32;
+                let mut counts = HashMap::new();
+                let mut present = unsafe { Process32FirstW(handle, &mut entry) } != 0;
+                while present {
+                    counts.insert(entry.th32ProcessID, entry.cntThreads as usize);
+                    present = unsafe { Process32NextW(handle, &mut entry) } != 0;
+                }
+                let complete = unsafe { GetLastError() } == ERROR_NO_MORE_FILES;
+                unsafe { CloseHandle(handle) };
+                assert!(complete);
+                (counts, started.elapsed().as_secs_f64() * 1000.0)
+            };
+            let read_thread_counts = || {
+                let started = Instant::now();
+                let counts = thread_counts().expect("thread walk completes");
+                (counts, started.elapsed().as_secs_f64() * 1000.0)
+            };
+            // Alternate order; separate snapshots can legitimately differ under churn.
+            let ((processes, process_ms), (threads, thread_ms)) = if iteration % 2 == 0 {
+                let processes = read_process_counts();
+                (processes, read_thread_counts())
+            } else {
+                let threads = read_thread_counts();
+                (read_process_counts(), threads)
+            };
+            process_times.push(process_ms);
+            thread_times.push(thread_ms);
+            for (pid, count) in &threads {
+                if let Some(other) = processes.get(pid) {
+                    shared += 1;
+                    equal += usize::from(count == other);
+                } else { missing_from_process += 1; }
+            }
+            let own_pid = std::process::id();
+            let own_process_count = processes.get(&own_pid).expect("current process in process snapshot");
+            let own_thread_count = threads.get(&own_pid).expect("current process in thread snapshot");
+            own_equal += usize::from(own_process_count == own_thread_count);
+        }
+        for (name, mut values) in [("process_snapshot", process_times), ("thread_walk", thread_times)] {
+            values.sort_by(f64::total_cmp);
+            println!("source={name} median_ms={:.3} p95_ms={:.3}", (values[9] + values[10]) / 2.0, values[18]);
+        }
+        println!("shared_records={shared} equal_counts={equal} current_process_equal_samples={own_equal}/20 thread_pids_missing_from_process={missing_from_process}");
+    }
 }
