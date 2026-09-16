@@ -9,6 +9,7 @@ import { decideAnimationFrame } from "../animation/frameRate";
 import { damp, stableProcessAngle } from "../animation/smoothing";
 import { SceneClock } from "../animation/sceneClock";
 import { processIdentity } from "../animation/processIdentity";
+import { ProcessIconImages } from "../animation/processIconImages";
 import { LabelMotion, labelExitOpacity } from "../animation/labelMotion";
 import { ambientFaunaPose, ambientVisibility } from "../animation/ambientMotion";
 import { AgentEmbryoScene, EMBRYO_BIRTH_MS } from "../animation/agentEmbryos";
@@ -46,7 +47,6 @@ interface VisualNode extends NodePosition {
 }
 type SceneLabelNode = Pick<VisualNode, "pid" | "x" | "y" | "radius" | "targetRadius" | "process" | "opacity" | "exiting" | "displayCpu" | "transitionStartedAt">;
 
-const processIconImageCache = new Map<string, HTMLImageElement>();
 
 const nameColors: Record<string, string> = {
   chrome: "#78e675", code: "#38bdf8", node: "#a878f5", spotify: "#6ce78d", postgres: "#a86fe4",
@@ -558,6 +558,7 @@ export function GardenCanvas() {
   const state = useAppStore();
   const reducedMotion = state.reducedMotion || systemReducedMotion;
   const processIcons = useProcessIconStore((iconState) => iconState.icons);
+  const [processIconImageCache] = useState(() => new ProcessIconImages());
   const themes = useMemo(() => [...builtInThemes, ...state.customThemes], [state.customThemes]);
   const requestedTheme = themes.find((item) => item.id === state.themeId) ?? builtInThemes[0];
   const [theme, setTheme] = useState(requestedTheme);
@@ -615,13 +616,10 @@ export function GardenCanvas() {
 
   useEffect(() => {
     Object.entries(processIcons).forEach(([key, dataUrl]) => {
-      if (!dataUrl || processIconImageCache.has(key)) return;
-      const image = new Image();
-      processIconImageCache.set(key, image);
-      image.onload = () => requestRenderRef.current();
-      image.src = dataUrl;
+      processIconImageCache.update(key, dataUrl, () => requestRenderRef.current());
     });
-  }, [processIcons]);
+  }, [processIcons, processIconImageCache]);
+  useEffect(() => () => processIconImageCache.clear(), [processIconImageCache]);
 
   const renderState = useMemo(() => ({
     processes,

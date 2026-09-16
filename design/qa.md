@@ -1,5 +1,7 @@
 # Current QA index
 
+- Native icon replacement: [2026-09-16 icon cache QA](qa-icon-replacement-2026-09-16.md). Canvas now accepts later native icons while retaining decoded fallback images during loading; stale callback and unmount regressions included. Native visual follow-up remains open.
+
 - PID reuse continuity: [2026-09-16 process lifetime QA](qa-process-lifetime-2026-09-16.md). Main nodes retire/birth independently for reused PIDs; both-theme Canvas regressions, 197 tests and focused browser captures pass. Native/high-density acceptance remains open; coordinate overlapping theme hunks.
 
 - Parent/child consumption: [2026-09-16 browser lifecycle QA](qa-parent-child-browser-2026-09-16.md). Actual canvas captures confirm open maw, suction, occlusion and recoil for simultaneous parent/child departure; not native or high-density acceptance.
