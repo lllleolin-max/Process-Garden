@@ -86,3 +86,21 @@ it("preserves the search input and caret through telemetry updates", () => {
   expect(input.selectionStart).toBe(3);
   expect(input.selectionEnd).toBe(3);
 });
+
+it.each(["exit", "reuse"])("rejects a stale row when %s happens just before its click", change => {
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  const button = screen.getByRole("button", { name: "Inspect app-120, PID 120" });
+  // Capture-phase update reproduces a newer store snapshot before React's
+  // rendered row handler runs, without relying on timer scheduling.
+  button.addEventListener("click", () => {
+    const snapshot = useAppStore.getState().snapshot;
+    const processes = change === "exit"
+      ? snapshot.processes.filter(process => process.pid !== 120)
+      : snapshot.processes.map(process => process.pid === 120 ? { ...process, startedAt: process.startedAt + 1 } : process);
+    useAppStore.setState({ snapshot: { ...snapshot, processes, processCount: processes.length } });
+  }, { capture: true, once: true });
+  fireEvent.click(button);
+  expect(useAppStore.getState().selectedPid).toBeNull();
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
+});
