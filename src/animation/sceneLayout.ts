@@ -53,7 +53,7 @@ function overlapArea(a: LabelBox, b: LabelBox) {
 }
 
 /** The caller places focused labels first; secondary labels yield when space is scarce. */
-export function placeSceneLabel(node: SceneNode, width: number, bounds: SceneBounds, occupied: LabelBox[], required: boolean): LabelBox | null {
+export function placeSceneLabel(node: SceneNode, width: number, bounds: SceneBounds, occupied: LabelBox[], required: boolean, previous?: LabelBox): LabelBox | null {
   const height = 34;
   const gap = node.radius * 1.08 + 12;
   const candidates = [
@@ -64,9 +64,30 @@ export function placeSceneLabel(node: SceneNode, width: number, bounds: SceneBou
     { x: node.x + gap, y: node.y - gap - height },
     { x: node.x - gap - width, y: node.y + gap }
   ].map((box) => ({ x: clamp(box.x, 10, bounds.width - width - 10), y: clamp(box.y, 70, bounds.height - 70 - height), width, height }));
-  const ranked = candidates.map((box, index) => ({ box, score: occupied.reduce((score, obstacle) => score + overlapArea(box, obstacle), 0), index }))
-    .sort((a, b) => a.score - b.score || a.index - b.index);
-  return !required && ranked[0].score > 0 ? null : ranked[0].box;
+  // Keep a clear existing side instead of switching back as soon as another side
+  // clears. Collision scores still win; this only changes equal-score preference.
+  if (previous) {
+    let nearest = 0;
+    let distance = Infinity;
+    candidates.forEach((box, index) => {
+      const next = (box.x - previous.x) ** 2 + (box.y - previous.y) ** 2;
+      if (next < distance) { nearest = index; distance = next; }
+    });
+    candidates.unshift(...candidates.splice(nearest, 1));
+  }
+  let best = candidates[0];
+  let bestScore = Infinity;
+  for (const box of candidates) {
+    let score = 0;
+    for (const obstacle of occupied) {
+      score += overlapArea(box, obstacle);
+      // Areas are nonnegative; ties retain the earlier placement preference.
+      if (score >= bestScore || (!required && score > 0)) break;
+    }
+    if (score === 0) return box;
+    if (score < bestScore) { best = box; bestScore = score; }
+  }
+  return required ? best : null;
 }
 
 /** Choose the nearest visible organism when generated artwork or hit areas overlap. */

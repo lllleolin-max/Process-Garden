@@ -1,5 +1,6 @@
 import type { ThemeManifest } from "../types/theme";
-import { removeBlackMatte } from "./spriteAlpha";
+import { rasterizeScene, type RasterMode } from "./sceneRaster";
+import { prepareSceneOffThread } from "./sceneRasterClient";
 
 export interface SceneAssets {
   core: HTMLCanvasElement;
@@ -24,7 +25,7 @@ export function sceneBackground(theme: ThemeManifest) {
 // requests are shared too, so rapid theme changes cannot duplicate decoding.
 function assetCache<T>() {
   const cache = new Map<string, Promise<T>>();
-  return (path: string, prepare: (image: HTMLImageElement) => T): Promise<T> => {
+  return (path: string, prepare: (image: HTMLImageElement) => T | Promise<T>): Promise<T> => {
     const cached = cache.get(path);
     if (cached) return cached;
     const pending = new Promise<T>((resolve, reject) => {
@@ -60,40 +61,17 @@ function surface(width: number, height: number, readable = false) {
   return { canvas, context };
 }
 
-function prepareCore(image: HTMLImageElement, maw: boolean) {
-  const { canvas, context } = surface(image.naturalWidth, image.naturalHeight, maw);
-  context.drawImage(image, 0, 0);
-  if (maw) {
-    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-    removeBlackMatte(pixels.data);
-    context.putImageData(pixels, 0, 0);
-  } else {
-    context.globalCompositeOperation = "destination-in";
-    const edge = context.createRadialGradient(canvas.width / 2, canvas.height / 2, canvas.width * 0.23, canvas.width / 2, canvas.height / 2, canvas.width * 0.49);
-    edge.addColorStop(0, "rgba(0,0,0,1)");
-    edge.addColorStop(0.68, "rgba(0,0,0,.95)");
-    edge.addColorStop(0.88, "rgba(0,0,0,.42)");
-    edge.addColorStop(1, "rgba(0,0,0,0)");
-    context.fillStyle = edge;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-  }
-  return canvas;
+async function prepare(image: HTMLImageElement, mode: RasterMode) {
+  return await prepareSceneOffThread(image, mode)
+    ?? rasterizeScene(image, image.naturalWidth, image.naturalHeight, mode, surface);
+}
+
+async function prepareCore(image: HTMLImageElement, maw: boolean) {
+  return (await prepare(image, maw ? "maw" : "core"))[0];
 }
 
 function prepareAtlas(image: HTMLImageElement, preserveAlpha = false) {
-  const width = Math.floor(image.naturalWidth / 2);
-  const height = Math.floor(image.naturalHeight / 2);
-  return [0, 1, 2, 3].map((index) => {
-    const { canvas, context } = surface(width, height, !preserveAlpha);
-    context.drawImage(image, (index % 2) * width, Math.floor(index / 2) * height, width, height, 0, 0, width, height);
-    if (!preserveAlpha) {
-      const pixels = context.getImageData(0, 0, width, height);
-      removeBlackMatte(pixels.data);
-      context.clearRect(0, 0, width, height);
-      context.putImageData(pixels, 0, 0);
-    }
-    return canvas;
-  });
+  return prepare(image, preserveAlpha ? "transparent-atlas" : "atlas");
 }
 
 const coreAsset = assetCache<HTMLCanvasElement>();

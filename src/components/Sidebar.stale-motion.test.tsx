@@ -1,0 +1,34 @@
+import { act, cleanup, render, screen } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import { Sidebar } from "./Sidebar";
+import { useAppStore } from "../stores/appStore";
+import { useFeedHealth } from "../stores/feedHealth";
+import i18n from "../i18n/config";
+const initial = useAppStore.getState(), health = useFeedHealth.getState();
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial, true); useFeedHealth.setState(health, true); });
+it("stops summary motion and describes retained observations when acquisition fails", async () => {
+  await i18n.changeLanguage("en-US");
+  let id = 0;
+  const frames = new Map<number, FrameRequestCallback>();
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; });
+  vi.stubGlobal("cancelAnimationFrame", (key: number) => frames.delete(key));
+  vi.stubGlobal("matchMedia", () => ({ matches: false }));
+  vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  useAppStore.setState({ locale: "en-US", collector: "native", demoMode: false, paused: false, reducedMotion: false, displayMode: "windowed", snapshot: { ...initial.snapshot, cpuPercent: 0 } });
+  useFeedHealth.setState({ failed: false, lastSuccess: Date.now() });
+  render(<Sidebar />);
+  const cpu = screen.getByRole("region", { name: "CPU" });
+  const line = cpu.querySelector("polyline");
+  act(() => useAppStore.setState(s => ({ snapshot: { ...s.snapshot, cpuPercent: 100 } })));
+  expect(frames.size).toBe(1);
+  act(() => useFeedHealth.setState({ failed: true }));
+  expect(frames.size).toBe(0);
+  expect(cpu.querySelector("polyline")).toBe(line);
+  expect(cpu.querySelector('.metric-value [aria-hidden="true"]')).toHaveTextContent("100%");
+  for (const name of ["CPU", "Memory", "Processes", "Threads"])
+    expect(screen.getByRole("region", { name })).toHaveAttribute("aria-description", "Stale data");
+  const progress = screen.getByRole("region", { name: "Memory" }).querySelector(".progress-track span")!;
+  expect(progress).toHaveStyle({ transition: "none" });
+  act(() => useFeedHealth.setState({ failed: false }));
+  expect(progress).not.toHaveStyle({ transition: "none" });
+});

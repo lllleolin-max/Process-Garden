@@ -1,22 +1,38 @@
 import { memo, useLayoutEffect, useRef } from "react";
 import { useAppStore } from "../stores/appStore";
+import { decideAnimationFrame } from "../animation/frameRate";
+import { alignPolylinePoints } from "../animation/polylineMorph";
+import { requestMetricFrame } from "../animation/metricFrames";
 
 interface SparklineProps {
+  active?: boolean;
   values: number[];
   color?: string;
   height?: number;
   fill?: boolean;
+  scale?: "auto" | "percent";
 }
 
-export const Sparkline = memo(function Sparkline({ values, color = "var(--color-primary)", height = 42, fill = true }: SparklineProps) {
+function setChangedAttribute(node: SVGElement | null, name: string, value: string) {
+  if (node && node.getAttribute(name) !== value) node.setAttribute(name, value);
+}
+
+export const Sparkline = memo(function Sparkline({ values, color = "var(--color-primary)", height = 42, fill = true, scale = "auto", active = true }: SparklineProps) {
   const lineRef = useRef<SVGPolylineElement>(null);
   const fillRef = useRef<SVGPolygonElement>(null);
   const tipRef = useRef<SVGCircleElement>(null);
+  const collector = useAppStore(state => state.collector);
+  const previousCollector = useRef(collector);
   const motionDisabled = useAppStore((state) => state.reducedMotion || state.paused || state.displayMode !== "windowed");
   const width = 160;
-  const samples = values.filter(Number.isFinite);
-  const min = Math.min(...samples);
-  const max = Math.max(...samples);
+  // A missing observation breaks continuity; filtering it out would fabricate
+  // a connection between samples on opposite sides of the gap.
+  let tailStart = values.length;
+  while (tailStart > 0 && Number.isFinite(values[tailStart - 1])
+    && (scale !== "percent" || (values[tailStart - 1] >= 0 && values[tailStart - 1] <= 100))) tailStart--;
+  const samples = values.slice(tailStart);
+  const min = scale === "percent" ? 0 : Math.min(...samples);
+  const max = scale === "percent" ? 100 : Math.max(...samples);
   const range = Math.max(max - min, 1);
   const coordinates = samples.map((value, index) => [
     samples.length === 1 ? width : (index / (samples.length - 1)) * width,
@@ -24,47 +40,82 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
   ]);
   const points = coordinates.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   const displayed = useRef(points);
+  const displayedHeight = useRef(height);
   const tip = coordinates.at(-1);
+
+  useLayoutEffect(() => {
+    // A newly mounted fill must match the in-flight line, not its final target.
+    // Keep this separate from the morph effect so toggling fill never restarts it.
+    const current = displayed.current;
+    fillRef.current?.setAttribute("points", current ? `0,${height} ${current} ${width},${height}` : "");
+  }, [fill, height]);
 
   useLayoutEffect(() => {
     const draw = (next: string) => {
       displayed.current = next;
-      lineRef.current?.setAttribute("points", next);
-      fillRef.current?.setAttribute("points", next ? `0,${height} ${next} ${width},${height}` : "");
+      setChangedAttribute(lineRef.current, "points", next);
+      setChangedAttribute(fillRef.current, "points", next ? `0,${height} ${next} ${width},${height}` : "");
       const last = next.split(" ").at(-1)?.split(",");
       if (last?.length === 2) {
-        tipRef.current?.setAttribute("cx", last[0]);
-        tipRef.current?.setAttribute("cy", last[1]);
+        setChangedAttribute(tipRef.current, "cx", last[0]);
+        setChangedAttribute(tipRef.current, "cy", last[1]);
       }
     };
-    const start = displayed.current;
-    const from = start.split(" ").map((point) => point.split(",").map(Number));
-    const to = points.split(" ").map((point) => point.split(",").map(Number));
-    if (!start || !points || start === points || from.length !== to.length || motionDisabled || document.hidden || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    // The viewBox changes immediately on resize. Rebase the displayed geometry
+    // into its new coordinate system before morphing so it stays in the same
+    // relative position instead of jumping or being clipped on the first frame.
+    const oldHeight = displayedHeight.current;
+    displayedHeight.current = height;
+    const start = oldHeight !== height && oldHeight > 0
+      ? displayed.current.split(" ").filter(Boolean).map(point => {
+        const [x, y] = point.split(",").map(Number);
+        return `${x.toFixed(1)},${(y * height / oldHeight).toFixed(1)}`;
+      }).join(" ")
+      : displayed.current;
+    const previous = start.split(" ").map((point) => point.split(",").map(Number));
+    const target = points.split(" ").map((point) => point.split(",").map(Number));
+    const motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const changedSource = previousCollector.current !== collector;
+    previousCollector.current = collector;
+    if (!active || changedSource || !start || !points || start === points || previous.length < 2 || target.length < 2 || motionDisabled || document.hidden || motionPreference?.matches) {
       draw(points);
       return;
     }
-    let frame = 0;
+    const { from, to } = alignPolylinePoints(previous, target);
+    let cancelFrame = () => {};
     let startedAt: number | null = null;
+    let lastRenderedAt = 0;
     const animate = (now: number) => {
-      if (document.hidden || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { draw(points); return; }
+      if (document.hidden || motionPreference?.matches) { draw(points); return; }
       startedAt ??= now;
       const progress = Math.min(1, (now - startedAt) / 420);
+      if (progress === 1) { draw(points); return; }
+      const decision = decideAnimationFrame(lastRenderedAt, now, useAppStore.getState().animationFps);
+      if (!decision.render && progress < 1) {
+        cancelFrame = requestMetricFrame(animate);
+        return;
+      }
+      lastRenderedAt = decision.alignedTime;
       const eased = 1 - (1 - progress) ** 3;
       draw(to.map(([x, y], index) => `${(from[index][0] + (x - from[index][0]) * eased).toFixed(1)},${(from[index][1] + (y - from[index][1]) * eased).toFixed(1)}`).join(" "));
-      if (progress < 1) frame = requestAnimationFrame(animate);
+      if (progress < 1) cancelFrame = requestMetricFrame(animate);
     };
     const finishWhenHidden = () => {
-      if (document.hidden) { cancelAnimationFrame(frame); draw(points); }
+      if (document.hidden) { cancelFrame(); draw(points); }
+    };
+    const finishWhenReduced = () => {
+      if (motionPreference?.matches) { cancelFrame(); draw(points); }
     };
     draw(start);
-    frame = requestAnimationFrame(animate);
+    cancelFrame = requestMetricFrame(animate);
     document.addEventListener("visibilitychange", finishWhenHidden);
+    motionPreference?.addEventListener?.("change", finishWhenReduced);
     return () => {
-      cancelAnimationFrame(frame);
+      cancelFrame();
       document.removeEventListener("visibilitychange", finishWhenHidden);
+      motionPreference?.removeEventListener?.("change", finishWhenReduced);
     };
-  }, [points, height, motionDisabled]);
+  }, [points, height, motionDisabled, active, collector]);
 
   return (
     <svg className="sparkline" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
@@ -73,4 +124,4 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
       {tip && <circle ref={tipRef} className="sparkline-tip" cx={tip[0]} cy={tip[1]} r="2" fill={color} />}
     </svg>
   );
-}, (previous, next) => previous.color === next.color && previous.height === next.height && previous.fill === next.fill && previous.values.length === next.values.length && previous.values.every((value, index) => Object.is(value, next.values[index])));
+}, (previous, next) => previous.active === next.active && previous.scale === next.scale && previous.color === next.color && previous.height === next.height && previous.fill === next.fill && previous.values.length === next.values.length && previous.values.every((value, index) => Object.is(value, next.values[index])));

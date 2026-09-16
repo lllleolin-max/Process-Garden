@@ -4,48 +4,76 @@ import { formatBytes, formatDuration, formatPercent } from "../i18n/formatters";
 import { useAppStore } from "../stores/appStore";
 import { MetricCard } from "./MetricCard";
 import { PowerMetric } from "./PowerMetric";
+import { CpuCorePanel } from "./CpuCorePanel";
+import { NetworkPanel } from "./NetworkPanel";
+import { DiskPanel } from "./DiskPanel";
+import { GpuPanel } from "./GpuPanel";
+import { ServicePanel } from "./ServicePanel";
+import { useSnapshotStatusDetails } from "../hooks/useSnapshotStatus";
+import { threadHistory } from "../data/threadHistory";
+import { useCallback } from "react";
+import { isObservedCount, isObservedMetric, isObservedPercent } from "../data/processTable";
 
 export function Sidebar() {
+  const status = useSnapshotStatusDetails();
+  const snapshotStatus = status.label;
+  const metricState = { active: status.animationState === "live" || status.animationState === "demo", observationStatus: status.label };
   const { t } = useTranslation();
   const snapshot = useAppStore((state) => state.snapshot);
   const history = useAppStore((state) => state.history);
   const locale = useAppStore((state) => state.locale);
-  const memoryPercent = snapshot.memoryTotalBytes ? (snapshot.memoryUsedBytes / snapshot.memoryTotalBytes) * 100 : 0;
+  const cpuLabel = useCallback((value: number) => formatPercent(value, locale), [locale]);
+  const memoryLabel = useCallback((value: number) => formatBytes(value, locale), [locale]);
+  const cpuValue = isObservedPercent(snapshot.cpuPercent) ? snapshot.cpuPercent : NaN;
+  const memoryValue = isObservedMetric(snapshot.memoryUsedBytes) ? snapshot.memoryUsedBytes : NaN;
+  const memoryPercent = isObservedMetric(snapshot.memoryTotalBytes) && snapshot.memoryTotalBytes > 0
+    && Number.isFinite(memoryValue) && memoryValue <= snapshot.memoryTotalBytes
+    ? (memoryValue / snapshot.memoryTotalBytes) * 100 : NaN;
 
   return (
     <aside className="sidebar panel-surface">
-      <MetricCard
+      <MetricCard {...metricState}
         label={t("metrics.cpu")}
-        value={formatPercent(snapshot.cpuPercent, locale)}
-        detail={`${snapshot.logicalCpuCount} ${t("metrics.cores")}`}
+        value={formatPercent(cpuValue, locale)}
+        animatedValue={cpuValue}
+        formatValue={cpuLabel}
+        percentScale
+        detail={`${isObservedCount(snapshot.logicalCpuCount) && snapshot.logicalCpuCount > 0 ? snapshot.logicalCpuCount : "—"} ${t("metrics.cores")}`}
         icon={Cpu}
         values={history.slice(-36).map((item) => item.cpuPercent)}
         color="var(--color-primary)"
       />
-      <MetricCard
+      <MetricCard {...metricState}
         label={t("metrics.memory")}
-        value={formatBytes(snapshot.memoryUsedBytes, locale)}
+        value={formatBytes(memoryValue, locale)}
+        animatedValue={memoryValue}
+        formatValue={memoryLabel}
         detail={`${formatPercent(memoryPercent, locale)} ${t("metrics.used")}`}
         icon={MemoryStick}
         values={history.slice(-36).map((item) => item.memoryUsedBytes)}
         progress={memoryPercent}
         color="linear-gradient(90deg, var(--color-tertiary), var(--color-secondary))"
       />
+      <CpuCorePanel />
+      <NetworkPanel />
+      <DiskPanel />
+      <GpuPanel />
+      <ServicePanel />
       <PowerMetric />
-      <MetricCard
+      <MetricCard {...metricState}
         label={t("metrics.processes")}
-        value={new Intl.NumberFormat(locale).format(snapshot.processCount)}
-        detail={t("common.live")}
+        value={isObservedCount(snapshot.processCount) ? new Intl.NumberFormat(locale).format(snapshot.processCount) : "—"}
+        detail={snapshotStatus}
         icon={Activity}
-        values={history.slice(-36).map((item) => item.processCount)}
+        values={history.slice(-36).map((item) => isObservedCount(item.processCount) ? item.processCount : NaN)}
         color="var(--color-secondary)"
       />
-      <MetricCard
+      <MetricCard {...metricState}
         label={t("metrics.threads")}
-        value={new Intl.NumberFormat(locale).format(snapshot.threadCount)}
-        detail={t("common.live")}
+        value={isObservedCount(snapshot.threadCount) ? new Intl.NumberFormat(locale).format(snapshot.threadCount) : "—"}
+        detail={snapshotStatus}
         icon={Workflow}
-        values={history.slice(-36).map((item) => item.threadCount)}
+        values={threadHistory(history)}
         color="var(--color-warning)"
       />
       <div className="uptime-card">

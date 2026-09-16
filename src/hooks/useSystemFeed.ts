@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { makeDemoSnapshot } from "../data/demo";
 import { useAppStore } from "../stores/appStore";
+import { useFeedHealth } from "../stores/feedHealth";
 import type { SystemSnapshot } from "../types/system";
 
 function isTauriRuntime() {
@@ -17,20 +18,32 @@ export function useSystemFeed() {
   const inFlight = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
+    if (demoMode) useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: null });
     if (paused) return;
     let active = true;
     let sampling = false;
     let visibilityVersion = 0;
     let timer: number | undefined;
+    let watchdog: number | undefined;
     const interval = displayMode === "wallpaper" ? Math.max(2_000, samplingMs) : samplingMs;
+    const watchPending = () => {
+      window.clearTimeout(watchdog);
+      if (demoMode || !isTauriRuntime()) return;
+      watchdog = window.setTimeout(() => {
+        if (active && sampling && !document.hidden && !useAppStore.getState().paused) {
+          useFeedHealth.setState({ failed: true, stalled: true });
+        }
+      }, Math.max(5_000, interval * 3));
+    };
 
     const sample = async () => {
       if (!active || document.hidden || sampling) return;
       sampling = true;
+      watchPending();
       // A preference change can restart the effect while a native request is still
       // running. Wait for it to finish before starting the replacement request.
       if (inFlight.current) await inFlight.current;
-      if (!active || document.hidden) { sampling = false; return; }
+      if (!active || document.hidden) { sampling = false; window.clearTimeout(watchdog); return; }
       const startedAt = performance.now();
       const version = visibilityVersion;
       const canIngest = () => active && !document.hidden && version === visibilityVersion && !useAppStore.getState().paused;
@@ -41,10 +54,23 @@ export function useSystemFeed() {
             const { invoke } = await import("@tauri-apps/api/core");
             if (!canIngest()) return;
             const snapshot = await invoke<SystemSnapshot>("sample_system");
-            if (canIngest()) ingestSnapshot(snapshot, "native");
+            if (canIngest()) {
+              const previous = useAppStore.getState().snapshot;
+              ingestSnapshot(snapshot, "native");
+              // A resolved IPC request is not necessarily a newer observation.
+              // Rejected duplicate/late snapshots must not clear a stale warning.
+              if (useAppStore.getState().snapshot === snapshot && snapshot !== previous) {
+                useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: snapshot.timestamp });
+              } else {
+                useFeedHealth.setState({ failed: true, stalled: false });
+              }
+            }
             return;
           } catch {
-            // A restricted process table should never break the visual experience.
+            // A native collection failure must not replace real processes with
+            // simulated ones. Keep the last observation and retry on schedule.
+            if (canIngest()) useFeedHealth.setState({ failed: true, stalled: false });
+            return;
           }
         }
         if (canIngest()) ingestSnapshot(makeDemoSnapshot(tick.current), "demo");
@@ -54,6 +80,7 @@ export function useSystemFeed() {
       try {
         await request;
       } finally {
+        window.clearTimeout(watchdog);
         if (inFlight.current === request) inFlight.current = null;
         sampling = false;
         if (active && !document.hidden) {
@@ -65,7 +92,11 @@ export function useSystemFeed() {
     const onVisibilityChange = () => {
       visibilityVersion += 1;
       window.clearTimeout(timer);
-      if (!document.hidden) void sample();
+      window.clearTimeout(watchdog);
+      if (!document.hidden) {
+        if (sampling) watchPending();
+        else void sample();
+      }
     };
 
     void sample();
@@ -73,6 +104,7 @@ export function useSystemFeed() {
     return () => {
       active = false;
       window.clearTimeout(timer);
+      window.clearTimeout(watchdog);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [demoMode, displayMode, ingestSnapshot, paused, samplingMs]);

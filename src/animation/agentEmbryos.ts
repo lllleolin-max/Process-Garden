@@ -2,6 +2,7 @@ import { agentEmbryoStage } from "../ecology/organisms";
 import type { ProcessSnapshot } from "../types/system";
 import { ELDRITCH_SWALLOW_DURATION_MS, getEldritchSwallowMotion } from "./eldritchLifecycle";
 import { damp, stableProcessAngle } from "./smoothing";
+import { processIdentity as identity } from "./processIdentity";
 
 export const EMBRYO_BIRTH_MS = 1_450;
 const GARDEN_EXIT_MS = 1_400;
@@ -43,10 +44,6 @@ interface EmbryoFrame {
   preferredPid?: number | null;
 }
 
-function identity(process: ProcessSnapshot) {
-  const start = process.startedAt > 10_000_000_000 ? process.startedAt : process.startedAt * 1_000;
-  return `${process.pid}:${start}`;
-}
 function smooth(value: number) {
   const t = Math.max(0, Math.min(1, value));
   return t * t * (3 - 2 * t);

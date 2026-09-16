@@ -1,0 +1,5 @@
+.child-processes ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.child-processes li > button { display: flex; width: 100%; gap: 6px; text-align: left; }
+.child-processes li > button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.child-processes li > button > small { flex-shrink: 0; margin-left: auto; }
+.child-processes nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

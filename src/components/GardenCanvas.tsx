@@ -8,6 +8,9 @@ import { ELDRITCH_SWALLOW_DURATION_MS, getEldritchSwallowMotion } from "../anima
 import { decideAnimationFrame } from "../animation/frameRate";
 import { damp, stableProcessAngle } from "../animation/smoothing";
 import { SceneClock } from "../animation/sceneClock";
+import { processIdentity } from "../animation/processIdentity";
+import { ProcessIconImages } from "../animation/processIconImages";
+import { LabelMotion, labelExitOpacity } from "../animation/labelMotion";
 import { ambientFaunaPose, ambientVisibility } from "../animation/ambientMotion";
 import { AgentEmbryoScene, EMBRYO_BIRTH_MS } from "../animation/agentEmbryos";
 import { hitTestScene, placeSceneLabel, separateSceneNodes, type LabelBox } from "../animation/sceneLayout";
@@ -42,9 +45,8 @@ interface VisualNode extends NodePosition {
   emphasis: number;
   emphasisTarget: number;
 }
-type SceneLabelNode = Pick<VisualNode, "pid" | "x" | "y" | "radius" | "targetRadius" | "process" | "opacity" | "exiting" | "displayCpu">;
+type SceneLabelNode = Pick<VisualNode, "pid" | "x" | "y" | "radius" | "targetRadius" | "process" | "opacity" | "exiting" | "displayCpu" | "transitionStartedAt">;
 
-const processIconImageCache = new Map<string, HTMLImageElement>();
 
 const nameColors: Record<string, string> = {
   chrome: "#78e675", code: "#38bdf8", node: "#a878f5", spotify: "#6ce78d", postgres: "#a86fe4",
@@ -544,7 +546,7 @@ export function GardenCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const nodePositions = useRef<NodePosition[]>([]);
-  const visualNodesRef = useRef(new Map<number, VisualNode>());
+  const visualNodesRef = useRef(new Map<string, VisualNode>());
   const embryosRef = useRef(new AgentEmbryoScene());
   const clockRef = useRef(new SceneClock());
   const celestialClockRef = useRef(new CelestialClock());
@@ -556,6 +558,7 @@ export function GardenCanvas() {
   const state = useAppStore();
   const reducedMotion = state.reducedMotion || systemReducedMotion;
   const processIcons = useProcessIconStore((iconState) => iconState.icons);
+  const [processIconImageCache] = useState(() => new ProcessIconImages());
   const themes = useMemo(() => [...builtInThemes, ...state.customThemes], [state.customThemes]);
   const requestedTheme = themes.find((item) => item.id === state.themeId) ?? builtInThemes[0];
   const [theme, setTheme] = useState(requestedTheme);
@@ -613,13 +616,10 @@ export function GardenCanvas() {
 
   useEffect(() => {
     Object.entries(processIcons).forEach(([key, dataUrl]) => {
-      if (!dataUrl || processIconImageCache.has(key)) return;
-      const image = new Image();
-      processIconImageCache.set(key, image);
-      image.onload = () => requestRenderRef.current();
-      image.src = dataUrl;
+      processIconImageCache.update(key, dataUrl, () => requestRenderRef.current());
     });
-  }, [processIcons]);
+  }, [processIcons, processIconImageCache]);
+  useEffect(() => () => processIconImageCache.clear(), [processIconImageCache]);
 
   const renderState = useMemo(() => ({
     processes,
@@ -676,6 +676,7 @@ export function GardenCanvas() {
     let fontBody = '"Inter Variable", "Noto Sans SC", sans-serif';
     let fontMono = '"JetBrains Mono Variable", monospace';
     const labelTextCache = new Map<string, { text: string; width: number }>();
+    const labelMotion = new LabelMotion();
     const resize = () => {
       const rect = container.getBoundingClientRect();
       const ratio = Math.min(window.devicePixelRatio || 1, 2);
@@ -799,6 +800,7 @@ export function GardenCanvas() {
         const previous = layoutProcesses![index];
         return process.pid === previous.pid && process.memoryBytes === previous.memoryBytes && process.cpuPercent === previous.cpuPercent;
       }));
+      const viewportChanged = layoutDirty;
       const layoutChanged = layoutDirty || !sameGeometry;
       layoutProcesses = live.processes;
       if (layoutChanged) {
@@ -820,14 +822,20 @@ export function GardenCanvas() {
         layoutDirty = false;
       }
       const settleStaticState = staticFrame && (sampleChanged || layoutChanged);
-      const visiblePids = new Set(live.processes.map((process) => process.pid));
+      const liveIdentities = new Map(live.processes.map((process) => [process.pid, processIdentity(process)]));
+      const visibleLifetimes = new Set(liveIdentities.values());
+      const findLiveNode = (pid: number | undefined) => {
+        const key = liveIdentities.get(pid ?? -1);
+        return key === undefined ? undefined : visualNodes.get(key);
+      };
       live.processes.forEach((process) => {
         const target = layoutTargets.get(process.pid)!;
         const drift = Math.sin(time * 0.00045 * theme.motion.drift + process.pid) * 5;
         const targetX = target.x + drift;
         const targetY = target.y + drift * 0.4;
         const targetRadius = target.radius;
-        const existing = visualNodes.get(process.pid);
+        const key = processIdentity(process);
+        const existing = visualNodes.get(key);
         if (existing) {
           if (existing.exiting) existing.bornAt = time - 1_450;
           existing.process = process;
@@ -838,10 +846,10 @@ export function GardenCanvas() {
           existing.lastSeenAt = time;
           existing.exiting = false;
         } else {
-          const parent = visualNodes.get(process.parentPid ?? -1);
+          const parent = findLiveNode(process.parentPid);
           const originX = parent?.x ?? cx;
           const originY = parent?.y ?? cy;
-          visualNodes.set(process.pid, {
+          visualNodes.set(key, {
             pid: process.pid,
             process,
             x: live.reducedMotion || live.paused ? targetX : originX,
@@ -868,9 +876,9 @@ export function GardenCanvas() {
         }
       });
 
-      visualNodes.forEach((node, pid) => {
-        if (!visiblePids.has(pid)) {
-          if (settleStaticState) { visualNodes.delete(pid); return; }
+      visualNodes.forEach((node, key) => {
+        if (!visibleLifetimes.has(key)) {
+          if (settleStaticState) { visualNodes.delete(key); return; }
           if (!node.exiting) {
             node.exiting = true;
             node.transitionStartedAt = time;
@@ -925,17 +933,18 @@ export function GardenCanvas() {
         }
         node.displayCpu = damp(node.displayCpu, node.process.cpuPercent, deltaMs, 620);
         node.displayMemory = damp(node.displayMemory, node.process.memoryBytes, deltaMs, 760);
-        const emphasis = live.selectedPid === pid || live.hoveredPid === pid ? 1 : 0;
+        const emphasis = live.selectedPid === node.pid || live.hoveredPid === node.pid ? 1 : 0;
         if (!staticFrame) node.emphasis = damp(node.emphasis, emphasis, deltaMs, emphasis ? 120 : 220);
         else if (emphasis !== node.emphasisTarget) node.emphasis = emphasis;
         node.emphasisTarget = emphasis;
-        if (node.exiting && time - node.transitionStartedAt > (isEldritch ? ELDRITCH_SWALLOW_DURATION_MS + 80 : 1_800) && node.opacity < 0.035) visualNodes.delete(pid);
+        if (node.exiting && time - node.transitionStartedAt > (isEldritch ? ELDRITCH_SWALLOW_DURATION_MS + 80 : 1_800) && node.opacity < 0.035) visualNodes.delete(key);
       });
 
       const renderNodes = [...visualNodes.values()].filter((node) => node.opacity > 0.008);
+      const retiringParents = new Map([...visualNodes.values()].filter((node) => node.exiting).map((node) => [node.pid, node]));
       const embryoNodes = agentSprites.length === 4 ? embryosRef.current.update({
         processes: live.allProcesses, snapshotAt: live.snapshotAt,
-        parents: new Map([...visualNodes.values()].filter((node) => isAgentProcess(node.process)).map((node) => [node.pid, node])),
+        parents: new Map([...visualNodes.values()].filter((node) => !node.exiting && isAgentProcess(node.process)).map((node) => [node.pid, node])),
         time, deltaMs, width, height, core: { x: cx, y: cy + coreRadius * 0.12 },
         eldritch: isEldritch, frozen: staticFrame, limit: live.displayMode === "wallpaper" ? 2 : 3,
         preferredPid: live.embryoFocusPid
@@ -945,7 +954,7 @@ export function GardenCanvas() {
 
       renderNodes.forEach((position) => {
         const process = { ...position.process, cpuPercent: position.displayCpu, memoryBytes: Math.round(position.displayMemory) };
-        const parent = visualNodes.get(process.parentPid ?? -1);
+        const parent = findLiveNode(process.parentPid) ?? retiringParents.get(process.parentPid ?? -1);
         const target = parent ?? { x: cx, y: cy };
         const styleIndex = organismVisualIndex(resolveOrganismStyle(process, live.processStyleOverrides));
         const color = processColor(process, theme, isEldritch, styleIndex);
@@ -1067,7 +1076,7 @@ export function GardenCanvas() {
       });
 
       renderEmbryos.forEach((node) => {
-        const parent = visualNodes.get(node.parentPid);
+        const parent = findLiveNode(node.parentPid);
         const withdrawal = node.exiting && isEldritch ? getEldritchSwallowMotion(time - node.transitionStartedAt).suction : 0;
         const anchor = node.exiting ? {
           x: node.tetherOrigin.x + (cx - node.tetherOrigin.x) * withdrawal,
@@ -1145,10 +1154,15 @@ export function GardenCanvas() {
       const allLabelNodes: SceneLabelNode[] = [...renderNodes, ...renderEmbryos];
       const occupied: LabelBox[] = allLabelNodes.filter((node) => !node.exiting).map((node) => ({ x: node.x - node.radius * 0.9, y: node.y - node.radius * 0.9, width: node.radius * 1.8, height: node.radius * 1.8 }));
       occupied.push({ x: cx - coreRadius, y: cy - coreRadius * 0.85, width: coreRadius * 2, height: coreRadius * 1.7 });
-      const labelNodes = allLabelNodes.filter((node) => !node.exiting && (live.labelsAlwaysVisible || live.selectedPid === node.pid || live.hoveredPid === node.pid || node.radius > 24))
+      const labelNodes = allLabelNodes.filter((node) => node.exiting
+        ? Boolean(labelMotion.target(processIdentity(node.process)))
+        : (live.labelsAlwaysVisible || live.selectedPid === node.pid || live.hoveredPid === node.pid || node.radius > 24))
         .sort((a, b) => Number(b.pid === live.selectedPid) - Number(a.pid === live.selectedPid) || Number(b.pid === live.hoveredPid) - Number(a.pid === live.hoveredPid) || b.targetRadius - a.targetRadius || a.pid - b.pid);
-      const placedLabels: { node: SceneLabelNode; label: { text: string; width: number }; box: LabelBox; focused: boolean }[] = [];
+      const placedLabels: { node: SceneLabelNode; label: { text: string; width: number }; box: LabelBox; focused: boolean; alpha: number }[] = [];
+      const visibleLabelKeys = new Set<string>();
       labelNodes.forEach((node) => {
+        const alpha = node.exiting ? labelExitOpacity(time - node.transitionStartedAt, live.reducedMotion) : 1;
+        if (alpha <= 0) return;
         const focused = live.selectedPid === node.pid || live.hoveredPid === node.pid;
         let label = labelTextCache.get(node.process.name);
         if (!label) {
@@ -1158,16 +1172,24 @@ export function GardenCanvas() {
           label = { text, width: Math.max(105, context.measureText(text).width + 16) };
           labelTextCache.set(node.process.name, label);
         }
-        const box = placeSceneLabel(node, label.width, { width, height, coreRadius }, occupied, focused || live.labelsAlwaysVisible);
+        const key = processIdentity(node.process);
+        const box = node.exiting ? labelMotion.target(key)
+          : placeSceneLabel(node, label.width, { width, height, coreRadius }, occupied, focused || live.labelsAlwaysVisible, labelMotion.target(key));
         if (!box) return;
-        occupied.push({ x: box.x - 4, y: box.y - 4, width: box.width + 8, height: box.height + 8 });
-        placedLabels.push({ node, label, box, focused });
+        if (!node.exiting) occupied.push({ x: box.x - 4, y: box.y - 4, width: box.width + 8, height: box.height + 8 });
+        visibleLabelKeys.add(key);
+        const instant = settleStaticState || viewportChanged || live.reducedMotion || (staticFrame && focusOrSearchChanged);
+        const labelDelta = staticFrame ? 0 : deltaMs;
+        const visible = labelMotion.update(key, box, labelDelta, instant, { width, height });
+        const visibleAlpha = labelMotion.opacity(key, alpha, labelDelta, instant, node.exiting);
+        placedLabels.push({ node, label, box: visible, focused, alpha: visibleAlpha });
       });
+      labelMotion.retain(visibleLabelKeys);
       // Reserve focus space first, then paint it last when a dense scene has unavoidable overlap.
-      placedLabels.reverse().forEach(({ node, label, box, focused }) => {
+      placedLabels.reverse().forEach(({ node, label, box, focused, alpha }) => {
         const color = processColor(node.process, theme, isEldritch, organismVisualIndex(resolveOrganismStyle(node.process, live.processStyleOverrides)));
         context.save();
-        context.globalAlpha = Math.max(0, Math.min(1, node.opacity)) * (focused ? 1 : 0.88);
+        context.globalAlpha = Math.max(0, Math.min(1, node.opacity)) * (focused ? 1 : 0.88) * alpha;
         context.fillStyle = focused ? "rgba(3,15,13,.94)" : "rgba(1,8,8,.8)";
         context.strokeStyle = withAlpha(color, focused ? 0.55 : 0.23);
         context.lineWidth = 0.8;

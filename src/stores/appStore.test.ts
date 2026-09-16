@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppStore } from "./appStore";
+import { toObservation } from "../data/observation";
 
 beforeEach(() => useAppStore.setState(useAppStore.getInitialState(), true));
 afterEach(() => {
@@ -8,9 +9,21 @@ afterEach(() => {
 });
 
 describe("snapshot continuity", () => {
+  it.each([NaN, Infinity, -Infinity, -1])("rejects invalid sample time %s without changing data or notifying subscribers", timestamp => {
+    const before = useAppStore.getState();
+    const listener = vi.fn();
+    const unsubscribe = useAppStore.subscribe(listener);
+    try {
+      // Invalid time must also be rejected when changing collectors.
+      before.ingestSnapshot({ ...before.snapshot, timestamp }, "native");
+      expect(useAppStore.getState()).toBe(before);
+      expect(listener).not.toHaveBeenCalled();
+    } finally { unsubscribe(); }
+  });
+
   it("starts with a chronological demo history ending at the displayed snapshot", () => {
     const { history, snapshot, samplingMs } = useAppStore.getState();
-    expect(history.at(-1)).toBe(snapshot);
+    expect(history.at(-1)).toEqual(toObservation(snapshot));
     expect(history.slice(1).every((item, index) => item.timestamp - history[index].timestamp === samplingMs)).toBe(true);
   });
 
@@ -18,11 +31,11 @@ describe("snapshot continuity", () => {
     const demo = useAppStore.getState().snapshot;
     const native = { ...demo, timestamp: demo.timestamp + 1_000, cpuPercent: 80 };
     useAppStore.getState().ingestSnapshot(native, "native");
-    expect(useAppStore.getState().history).toEqual([native]);
+    expect(useAppStore.getState().history).toEqual([toObservation(native)]);
     expect(useAppStore.getState().events).toEqual([]);
     const nextDemo = { ...demo, timestamp: native.timestamp + 4_000 };
     useAppStore.getState().ingestSnapshot(nextDemo, "demo");
-    expect(useAppStore.getState().history).toEqual([nextDemo]);
+    expect(useAppStore.getState().history).toEqual([toObservation(nextDemo)]);
     expect(useAppStore.getState().events).toEqual([]);
   });
 
@@ -57,7 +70,27 @@ describe("snapshot continuity", () => {
       useAppStore.getState().ingestSnapshot({ ...snapshot, timestamp: snapshot.timestamp + index * 1_000 }, "demo");
     }
     expect(useAppStore.getState().history).toHaveLength(120);
-    expect(useAppStore.getState().history.at(-1)).toBe(useAppStore.getState().snapshot);
+    expect(useAppStore.getState().history.at(-1)).toEqual(toObservation(useAppStore.getState().snapshot));
+  });
+
+  it.each(["exit", "reuse", "collector"])("clears selection on %s rather than silently selecting another application", change => {
+    const snapshot = useAppStore.getState().snapshot;
+    const selected = snapshot.processes[0];
+    useAppStore.setState({ selectedPid: selected.pid, collector: "native" });
+    const processes = change === "exit" ? snapshot.processes.slice(1)
+      : snapshot.processes.map(process => process.pid === selected.pid && change === "reuse"
+        ? { ...process, startedAt: process.startedAt + 1 } : process);
+    useAppStore.getState().ingestSnapshot({ ...snapshot, timestamp: snapshot.timestamp + 1000, processes }, change === "collector" ? "demo" : "native");
+    expect(useAppStore.getState().selectedPid).toBeNull();
+  });
+
+  it("retains the selected lifetime through reordering and equivalent start-time units", () => {
+    const snapshot = useAppStore.getState().snapshot;
+    const selected = snapshot.processes[0];
+    useAppStore.setState({ selectedPid: selected.pid, collector: "native" });
+    const processes = [...snapshot.processes].reverse().map(process => ({ ...process, startedAt: process.startedAt * 1000 }));
+    useAppStore.getState().ingestSnapshot({ ...snapshot, timestamp: snapshot.timestamp + 1000, processes }, "native");
+    expect(useAppStore.getState().selectedPid).toBe(selected.pid);
   });
 });
 

@@ -1,0 +1,51 @@
+# Label continuity — 2026-09-16
+
+Scope: user requirement for gradual state changes and natural frontend motion. Source baseline `3db3090`; independent performance branch. This is a focused motion change, not a declaration that the complete application is ready.
+
+## Change
+
+- Previously, label collision placement selected a fresh candidate every paint and drew directly at that coordinate. A side becoming clear could make an already clear label jump back to the default side.
+- Prefer the candidate nearest the previous target when collision scores tie. A blocked existing side still yields to a better placement. Focused labels continue reserving space first and drawing last.
+- Existing visible labels interpolate position on the scene clock with a 95 ms exponential response. Actor identities include PID and start time. No additional animation loop, timer or per-frame React update is introduced. Disappearing labels are pruned from the motion map every paint.
+- First appearance starts at its valid placement. Viewport changes and static data/focus changes settle immediately. Pause alone preserves the current intermediate position with zero elapsed time; reduced motion settles without animation. Text width/height use current metrics rather than scaling/stretching glyphs.
+- No generated artwork, fonts, icon assets, process lifecycle or density limits were changed. Labels can still overlap temporarily while moving or in forced-all-label dense layouts; this is not a complete dense-label readability solution. Label retirement is covered by the follow-up below.
+
+## Verification
+
+- Final `npm run verify` passed: **178 tests / 32 files**, TypeScript checking and production build. `git diff --check` passed.
+
+- Four new regression tests: retain an unobstructed side but yield when blocked; move without teleporting and freeze at zero delta; equal convergence at 30/60/120 elapsed-time steps; static settling, recycled PID isolation and removal of stale entries. Existing exhaustive label placement tests still cover calls without a preferred position.
+- Clean-reload browser test at localhost:1422, 740×422 scene Canvas, regular demo actors with labels enabled: selection reflow produced **126 interpolated label updates out of 377 calls**, none forced instant. Pause produced **13 calls with delta 0 and no forced settling**, including six still at intermediate positions. Changing selection while paused produced **13 instant updates at delta 0**, all exactly at targets. Reduced motion likewise produced **13 exact static updates**, no interpolation.
+- An earlier hot-update run showed inconsistent pause timing against the asynchronously read store. It was not accepted as evidence. Removed instrumentation, reloaded cleanly and repeated; numbers above are from the clean run.
+- Screenshot inspected: generated actors/core, original application icons, highlighted selected label and inspector remain visible. Browser warning/error logs empty. This was not a full two-reference comparison, native wallpaper test or assistive-technology certification.
+- Temporary prototype instrumentation/store changes are restored and the preview closed after QA.
+
+## Coordination and open gates
+
+### Fade-in and interrupted-retirement follow-up
+
+Retain opacity with each label's position. Newly visible labels in an already running scene fade toward full brightness with a 90 ms response; static/viewport settling remains immediate. If a retiring process returns before its label is removed, continue from the retained alpha rather than resetting to one. A label already partly faded in cannot brighten merely because retirement starts: outgoing alpha is capped by its previous visible value. Zero scene delta freezes incoming opacity; static/reduced-motion interactions settle it. The existing per-frame retention pass releases opacity and position together.
+
+Two new tests cover fade-in, preservation across position updates, interrupted exit, no outgoing brightening, pause/static behavior, removal and 30/60/120 time equivalence. Final `npm run verify`: **183 tests / 32 files**, typecheck and production build passed.
+
+Clean-browser Eldritch test, using demo snapshots only: remove Chrome PID 5521, then restore the same identity 140 ms later while its label is retiring. Actual Canvas `fillText` alpha decreased through 1.0, .875, .678 to **.49250**; after restoration it increased through **.59767, .65525, .72639, .76554, .79887**, reaching .99844 by 652 ms after removal. It did not jump straight back to full opacity. Browser warning/error logs were empty. Restored store/feed and Canvas prototype, closed the test page and stopped the dev server. This is continuity evidence, not a new FPS or native-release claim.
+
+### Exit-label retirement follow-up
+
+Previously, `!node.exiting` immediately removed annotations even while their organisms were still beginning the exit/swallow lifecycle. Keep **previously visible** annotations at their existing placement and fade them with a 220 ms smoothstep on scene time. Do not introduce a new label for a retiring organism whose label was hidden. Retiring labels stop reserving collision space; remove their motion entries once the fade reaches zero. Reduced motion skips the fade. Existing pause/time semantics apply, with no separate timeout or RAF loop. Annotation retirement does not alter the generated-mouth or organism-swallow trajectory.
+
+Added monotonic exit-opacity, finite lifetime and reduced-motion coverage at 30/60/120 sampling steps. `npm run verify`: **181 tests / 32 files**, typecheck and production build passed.
+
+Real-browser Eldritch check: remove demo Chrome PID 5521 through a temporary snapshot filter, without touching OS processes. Canvas `fillText` observation recorded **13** outgoing Chrome-label draws: alpha 0.88 → 0.0011877, monotonically decreasing. First/last observed draw at 41.0/251.6 ms after the state update; this includes update-to-render delay, not a change to the 220 ms scene-time fade. X moved only from 199.616 to 199.676 as its existing relocation settled; Y stayed at 83. No label draw after 350 ms in the 650 ms capture. This demonstrates actual text fading rather than only testing the easing function. Browser warning/error logs empty. Restored the snapshot/store and original `fillText` method, closed the test tab and stopped the preview.
+
+The task-messaging tool was rechecked but remains unavailable through the exposed dynamic interface; coordination continues through PR #7 comments. The shared worktree remains untouched. Native wallpaper and sustained high-refresh checks are not certified by this label test.
+
+### Viewport-bounds follow-up
+
+A widening-label regression exposed clipping during interpolation: changing width from 105 to 158 at the right edge produced a visible right edge of 774.78 in a 740px Canvas (required inset edge: 730). The target itself was valid; the interpolated position with the new width was not. Constrain the **visible** label box to the same 10px horizontal / 70px vertical margins as the placement solver. Text remains unscaled. On views too small to contain a label, retain finite minimum-inset coordinates rather than inverted bounds; full containment is geometrically impossible there.
+
+Red/green widening regression and a viewport-shrink/undersized-view regression pass. Final verification after this follow-up: **180 tests / 32 files**, typecheck and production build; diff check passes. The prior browser observations remain the evidence for motion/pause behavior; this bounds-only follow-up was verified by automated geometry tests, not a new native or full visual certification.
+
+The implementation adds `labelMotion.ts` and changes only the label-placement path in `GardenCanvas.tsx`, plus a backward-compatible optional placement preference in `sceneLayout.ts`. The shared theme task also edits `GardenCanvas.tsx`; integrate these small hunks deliberately after its changes are committed, preserving its custom theme/artwork work. No shared worktree or native installer changes.
+
+High-density 120 FPS remains unproven. Broader application goals, native acceptance, sustained profiling, true Agent task metadata and full reference fidelity remain open. This change improves position continuity, not measured frame rate.

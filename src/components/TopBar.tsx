@@ -1,18 +1,24 @@
-import { Expand, Languages, Leaf, Maximize2, MonitorUp, Pause, Play, Plus, Search, Settings, Sparkles, X } from "lucide-react";
+import { Expand, Languages, Leaf, List, Maximize2, MonitorUp, Pause, Play, Plus, Search, Settings, Sparkles, X } from "lucide-react";
 import { useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
 import { builtInThemes } from "../design-system/themes/builtIn";
 import { useDisplayMode } from "../hooks/useDisplayMode";
 import { useOverlay } from "../hooks/useOverlay";
 import i18n from "../i18n/config";
 import { useAppStore } from "../stores/appStore";
 import "../styles/overlays.css";
+import { ProcessExplorer } from "./ProcessExplorer";
+import { FeedHealthNotice } from "./FeedHealthNotice";
+import { useSnapshotStatusDetails } from "../hooks/useSnapshotStatus";
 
 export function TopBar() {
+  const { label: snapshotStatus, animationState: observationState } = useSnapshotStatusDetails();
   const { t } = useTranslation();
-  const state = useAppStore();
+  const state = useAppStore(useShallow(({ snapshot: _snapshot, history: _history, events: _events, ...controls }) => controls));
   const setMode = useDisplayMode();
   const [displayError, setDisplayError] = useState(false);
+  const [processListOpen, setProcessListOpen] = useState(false);
   const [changingDisplay, setChangingDisplay] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const menuId = useId();
@@ -35,8 +41,9 @@ export function TopBar() {
   };
 
   return (
-    <header className="topbar">
+    <><header className="topbar">
       <div className="brand-lockup">
+        <FeedHealthNotice />
         <span className="brand-mark"><Leaf size={20} /></span>
         <div>
           <strong>{t("app.name")}</strong>
@@ -67,14 +74,15 @@ export function TopBar() {
       </div>
 
       <nav className="topbar-actions" aria-label={t("a11y.appControls")}>
-        <button className={`live-pill ${state.paused ? "paused" : ""}`} onClick={() => state.setPaused(!state.paused)} aria-pressed={state.paused} aria-label={state.paused ? t("nav.resume") : t("nav.pause")} title={state.paused ? t("nav.resume") : t("nav.pause")}>
+        <button className="icon-button" data-process-list-trigger aria-label={t("processList.title")} title={t("processList.title")} aria-haspopup="dialog" aria-expanded={processListOpen} onClick={() => { state.setThemeMenuOpen(false); setProcessListOpen(true); }}><List size={18} /></button>
+        <button className={`live-pill ${state.paused ? "paused" : ""}`} data-observation-state={observationState} onClick={() => state.setPaused(!state.paused)} aria-pressed={state.paused} aria-label={state.paused ? t("nav.resume") : t("nav.pause")} title={state.paused ? t("nav.resume") : t("nav.pause")}>
           <span className="live-dot" />
           {state.paused ? <Play size={13} /> : <Pause size={13} />}
-          {state.paused ? t("nav.resume") : t("common.live")}
+          {state.paused ? t("nav.resume") : snapshotStatus}
         </button>
 
         <button className="icon-button text-button" onClick={() => state.setDemoMode(!state.demoMode)} aria-pressed={state.demoMode} aria-label={t("a11y.toggleData")}>
-          <Sparkles size={16} /> {state.demoMode ? t("common.demo") : t("common.live")}
+          <Sparkles size={16} /> {state.demoMode ? t("common.demo") : state.locale === "zh-CN" ? "本机" : "Native"}
         </button>
 
         <div className="popover-anchor">
@@ -116,6 +124,6 @@ export function TopBar() {
         </button>
       </nav>
       {displayError && <p className="display-mode-error" role="alert">{t("modes.changeFailed")}</p>}
-    </header>
+    </header><ProcessExplorer open={processListOpen} onClose={() => setProcessListOpen(false)} /></>
   );
 }

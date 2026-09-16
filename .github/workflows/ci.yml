@@ -32,6 +32,9 @@ jobs:
       - name: Rust unit tests
         working-directory: src-tauri
         run: cargo test --lib --locked
+      - name: Windows manifest build rules
+        working-directory: src-tauri
+        run: cargo test --test manifest_specs --locked
       - name: Rust compile check
         working-directory: src-tauri
         run: cargo check --locked

@@ -2,6 +2,14 @@ mod collector;
 mod icons;
 mod models;
 mod power;
+pub mod process_io;
+pub mod network;
+pub mod disk;
+pub mod disk_worker;
+mod performance_counters;
+mod provider_worker;
+pub mod gpu;
+pub mod services;
 
 #[cfg(not(test))]
 use collector::SystemCollector;
@@ -21,8 +29,40 @@ async fn sample_system(collector: tauri::State<'_, SystemCollector>) -> Result<S
 
 #[cfg(not(test))]
 #[tauri::command]
+async fn sample_process_io(reader: tauri::State<'_, process_io::ProcessIoReader>, pid: u32, started_at: u64, session: String) -> Result<Option<process_io::IoRates>, String> {
+    let reader = reader.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || reader.sample(pid, started_at, session))
+        .await.map_err(|error| format!("process I/O worker failed: {error}"))?
+}
+
+#[cfg(not(test))]
+#[tauri::command]
+async fn sample_disks(reader: tauri::State<'_, disk_worker::DiskReader>, session: String) -> Result<Vec<disk::DiskReading>, String> {
+    let reader = reader.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || reader.sample(session))
+        .await.map_err(|error| format!("disk request failed: {error}"))?
+}
+
+#[cfg(not(test))]
+#[tauri::command]
+async fn sample_gpu(reader: tauri::State<'_, gpu::worker::GpuReader>, session: String) -> Result<gpu::grouping::GroupedSnapshot, String> {
+    let reader = reader.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || reader.sample(session))
+        .await.map_err(|error| format!("gpu request failed: {error}"))?
+}
+
+#[cfg(not(test))]
+#[tauri::command]
 fn platform_name() -> &'static str {
     std::env::consts::OS
+}
+
+#[cfg(not(test))]
+#[tauri::command]
+async fn sample_services(reader: tauri::State<'_, services::worker::ServiceReader>, session: String) -> Result<Vec<services::ServiceReading>, String> {
+    let reader = reader.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || reader.sample(session))
+        .await.map_err(|error| format!("service request failed: {error}"))?
 }
 
 #[cfg(not(test))]
@@ -44,6 +84,10 @@ pub fn run() {
         .plugin(tauri_plugin_wallpaper::init())
         .manage(SystemCollector::default())
         .manage(ProcessIconCache::default())
+        .manage(process_io::ProcessIoReader::default())
+        .manage(disk_worker::DiskReader::default())
+        .manage(gpu::worker::GpuReader::default())
+        .manage(services::worker::ServiceReader::default())
         .setup(|app| {
             use tauri::{
                 menu::{Menu, MenuItem},
@@ -77,7 +121,7 @@ pub fn run() {
             tray.build(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![sample_system, platform_name, process_icons])
+        .invoke_handler(tauri::generate_handler![sample_system, platform_name, process_icons, sample_process_io, sample_disks, sample_gpu, sample_services])
         .run(tauri::generate_context!())
         .expect("error while running Process Garden");
 }

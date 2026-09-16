@@ -1,0 +1,234 @@
+# GPU monitoring: raw acquisition foundation
+
+Status: local PDH reader, identity parsing, per-engine experimental observation
+grouping and independent worker pass host probes. The `sample_gpu({ session })`
+Tauri command and demand-driven frontend are connected in code and tested, but
+actual desktop IPC/live GPU curves are not exercised yet. No validated overall GPU percentage;
+GPU monitoring and Task Manager replacement are not done.
+
+## Device labels — 2026-09-17
+
+`gpu/devices.rs` uses DXGI 1.1 read-only adapter descriptions. It reuses the
+already-locked windows 0.61.3 dependency with the Dxgi feature; no package version
+upgrade, driver installation, elevation or new network dependency was needed.
+Descriptions match BOTH LUID components, not enumeration order or a partial ID.
+The optional `device: { name, software }` enriches each counter adapter; unmatched
+identities remain null and retain their original ID. Physical indices stay separate
+even when several belong to the same logical DXGI adapter. No logical-adapter
+capacity is incorrectly assigned as per-physical-node capacity.
+
+Factory creation/enumeration stays on the existing GPU worker. Cached factories
+are checked with IsCurrent and recreated after adapter-set changes; a factory
+that changes during enumeration is rejected. Errors, expired deadlines, malformed
+UTF-16 names, duplicate LUIDs and lists over 256 adapters do not produce partial
+or stale name maps. Failed discovery backs off five seconds; names become unknown
+while numeric observations remain usable. Idle release drops the factory too.
+COM wrappers release native references automatically; no unsafe Send was added.
+
+The selector displays the native name, a software-adapter label when appropriate,
+and physical index (explicitly not Task Manager GPU numbering). Stable IDs remain
+selection/chart keys, so name enrichment does not remount charts or lose focus.
+Frontend validation accepts omitted enrichment from older builds and rejects
+invalid name/flag fields. Unmatched devices are explicitly labelled unavailable.
+
+Evidence: 55 Rust tests passed / 12 manual probes ignored; locked/offline cargo
+check passed. Explicit DXGI probe found 2 logical descriptions (1 software): first
+enumeration 21.888ms, cached lookup 0.003ms. GPU worker matched 2 of 3 counter
+adapter identities; the remaining identity is intentionally unnamed. Four debug
+responses including grouping/lookup: median 3.624ms, max 3.879ms. No device names
+or LUIDs logged. These counts are not physical GPU inventory or workload parity.
+475 frontend tests, typecheck and build passed. Named-state focus/key continuity
+is component-tested; actual named-state desktop rendering/hotplug remains unverified.
+
+Primary sources: [DXGI adapter descriptions](https://learn.microsoft.com/en-us/windows/win32/api/dxgi/ns-dxgi-dxgi_adapter_desc1),
+[enumeration and factory lifetime](https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgifactory1-enumadapters1),
+[adapter-change detection](https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgifactory1-iscurrent).
+
+## Independent worker and bridge
+
+`gpu/worker.rs` owns one GPU provider thread, separate from CPU/process and disk
+sampling. `provider_worker.rs` now shares the existing disk admission, timeout,
+deadline, idle-release and channel logic; disk and GPU each create their own worker.
+Native query handles are constructed/used/dropped on the owning thread, with no
+unsafe Send assertion. Initial construction does not open counters or auto-poll.
+
+One request may be queued/in flight; caller timeout is 4 seconds and does not
+release admission while native work continues. Closed-channel replies are dropped,
+expired requests are rejected before collection and after native initialization.
+15 seconds idle closes the query and waits without polling. A truly hung provider
+cannot be safely cancelled and keeps only its own worker busy, not other providers.
+Opening failures back off 5 seconds, including when callers change session tokens.
+
+Sessions are 1–128 ASCII alphanumeric/hyphen/underscore characters. A changed
+session reopens counters and returns an explicit `rateBaseline: true`. This flag
+also applies to cold/recovery/long-gap raw rate observations. PDH may omit the
+entire rate counter on its initial observation; that is not an observed zero.
+Baseline suppresses engine sums without erasing instantaneous memory readings.
+Once a contiguous observation exists, `rateBaseline` is false; per-counter and
+per-engine coverage still determines whether an individual value is available.
+
+Worker evidence: 52 Rust library tests passed / 11 manual probes ignored; locked,
+offline non-test cargo check passed. A blocked GPU fixture remains busy after the
+caller times out while real SystemCollector and an independent provider complete.
+The fixture is deliberately non-Send, verifying thread-local source construction.
+Existing disk concurrency/timeout/idle/expiry tests pass after extraction; native
+disk worker probe also passes (one instance, second response 0.355ms).
+
+The GPU native worker probe checks cold baseline, four contiguous readings, a
+renewed-session baseline and that the renewed session then warms up. This is a
+short read-only debug probe, not long-run overhead or controlled workload parity.
+Real packaged IPC remains an integration gate.
+
+## Frontend observations and continuity
+
+Retention follow-up (2026-09-17): temporary request failure, watchdog expiry,
+pause/hide and resume warmup retain the last received layout with `stale: true`.
+The stored snapshot's session stays unchanged until a new response arrives,
+including when the next request token has already rotated after timeout. This
+prevents premature chart remounts. UI says "Showing the last sample (not live)";
+metric/curve interpolation stops and curves are dimmed, without dimming text.
+Each metric region references this status as an accessible description. No zero
+fill or fresh-data claim. Recovery resets history across the gap; source change
+to demo/unavailable clears the retained reading entirely. Disk uses the same
+policy. 479 frontend tests/typecheck/build pass; runtime failure-state visuals and
+manual AT still need native desktop validation.
+
+`GpuPanel` is initially collapsed in the sidebar. Native adapter and engine
+selectors keep all received choices reachable while mounting at most three
+curves: one engine observed sum (fixed 0–100 scale), dedicated memory and shared
+memory (usage bytes, not capacity). Matched native descriptions enrich labels;
+unmatched adapters retain counter identities. UI copy labels these values experimental,
+not total GPU utilization; it does not fabricate demo GPU data.
+
+`gpuReadings.ts` validates and projects the native contract, with bounded lists,
+unique IDs, finite/range/count checks and contradictory coverage rejection. Raw
+unknown fields are not retained. Histories are capped at 36 frames and break at
+missing observations/baselines/engine-type changes rather than bridging them.
+Memory gauges can remain available during rate warmup.
+
+`createNativeReadings` extracts the disk hook's existing demand/watchdog/session
+logic. Each provider factory owns its own pending promise, so a stalled GPU
+request does not block disk reads. Neither provider permits overlapping work
+across remounts; timeout/late reply and ordinary-error warmup semantics remain.
+Hidden, paused, collapsed and non-windowed panels stop requesting; resume uses a
+fresh session. Valid samples never clear the panel before replacing its values.
+
+Existing AnimatedMetric/Sparkline motion shares one browser frame and respects
+pause, reduced motion and the global FPS setting. Data updates preserve selected
+IDs, focus and chart nodes; identity/session changes reset histories deliberately.
+
+Evidence: 473 frontend tests, typecheck and production build pass. Twenty-five
+new cases cover contract/history, hook concurrency/cancellation and panel/motion
+behavior. Browser screenshots and interaction verify Garden Chinese/Eldritch
+English unavailable states and keyboard expansion in an isolated preview at
+http://127.0.0.1:1437. No real desktop GPU stream was exercised through the UI;
+hardware FPS, screen-reader behavior and numerical workload parity remain open.
+Full frontend log: `%TEMP%/process-garden-gpu-panel-verify.log`.
+
+## Current implementation
+
+`gpu.rs` opens language-neutral local wildcard counters for GPU Engine utilization
+and GPU Adapter Memory Dedicated/Shared Usage. It returns separate raw instance
+maps. Failure of a counter is null; a successful empty map and an observed zero
+remain different. It does not sum adapters, processes or engine categories.
+
+Rate observations are suppressed for the first sample and after collection failure
+or a gap over 15 seconds. Memory counters are usage gauges and do not require an
+invented rate baseline. Query ownership closes all counter handles; no unsafe Send
+implementation, privilege elevation, driver setting changes or counter repair.
+
+The disk reader's validated PDH array routine has moved to
+`performance_counters.rs` and is shared by disk and GPU. The existing 4 MiB buffer
+bound, alignment, per-item status checks, bounded UTF-16 identities, duplicate
+rejection and fresh size queries on buffer races are retained. It uses NOCAP100
+and preserves raw observations, rather than concealing an unexplained value by
+silently clamping it. GPU instance names may include PIDs and adapter identities;
+keep them local and do not use a PID alone as process-lifetime attribution.
+
+## Aggregation and integration gates
+
+`gpu/grouping.rs` creates ordered adapter/physical/engine observations. It sums
+only distinct process samples within one engine, not across engines/adapters.
+The field is deliberately `observedPercentSum`, not a Task Manager parity claim.
+Missing/invalid samples, normalized duplicate PID-engine identities, conflicting
+type labels, an out-of-range sum or any unmapped engine record suppress the sum
+to null. Genuine zero is preserved; no clamping or missing-value zero filling.
+Each engine includes coverage diagnostics; over-range sums have a separate flag.
+The adapter key retains both LUID components and physical index. PIDs are used
+locally to detect duplicates and are not present in the grouped serialized output.
+
+Dedicated/shared memory observations are joined by the same adapter identity.
+Missing counter, empty successful map, missing adapter field, invalid observation
+and duplicate normalized identity remain distinguishable through counter-level
+coverage and per-field sample counts. Duplicate memory records are never summed.
+`_Total` records are counted separately, never synthesized into a device. Unknown
+formats remain counted; raw input maps are not mutated or discarded by grouping.
+
+2026-09-16 grouping evidence: 50 Rust library tests passed / 10 manual probes
+ignored, non-test cargo check passed. Explicit host probe: 700 records, 3 provider
+adapter identities and 31 engine groups, zero duplicate identities/type conflicts,
+zero unavailable or out-of-range sums. Adapter-identity counts are NOT physical
+GPU enumeration. Query open 372.856ms, second collect/format 1.423ms (single debug
+sample, excluding grouping). Controlled GPU workload parity remains unverified.
+
+Independent implementation reference (reviewed, not copied):
+[System Informer counter processing](https://github.com/winsiderss/systeminformer/blob/master/plugins/ExtendedTools/counters.c)
+groups engine totals by adapter and engine. Our PDH reader, full LUID/physical key,
+unknown-value handling and validation differ; this reference is not a parity test.
+
+Identity parsing now separates session-local LUID high/low components, physical
+index, engine ID, PID and optional engine type. Numeric components are bounded
+unsigned integers; malformed names, `_Total` and duplicate suffixes are rejected.
+Hexadecimal case/padding normalizes through integer parsing. Type labels can have
+underscores. An empty type label is **unknown**, not an invalid engine identity:
+the host probe initially rejected 210 of 700 records for this reason. After making
+type optional, all 700 engine and both sets of 3 memory instances parsed. This
+observed grammar is not a guarantee for every driver. Raw maps remain intact;
+the parser itself does not perform aggregation or process-lifetime attribution.
+
+Identity validation evidence: 44 Rust library tests passed, 10 manual probes
+ignored by default; explicit GPU probe passed with zero unmapped records and
+locked/offline non-test cargo check passed. Single debug probe open 386.591ms,
+second collect/format 1.867ms. No instance identities or PIDs were logged.
+
+Microsoft describes Task Manager's overall GPU percentage as the busiest engine,
+not the sum of independent engines. That rule does not itself prove how to group
+the raw per-process/context PDH instances. Required before a total-usage display:
+
+- Parse and validate instance identities; distinguish adapter LUID, physical index,
+  engine ID/type and process scope. Unknown formats must not be silently grouped.
+- Identify aggregate instances, duplicates, virtual/software adapters and engines
+  sharing hardware. Validate aggregation against controlled workloads and Windows.
+- Map to real adapter names/capacity with verified device identities; do not call
+  the number of returned memory-counter instances the number of installed GPUs.
+- Validate the registered worker/IPC path in the desktop runtime; provider
+  initialization is independent of CPU/process locks and the UI thread.
+- Verify the new frontend schema/history and adapter/engine views with actual
+  desktop IPC; add per-process lifetime safety. Exercise unsupported drivers,
+  hotplug, sleep and provider failures beyond the synthetic tests.
+- Verify overhead, both-theme visuals, actual frame pacing and native UI behavior.
+
+## Evidence — 2026-09-16
+
+- Rust library: 42 passed / 10 ignored. Non-test locked/offline cargo check passed.
+- Explicit GPU native probe passed: 700 engine instances, 3 dedicated-memory and
+  3 shared-memory instances. These are counter-instance counts, not GPU counts.
+- Debug single observation: query open 494.246ms; next collect/format 1.409ms after
+  1.1 seconds. No aggregation or controlled GPU workload was performed. This is
+  not a performance distribution or proof of Task Manager numerical parity.
+- After shared-reader extraction, the existing native disk probe also passed:
+  one physical disk; second collect/format 0.379ms. Disk semantics are unchanged.
+- Logs: `%TEMP%/process-garden-gpu-reader-tests.log`,
+  `%TEMP%/process-garden-gpu-native-probe.log`,
+  `%TEMP%/process-garden-gpu-reader-check.log`, and
+  `%TEMP%/process-garden-shared-pdh-disk-probe.log`. No instance names/PIDs logged.
+
+## Primary references
+
+- [Microsoft: GPUs in Task Manager](https://devblogs.microsoft.com/directx/gpus-in-the-task-manager/)
+- [Language-neutral PDH registration](https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhaddenglishcounterw)
+- [Wildcard formatted arrays](https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhgetformattedcounterarrayw)
+
+Counter path availability above was verified on this host, not assumed to exist
+on every Windows installation. The official blog's indexed excerpt confirms the
+busiest-engine rule; fetching the complete article returned HTTP 403 in this run.

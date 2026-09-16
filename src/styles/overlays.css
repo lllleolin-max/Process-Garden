@@ -1,12 +1,15 @@
 /* Overlay presence uses the same 180 ms exit window as useOverlay. */
-[data-overlay-root][data-state="open"].modal-backdrop { animation: overlay-reveal 220ms ease-out both; }
-[data-overlay-root][data-state="closed"].modal-backdrop { animation: overlay-dismiss 180ms ease-in both; pointer-events: none; }
-.modal-backdrop[data-state="open"] .settings-drawer { animation: drawer-arrive 320ms cubic-bezier(.16, 1, .3, 1) both; }
-.modal-backdrop[data-state="closed"] .settings-drawer { animation: drawer-depart 180ms cubic-bezier(.4, 0, 1, 1) both; }
-.modal-backdrop[data-state="open"] .theme-studio { animation: studio-arrive 300ms cubic-bezier(.16, 1, .3, 1) both; }
-.modal-backdrop[data-state="closed"] .theme-studio { animation: studio-depart 180ms ease-in both; }
-.theme-popover[data-state="open"] { transform-origin: top right; animation: studio-arrive 240ms cubic-bezier(.16, 1, .3, 1) both; }
-.theme-popover[data-state="closed"] { transform-origin: top right; animation: studio-depart 180ms ease-in both; pointer-events: none; }
+[data-overlay-root][data-state].modal-backdrop { animation: none; opacity: 0; transition: opacity 180ms ease-in; }
+[data-overlay-root][data-state="open"][data-motion-ready].modal-backdrop { opacity: 1; transition-duration: 220ms; transition-timing-function: ease-out; }
+[data-overlay-root][data-state="closed"] { pointer-events: none; }
+.modal-backdrop[data-state] .settings-drawer { animation: none; transform: translateX(36px); opacity: 0; transition: transform 180ms cubic-bezier(.4, 0, 1, 1), opacity 180ms ease-in; }
+.modal-backdrop[data-state="open"]:not([data-motion-ready]) .settings-drawer { transform: translateX(48px); }
+.modal-backdrop[data-state="open"][data-motion-ready] .settings-drawer { transform: translateX(0); opacity: 1; transition-duration: 320ms; transition-timing-function: cubic-bezier(.16, 1, .3, 1); }
+.modal-backdrop[data-state] .theme-studio, .theme-popover[data-state] { animation: none; transform: translateY(8px) scale(.985); opacity: 0; transition: transform 180ms ease-in, opacity 180ms ease-in; }
+.modal-backdrop[data-state="open"]:not([data-motion-ready]) .theme-studio, .theme-popover[data-state="open"]:not([data-motion-ready]) { transform: translateY(12px) scale(.975); }
+.modal-backdrop[data-state="open"][data-motion-ready] .theme-studio { transform: translateY(0) scale(1); opacity: 1; transition-duration: 300ms; transition-timing-function: cubic-bezier(.16, 1, .3, 1); }
+.theme-popover[data-state] { transform-origin: top right; }
+.theme-popover[data-state="open"][data-motion-ready] { transform: translateY(0) scale(1); opacity: 1; transition-duration: 240ms; transition-timing-function: cubic-bezier(.16, 1, .3, 1); }
 .theme-popover[data-state] { max-width: calc(100vw - 24px); max-height: min(560px, calc(100dvh - 100px)); overflow: auto; overscroll-behavior: contain; }
 .settings-content > .settings-panel { animation: content-arrive 240ms cubic-bezier(.16, 1, .3, 1) both; }
 .settings-tabs button { transition: color 160ms ease, background-color 160ms ease; }
@@ -34,12 +37,6 @@
 .app-display-mode-error { position: absolute; z-index: 110; top: 72px; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); margin: 0; padding: 10px 14px; border: 1px solid var(--color-border-strong); border-radius: 9px; background: var(--color-background-elevated); }
 .topbar > .display-mode-error { position: absolute; right: 12px; top: calc(100% + 8px); max-width: min(360px, calc(100vw - 24px)); padding: 10px 12px; margin: 0; border: 1px solid var(--color-border-strong); border-radius: 9px; background: var(--color-background-elevated); box-shadow: 0 8px 28px rgba(0, 0, 0, .25); }
 
-@keyframes overlay-reveal { from { opacity: 0; } to { opacity: 1; } }
-@keyframes overlay-dismiss { from { opacity: 1; } to { opacity: 0; } }
-@keyframes drawer-arrive { from { transform: translateX(48px); opacity: .3; } to { transform: translateX(0); opacity: 1; } }
-@keyframes drawer-depart { from { transform: translateX(0); opacity: 1; } to { transform: translateX(36px); opacity: 0; } }
-@keyframes studio-arrive { from { transform: translateY(12px) scale(.975); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
-@keyframes studio-depart { from { transform: translateY(0) scale(1); opacity: 1; } to { transform: translateY(8px) scale(.985); opacity: 0; } }
 @keyframes content-arrive { from { transform: translateY(7px); opacity: .35; } to { transform: translateY(0); opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatWatts } from "../i18n/formatters";
 import { useAppStore } from "../stores/appStore";
+import { useFeedHealth } from "../stores/feedHealth";
 import type { PowerSnapshot } from "../types/system";
 import { MetricCard } from "./MetricCard";
 
@@ -16,23 +17,25 @@ export function PowerMetric({ compact = false }: { compact?: boolean }) {
   const history = useAppStore((state) => state.history);
   const locale = useAppStore((state) => state.locale);
   const collector = useAppStore((state) => state.collector);
+  const samplingFailed = useFeedHealth((state) => state.failed);
   const demoMode = useAppStore((state) => state.demoMode);
   const paused = useAppStore((state) => state.paused);
   const samplingMs = useAppStore((state) => state.samplingMs);
   const displayMode = useAppStore((state) => state.displayMode);
+  const invalidTimestamp = !Number.isFinite(snapshot.timestamp) || snapshot.timestamp <= 0 || snapshot.timestamp > Date.now();
   const [expiredTimestamp, setExpiredTimestamp] = useState<number | null>(null);
   useEffect(() => {
-    if (paused) return;
+    if (paused || invalidTimestamp) return;
     const interval = displayMode === "wallpaper" ? Math.max(2000, samplingMs) : samplingMs;
     const expiresIn = snapshot.timestamp + Math.max(5000, interval * 3) - Date.now();
     const timer = window.setTimeout(() => setExpiredTimestamp(snapshot.timestamp), Math.max(0, expiresIn));
     return () => window.clearTimeout(timer);
-  }, [snapshot.timestamp, paused, samplingMs, displayMode]);
-  // A native failure currently falls back to the demo scene. Power must never
-  // turn that synthetic scene into a supposed measurement of this computer.
+  }, [snapshot.timestamp, paused, samplingMs, displayMode, invalidTimestamp]);
+  // Requested and observed sources can differ while switching modes. Never
+  // present synthetic data as a native reading during that transition.
   const matchesMode = demoMode ? collector === "demo" : collector === "native";
   const power = snapshot.power;
-  const stale = expiredTimestamp === snapshot.timestamp;
+  const stale = invalidTimestamp || expiredTimestamp === snapshot.timestamp || (collector === "native" && samplingFailed);
   const source = matchesMode && !stale && hasReading(power) && (demoMode ? power.source === "demo" : power.source !== "demo") ? power.source : "unavailable";
   const label = t(`power.labels.${source}`);
   const value = formatWatts(source === "unavailable" ? null : power.watts, locale);

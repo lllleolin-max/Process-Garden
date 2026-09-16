@@ -1,4 +1,5 @@
 {
+  "processList": { "title": "Processes", "name": "Name", "filter": "Filter processes", "filterHint": "Name, PID or executable path", "count": "{{count}} matches · {{received}} records received · {{total}} reported by system", "partial": "{{count}} reported processes are not present in this snapshot. Results are incomplete.", "inspect": "Inspect {{name}}, PID {{pid}}", "noMatches": "No processes match this filter.", "noData": "No process records are available.", "previous": "Previous", "next": "Next", "page": "Page {{page}} of {{pages}}" },
   "app": { "name": "Process Garden", "tagline": "Your computer is alive." },
   "common": { "live": "Live", "demo": "Demo", "on": "On", "off": "Off", "close": "Close", "cancel": "Cancel", "save": "Save", "delete": "Delete", "import": "Import", "export": "Export", "back": "Back", "now": "Now", "system": "System", "unavailable": "Unavailable" },
   "nav": { "overview": "Overview", "threads": "Threads", "connections": "Connections", "search": "Search processes", "settings": "Settings", "fullscreen": "Fullscreen", "windowed": "Windowed", "wallpaper": "Ambient wallpaper", "pause": "Pause", "resume": "Resume" },

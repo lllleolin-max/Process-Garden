@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest";
 import { formatBytes, formatDateTime, formatDuration, formatPercent } from "../i18n/formatters";
 
 describe("locale-aware formatters", () => {
+  it.each(["en-US", "zh-CN"] as const)("keeps invalid observations distinct from zero in %s", locale => {
+    for (const value of [NaN, Infinity, -Infinity, -1]) {
+      expect(formatBytes(value, locale)).toBe("—");
+      expect(formatPercent(value, locale)).toBe("—");
+      expect(formatDuration(value, locale)).toBe("—");
+    }
+    expect(formatBytes(0, locale)).toBe("0 MB");
+    expect(formatPercent(0, locale)).toBe("0%");
+    expect(formatDuration(0, locale)).toBe(locale === "en-US" ? "0h 0m" : "0小时 0分");
+    expect(formatBytes(0.5, locale)).toBe("0.5 B");
+  });
+
   it("formats bytes and percentages for both locales", () => {
     expect(formatBytes(1.5 * 1024 ** 3, "en-US")).toContain("1.5 GB");
     expect(formatBytes(1.5 * 1024 ** 3, "zh-CN")).toContain("1.5 GB");

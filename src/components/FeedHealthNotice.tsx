@@ -1,0 +1,26 @@
+import { useAppStore } from "../stores/appStore";
+import { useFeedHealth } from "../stores/feedHealth";
+import "./FeedHealthNotice.css";
+
+export function FeedHealthNotice({ wallpaper = false }: { wallpaper?: boolean }) {
+  const failed = useFeedHealth(state => state.failed);
+  const stalled = useFeedHealth(state => state.stalled);
+  const lastSuccess = useFeedHealth(state => state.failed ? state.lastSuccess : null);
+  const locale = useAppStore(state => state.locale);
+  const paused = useAppStore(state => state.paused);
+  const demoMode = useAppStore(state => state.demoMode);
+  const displayMode = useAppStore(state => state.displayMode);
+  if (!failed || demoMode || wallpaper !== (displayMode === "wallpaper")) return null;
+  const zh = locale === "zh-CN";
+  const message = stalled
+    ? zh ? "采样响应超时 · 正在等待原请求" : "Sampling delayed · waiting on request"
+    : zh
+    ? paused ? "采样失败 · 已暂停重试" : "采样失败 · 正在自动重试"
+    : paused ? "Sampling failed · retries paused" : "Sampling failed · retrying automatically";
+  const detail = lastSuccess === null
+    ? zh ? "尚未取得本机数据，当前显示内容不是实时采样。" : "No native sample received. Displayed data is not live."
+    : !Number.isFinite(lastSuccess) || !Number.isFinite(new Date(lastSuccess).getTime())
+    ? zh ? "数据已过期 · 最后成功采样时间不可用" : "Data is stale · last successful sample time unavailable"
+    : `${zh ? "数据已过期 · 最后成功采样：" : "Data is stale · last successful sample: "}${new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "medium" }).format(lastSuccess)}`;
+  return <aside className="feed-health-notice" role="status" aria-live="polite" aria-atomic="true" title={`${message}\n${detail}`} tabIndex={wallpaper ? -1 : 0}><strong>{message}</strong><span>{detail}</span></aside>;
+}

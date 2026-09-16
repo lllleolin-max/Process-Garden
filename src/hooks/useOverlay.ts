@@ -20,6 +20,20 @@ export function useOverlay<T extends HTMLElement = HTMLElement>(open: boolean, o
   const [present, setPresent] = useState(open);
 
   useLayoutEffect(() => {
+    if (!open || !surfaceRef.current) return;
+    const root = surfaceRef.current.closest<HTMLElement>("[data-overlay-root]") ?? surfaceRef.current;
+    // Keep this marker through an interrupted exit so CSS transitions reverse
+    // from their current pose. A genuinely new surface gets an initial paint.
+    if (root.hasAttribute("data-motion-ready")) return;
+    const reduced = document.documentElement.dataset.reducedMotion === "true" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) { root.setAttribute("data-motion-ready", ""); return; }
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => root.setAttribute("data-motion-ready", ""));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
+
+  useLayoutEffect(() => {
     if (open) {
       setPresent(true);
       return;

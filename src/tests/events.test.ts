@@ -11,6 +11,31 @@ function snapshot(timestamp: number, processes: ProcessSnapshot[]): SystemSnapsh
 }
 
 describe("native process delta events", () => {
+  it("reports PID reuse as distinct birth and exit, never a CPU spike", () => {
+    const old = { ...process(42, 1), name: "old-app", startedAt: 1_700_000_000 };
+    const replacement = { ...process(42, 90), name: "new-app", startedAt: 1_700_000_001 };
+    const events = deriveProcessEvents(snapshot(1, [old]), snapshot(2, [replacement]));
+    expect(events.map(({ kind, processName }) => ({ kind, processName }))).toEqual([
+      { kind: "birth", processName: "new-app" },
+      { kind: "exit", processName: "old-app" }
+    ]);
+    expect(new Set(events.map((event) => event.id)).size).toBe(2);
+  });
+
+  it("preserves a lifetime when collectors change start-time units", () => {
+    const old = { ...process(42, 1), startedAt: 1_700_000_000 };
+    const same = { ...old, startedAt: old.startedAt * 1_000, cpuPercent: 40 };
+    const events = deriveProcessEvents(snapshot(1, [old]), snapshot(2, [same]));
+    expect(events.map((event) => event.kind)).toEqual(["spike"]);
+  });
+
+  it("retains parent association when a reused PID starts as a child", () => {
+    const old = process(42);
+    const child = { ...process(42, 50, 7), startedAt: 2 };
+    const events = deriveProcessEvents(snapshot(1, [old, process(7)]), snapshot(2, [child, process(7)]));
+    expect(events.map((event) => event.kind)).toEqual(["spawn", "exit"]);
+  });
+
   it("derives spawn, exit and CPU spike events", () => {
     const previous = snapshot(1, [process(1), process(2), process(3, 10)]);
     const next = snapshot(2, [process(1), process(3, 42), process(4, 2, 1)]);
