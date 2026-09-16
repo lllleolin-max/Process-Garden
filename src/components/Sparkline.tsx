@@ -1,6 +1,7 @@
 import { memo, useLayoutEffect, useRef } from "react";
 import { useAppStore } from "../stores/appStore";
 import { decideAnimationFrame } from "../animation/frameRate";
+import { alignPolylinePoints } from "../animation/polylineMorph";
 
 interface SparklineProps {
   values: number[];
@@ -39,12 +40,13 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
       }
     };
     const start = displayed.current;
-    const from = start.split(" ").map((point) => point.split(",").map(Number));
-    const to = points.split(" ").map((point) => point.split(",").map(Number));
-    if (!start || !points || start === points || from.length !== to.length || motionDisabled || document.hidden || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    const previous = start.split(" ").map((point) => point.split(",").map(Number));
+    const target = points.split(" ").map((point) => point.split(",").map(Number));
+    if (!start || !points || start === points || previous.length < 2 || target.length < 2 || motionDisabled || document.hidden || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
       draw(points);
       return;
     }
+    const { from, to } = alignPolylinePoints(previous, target);
     let frame = 0;
     let startedAt: number | null = null;
     let lastRenderedAt = 0;
@@ -52,6 +54,7 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
       if (document.hidden || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { draw(points); return; }
       startedAt ??= now;
       const progress = Math.min(1, (now - startedAt) / 420);
+      if (progress === 1) { draw(points); return; }
       const decision = decideAnimationFrame(lastRenderedAt, now, useAppStore.getState().animationFps);
       if (!decision.render && progress < 1) {
         frame = requestAnimationFrame(animate);

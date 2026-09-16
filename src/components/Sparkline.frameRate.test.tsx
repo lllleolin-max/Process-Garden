@@ -45,3 +45,20 @@ it("does not restart an active transition when the selected rate changes", () =>
   expect(line).toHaveAttribute("points", "0.0,6.0 80.0,38.0 160.0,6.0");
   expect(frames.size).toBe(0);
 });
+
+it("morphs a growing history and reverses from the displayed curve when interrupted", () => {
+  useAppStore.setState({ animationFps: 60 });
+  const view = render(<Sparkline values={[0, 10, 0]} />);
+  const line = view.container.querySelector("polyline")!;
+  const original = line.getAttribute("points");
+  view.rerender(<Sparkline values={[0, 10, 0, 20]} />);
+  expect(line.getAttribute("points")).toBe(original);
+  tick(1000); tick(1200);
+  const intermediate = line.getAttribute("points");
+  expect(intermediate).not.toBe(original);
+  view.rerender(<Sparkline values={[10, 0]} />);
+  expect(line.getAttribute("points")).toBe(intermediate);
+  tick(1210); tick(1640);
+  expect(line).toHaveAttribute("points", "0.0,6.0 160.0,38.0");
+  expect(frames.size).toBe(0);
+});
