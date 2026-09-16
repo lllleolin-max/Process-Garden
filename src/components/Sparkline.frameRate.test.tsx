@@ -77,3 +77,18 @@ it("mounts fill on the displayed curve without restarting an in-flight transitio
   expect(view.container.querySelector("polygon")).toHaveAttribute("points", `0,42 ${line.getAttribute("points")} 160,42`);
   expect(frames.size).toBe(0);
 });
+
+it("does not bridge invalid observations or display a stale tip when the latest sample is missing", () => {
+  useAppStore.setState({ reducedMotion: true });
+  const view = render(<Sparkline values={[100, Number.NaN, 0, 10]} />);
+  const line = view.container.querySelector("polyline")!;
+  expect(line).toHaveAttribute("points", "0.0,38.0 160.0,6.0");
+  view.rerender(<Sparkline values={[0, 10, Number.POSITIVE_INFINITY]} />);
+  expect(line).toHaveAttribute("points", "");
+  expect(view.container.querySelector("polygon")).toHaveAttribute("points", "");
+  expect(view.container.querySelector("circle")).toBeNull();
+  view.rerender(<Sparkline values={[10, Number.NaN, 0]} />);
+  expect(line).toHaveAttribute("points", "160.0,38.0");
+  expect(view.container.querySelector("circle")).not.toBeNull();
+  expect(frames.size).toBe(0);
+});

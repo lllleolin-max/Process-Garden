@@ -16,7 +16,11 @@ export const Sparkline = memo(function Sparkline({ values, color = "var(--color-
   const tipRef = useRef<SVGCircleElement>(null);
   const motionDisabled = useAppStore((state) => state.reducedMotion || state.paused || state.displayMode !== "windowed");
   const width = 160;
-  const samples = values.filter(Number.isFinite);
+  // A missing observation breaks continuity; filtering it out would fabricate
+  // a connection between samples on opposite sides of the gap.
+  let tailStart = values.length;
+  while (tailStart > 0 && Number.isFinite(values[tailStart - 1])) tailStart--;
+  const samples = values.slice(tailStart);
   const min = Math.min(...samples);
   const max = Math.max(...samples);
   const range = Math.max(max - min, 1);
