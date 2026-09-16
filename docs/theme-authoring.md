@@ -1,6 +1,12 @@
 # Theme authoring
 
+See the [11/12-file asset checklist and modular capture contract](theme-lifecycle-assets.md). The editor provides the same checklist and a capture motion selector.
+
 The in-app Theme Studio is the recommended path. Choose a base, backdrop family, typography preset, core/signal colors, glow and particle density; the theme is previewed, saved and enabled immediately.
+
+For custom artwork, open **Add theme → AI prompts & custom artwork** (also available from Settings → Theme authoring). Describe the desired world, copy the generated prompt into an image AI, and upload the resulting PNGs into their named slots. The prompt adapts to the selected behavior family. You can replace one image or the entire set; empty slots inherit built-in artwork. Inspect the thumbnails and backdrop/core preview, then Save. Chinese theme names are supported. Export packages include uploaded images; imports present a review step before installing or replacing an existing ID. The app itself does not call an external AI or upload your images.
+
+See the [Chinese prompt kit](ai-theme-prompt-kit.zh-CN.md) for an offline copy of the workflow. The app generates the v2 image manifest automatically; users do not need to write JSON or rename source files.
 
 ## Minimal manifest
 
@@ -41,6 +47,6 @@ The in-app Theme Studio is the recommended path. Choose a base, backdrop family,
 }
 ```
 
-To create a package manually, ZIP this file at the archive root as `manifest.json` and rename the archive to `moss-night.pgtheme`. Use the in-app Import action. Never add JavaScript, remote URLs or external paths; v1 intentionally rejects packaged custom assets until their metadata and license pipeline is versioned.
+To create a parameter-only package manually, ZIP this file at the archive root as `manifest.json` and rename the archive to `moss-night.pgtheme`. Use the in-app Import action. v1 rejects packaged images. Use the artwork slots and app export for a v2 image package. Never add JavaScript, remote URLs or external paths.
 
-IDs must be 2–49 ASCII letters, numbers, `_` or `-`, beginning with a letter or number. Built-in IDs `garden` and `eldritch` are reserved. Versions use semantic version form.
+IDs must be 2–49 ASCII letters, numbers, `_` or `-`, beginning with a letter or number. Built-in IDs `garden`, `eldritch` and `cyberpunk` are reserved. Versions use semantic version form.

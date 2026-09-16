@@ -5,8 +5,18 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "id", "name", "version", "colors", "typography", "effects", "motion"],
+  "allOf": [
+    { "if": { "properties": { "schemaVersion": { "const": 1 } } }, "then": { "not": { "anyOf": [{ "required": ["assets"] }, { "required": ["captureStyle"] }] } }, "else": { "anyOf": [{ "required": ["assets"] }, { "required": ["captureStyle"] }] } }
+  ],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "enum": [1, 2] },
+    "captureStyle": { "enum": ["vine", "tentacle", "cable", "beam", "wing", "laurel", "spear"] },
+    "assets": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "enum": ["background", "core", "process1", "process2", "process3", "process4", "habitat", "pollinator", "agent", "celestial", "capture", "maw"] },
+      "additionalProperties": { "type": "string", "pattern": "^assets/[a-f0-9]{64}\\.png$" }
+    },
     "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{1,48}$" },
     "name": {
       "type": "object",
@@ -19,7 +29,7 @@
     },
     "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$" },
     "author": { "type": "string", "maxLength": 96 },
-    "basedOn": { "enum": ["garden", "eldritch"] },
+    "basedOn": { "enum": ["garden", "eldritch", "cyberpunk", "crimson", "angel", "olympus", "minimal"] },
     "colors": {
       "type": "object",
       "additionalProperties": false,

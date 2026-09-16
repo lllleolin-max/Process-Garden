@@ -1,4 +1,19 @@
 .garden-panel::before { display: none; }
+.garden-panel { background: color-mix(in srgb, var(--color-background) 90%, transparent); }
+.core-drop-zone { position: absolute; z-index: 4; transform: translate(-50%, -50%); border: 2px dashed var(--color-warning); border-radius: 50%; pointer-events: none; display: grid; place-items: end center; transition: background-color 120ms; }
+.core-drop-zone.active { border-color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 18%, transparent); box-shadow: 0 0 28px color-mix(in srgb, var(--color-danger) 35%, transparent); }
+.core-drop-zone span { position: absolute; top: calc(100% + 8px); white-space: nowrap; border-radius: 6px; padding: 6px 10px; color: var(--color-text); background: var(--color-background-elevated); font-size: 12px; }
+.termination-hint { position: absolute; top: 55px; left: 16px; right: 16px; z-index: 3; font-size: 10px; color: var(--color-text-muted); pointer-events: none; }
+.end-process-dialog { width: min(420px, calc(100vw - 40px)); margin: auto; padding: 24px; border: 1px solid var(--color-border-strong); border-radius: 14px; background: var(--color-background-elevated); color: var(--color-text); box-shadow: 0 24px 90px #0008; }
+.end-process-dialog h2 { font-size: 19px; margin: 0 0 10px; overflow-wrap: anywhere; }
+.end-process-dialog p { font-size: 13px; line-height: 1.7; }
+.end-process-identity { color: var(--color-text-muted); }
+.end-process-dialog .form-error { color: var(--color-danger); }
+.end-process-confirm { background: var(--color-danger); border-color: var(--color-danger); color: #fff; }
+.end-process-dialog button:disabled { opacity: .55; cursor: wait; }
+.modal-backdrop.capture-confirm-backdrop { background: linear-gradient(125deg, transparent 40%, #0007); backdrop-filter: none; align-items: flex-end; justify-content: flex-end; padding: 24px; }
+.capture-confirm-backdrop .end-process-dialog { margin: 0; }
+@media (max-width: 600px) { .modal-backdrop.capture-confirm-backdrop { padding: 12px; } .capture-confirm-backdrop .end-process-dialog { width: 100%; padding: 18px; } }
 .canvas-backdrop {
   position: absolute;
   inset: 0;

@@ -1,0 +1,406 @@
+{
+  "method": "Built-in image_gen.imagegen",
+  "status": "generated and integrated",
+  "note": "Blue Eldritch refined directly from original approved blue artwork. Supersedes grey-green eldritch art. All original files retained.",
+  "assets": [
+    {
+      "family": "garden",
+      "role": "core",
+      "dest": "public/assets/generated/refined/garden/core.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its garden core to premium art-directed quality. Botanical micro-ecosystem, jade leaves, moss velvet, translucent dew glass, aged warm brass and subtle amber sap. Elegant living specimens, believable natural asymmetry. Broad calm material planes and a few exquisite veins, restrained luminous accents. No rainbow glitter. One ecosystem heart, centered at 50%/50%, circular overall body occupying 66% image width, all appendages within central 78%. A clear luminous central focal organ with elegant concentric living/engineered layers. Black fading silhouette edges. No detached orbiting objects.  PNG, square. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-101328a3-0c83-4b35-8fc7-28e8b2fa9f9d.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2029513
+    },
+    {
+      "family": "garden",
+      "role": "background",
+      "dest": "public/assets/generated/refined/garden/background.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its garden background to premium art-directed quality. Botanical micro-ecosystem, jade leaves, moss velvet, translucent dew glass, aged warm brass and subtle amber sap. Elegant living specimens, believable natural asymmetry. Broad calm material planes and a few exquisite veins, restrained luminous accents. No rainbow glitter. Wide landscape 16:9 background environment. Extremely dark quiet central 65% negative space, rich but low-contrast environmental details restricted to edges and lower corners, delicate depth and cinematic light. No central protagonist, no core, no creatures, no UI, no bright central object.  PNG, landscape 16:9.  Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-79f4f876-d402-45f8-8efb-a7dd04a892dd.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2008077
+    },
+    {
+      "family": "garden",
+      "role": "process1",
+      "dest": "public/assets/generated/refined/garden/process1.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its garden process1 to premium art-directed quality. Botanical micro-ecosystem, jade leaves, moss velvet, translucent dew glass, aged warm brass and subtle amber sap. Elegant living specimens, believable natural asymmetry. Broad calm material planes and a few exquisite veins, restrained luminous accents. No rainbow glitter. EXACT 2x2 atlas: TOP LEFT watcher with dominant eye/lens and radial petals/plates; TOP RIGHT neural organism with lobed brain canopy and fine branching nerves; BOTTOM LEFT segmented curled larva; BOTTOM RIGHT compact armored construct. Four strongly different silhouettes.  Square PNG, exact equal 2x2 grid with NO visible dividers. Each of four subjects centered in its own quadrant, occupying 65-72% of the cell, at least 14% padding on ALL sides, nothing touching or crossing the cell boundaries. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-b130fa61-a2ed-4059-bea9-d6c4fbb94551.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1711298
+    },
+    {
+      "family": "garden",
+      "role": "process2",
+      "dest": "public/assets/generated/refined/garden/process2.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its garden process2 to premium art-directed quality. Botanical micro-ecosystem, jade leaves, moss velvet, translucent dew glass, aged warm brass and subtle amber sap. Elegant living specimens, believable natural asymmetry. Broad calm material planes and a few exquisite veins, restrained luminous accents. No rainbow glitter. EXACT 2x2 atlas: TOP LEFT spore colony of few rounded pods; TOP RIGHT graceful coiled tendril creature; BOTTOM LEFT slender signal wisp with luminous ribbon body; BOTTOM RIGHT shell creature with protective spiral carapace. Four strongly different silhouettes.  Square PNG, exact equal 2x2 grid with NO visible dividers. Each of four subjects centered in its own quadrant, occupying 65-72% of the cell, at least 14% padding on ALL sides, nothing touching or crossing the cell boundaries. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-2731dc8b-1a95-4bdb-bd24-e89e577d8ec2.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1439458
+    },
+    {
+      "family": "garden",
+      "role": "process3",
+      "dest": "public/assets/generated/refined/garden/process3.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its garden process3 to premium art-directed quality. Botanical micro-ecosystem, jade leaves, moss velvet, translucent dew glass, aged warm brass and subtle amber sap. Elegant living specimens, believable natural asymmetry. Broad calm material planes and a few exquisite veins, restrained luminous accents. No rainbow glitter. EXACT 2x2 atlas: TOP LEFT a long-petaled watcher with eye; TOP RIGHT folded fern neural organism; BOTTOM LEFT curled seed larva; BOTTOM RIGHT walnut armored construct. Alternative specimens distinct from radial watcher, round neural canopy, segmented larva and compact plated construct.  Square PNG, exact equal 2x2 grid with NO visible dividers. Each of four subjects centered in its own quadrant, occupying 65-72% of the cell, at least 14% padding on ALL sides, nothing touching or crossing the cell boundaries. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-8e553ea1-36a6-4c3a-8bed-b6a534f56db6.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1871075
+    },
+    {
+      "family": "garden",
+      "role": "process4",
+      "dest": "public/assets/generated/refined/garden/process4.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its garden process4 to premium art-directed quality. Botanical micro-ecosystem, jade leaves, moss velvet, translucent dew glass, aged warm brass and subtle amber sap. Elegant living specimens, believable natural asymmetry. Broad calm material planes and a few exquisite veins, restrained luminous accents. No rainbow glitter. EXACT 2x2 atlas: TOP LEFT branching mushroom spore colony; TOP RIGHT folded root tendril creature; BOTTOM LEFT delicate winged signal wisp; BOTTOM RIGHT spiral seed shell creature. Alternative botanical specimens, all distinctly different.  Square PNG, exact equal 2x2 grid with NO visible dividers. Each of four subjects centered in its own quadrant, occupying 65-72% of the cell, at least 14% padding on ALL sides, nothing touching or crossing the cell boundaries. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-034b307d-46ef-4644-9e01-4e793c91b629.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1634819
+    },
+    {
+      "family": "garden",
+      "role": "habitat",
+      "dest": "public/assets/generated/refined/garden/habitat.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its garden habitat to premium art-directed quality. Botanical micro-ecosystem, jade leaves, moss velvet, translucent dew glass, aged warm brass and subtle amber sap. Elegant living specimens, believable natural asymmetry. Broad calm material planes and a few exquisite veins, restrained luminous accents. No rainbow glitter. EXACT 2x2 atlas: TOP LEFT low habitat base; TOP RIGHT plant or structural cluster; BOTTOM LEFT small liquid/energy pool contained in a basin; BOTTOM RIGHT mineral cluster. Self-contained miniature environmental props, low wide silhouettes, three-quarter camera, no ground outside objects.  Square PNG, exact equal 2x2 grid with NO visible dividers. Each of four subjects centered in its own quadrant, occupying 65-72% of the cell, at least 14% padding on ALL sides, nothing touching or crossing the cell boundaries. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-3a8d2337-66fa-4dca-9f4d-129a71761e4d.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1776853
+    },
+    {
+      "family": "garden",
+      "role": "pollinator",
+      "dest": "public/assets/generated/refined/garden/pollinator.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its garden pollinator to premium art-directed quality. Botanical micro-ecosystem, jade leaves, moss velvet, translucent dew glass, aged warm brass and subtle amber sap. Elegant living specimens, believable natural asymmetry. Broad calm material planes and a few exquisite veins, restrained luminous accents. No rainbow glitter. EXACT 2x2 atlas: TOP LEFT butterfly silhouette; TOP RIGHT dragonfly silhouette; BOTTOM LEFT beetle silhouette; BOTTOM RIGHT moth silhouette. Theme-matched miniature flyers or drones, top-down three-quarter view, distinct wings and delicate clear silhouette.  Square PNG, exact equal 2x2 grid with NO visible dividers. Each of four subjects centered in its own quadrant, occupying 65-72% of the cell, at least 14% padding on ALL sides, nothing touching or crossing the cell boundaries. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-1c122720-30dc-433a-8748-38021fb5f534.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1586847
+    },
+    {
+      "family": "garden",
+      "role": "agent",
+      "dest": "public/assets/generated/refined/garden/agent.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its garden agent to premium art-directed quality. Botanical micro-ecosystem, jade leaves, moss velvet, translucent dew glass, aged warm brass and subtle amber sap. Elegant living specimens, believable natural asymmetry. Broad calm material planes and a few exquisite veins, restrained luminous accents. No rainbow glitter. EXACT 2x2 atlas: TOP LEFT independent AI neural core; TOP RIGHT early spherical task embryo; BOTTOM LEFT forming task embryo; BOTTOM RIGHT mature near-hatching task embryo. Last three are exactly same species, orientation and scale, progressive internal development inside translucent membranes, clearly different from the adult core. No umbilical cords extending outside silhouettes.  Square PNG, exact equal 2x2 grid with NO visible dividers. Each of four subjects centered in its own quadrant, occupying 65-72% of the cell, at least 14% padding on ALL sides, nothing touching or crossing the cell boundaries. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-3d846aed-e238-425e-85d5-19f44e1a9b7f.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1563409
+    },
+    {
+      "family": "garden",
+      "role": "capture",
+      "dest": "public/assets/generated/refined/garden/capture.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its garden capture to premium art-directed quality. Botanical micro-ecosystem, jade leaves, moss velvet, translucent dew glass, aged warm brass and subtle amber sap. Elegant living specimens, believable natural asymmetry. Broad calm material planes and a few exquisite veins, restrained luminous accents. No rainbow glitter. EXACT 2x2 atlas of modular capture appendage parts: TOP LEFT horizontal straight shaft, left to right, uniform diameter and seamless material along length, 72% cell width and 13% cell height; TOP RIGHT right-facing gripping tip matching shaft; BOTTOM LEFT small circular root socket; BOTTOM RIGHT empty-center open elliptical wrapping loop, opening at right. Same material scale and lighting on all four parts. Separate cutout parts, not a complete action scene.  Use supple braided vines with a few leaves. Square PNG, exact equal 2x2 grid with NO visible dividers. Each of four subjects centered in its own quadrant, occupying 65-72% of the cell, at least 14% padding on ALL sides, nothing touching or crossing the cell boundaries. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-7af180d3-ef3d-4cbd-af15-d0f089094e28.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1108760
+    },
+    {
+      "family": "eldritch",
+      "role": "core",
+      "dest": "public/assets/generated/refined/eldritch-blue/core.png",
+      "prompt": "Refine this EXACT existing Process Garden BLUE deep-sea Cthulhu game artwork, not a redesign. Preserve every subject's original silhouette, placement, anatomy, scale, camera, expressive eyes, coils and glossy translucent material. Keep the original saturated cyan/teal/azure, emerald and violet accents. Increase crisp sculpted detail, rich color depth and strong luminous cyan rim lighting, clean dark recesses, jewel-like iris microstructure, refined chitin engraving. Clear vibrant colorful game art legible at small size, NOT gray green realistic dead sea animals, NOT washed-out ghostly white, NOT desaturated. Preserve black background, empty margins and existing atlas layout EXACTLY. No new subjects, text, grid, scenery or extra tentacles. Improve finesse and vividness only.",
+      "reference": "D:/轻度幻想进行中/轻度幻想进行项目/Process Garden/public/assets/generated/eldritch/cores/eldritch-core-main-v1.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-d9757489-b9aa-43e0-a07b-e9a67bba0315.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1455230
+    },
+    {
+      "family": "eldritch",
+      "role": "background",
+      "dest": "public/assets/generated/refined/eldritch-blue/background.png",
+      "prompt": "Refine this exact existing blue deep-sea environment artwork. Preserve composition, empty central 65%, corner framing and architecture. Increase intricate depth and craftsmanship of submerged ancient ruins and alien coral at edges, saturated sapphire cyan and violet bioluminescent accents, deep navy black recesses. Keep center nearly black for game sprites. No new central creature or eyes, no UI or text. Same widescreen framing, rich clear colors, not gray green haze.",
+      "reference": "D:/轻度幻想进行中/轻度幻想进行项目/Process Garden/public/assets/generated/eldritch/backgrounds/eldritch-canvas-bg-v1.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-b45055d6-1e5c-48c1-a68d-b0a3e0d8dc89.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2679499
+    },
+    {
+      "family": "eldritch",
+      "role": "process1",
+      "dest": "public/assets/generated/refined/eldritch-blue/process1.png",
+      "prompt": "Refine this EXACT existing Process Garden BLUE deep-sea Cthulhu game artwork, not a redesign. Preserve every subject's original silhouette, placement, anatomy, scale, camera, expressive eyes, coils and glossy translucent material. Keep the original saturated cyan/teal/azure, emerald and violet accents. Increase crisp sculpted detail, rich color depth and strong luminous cyan rim lighting, clean dark recesses, jewel-like iris microstructure, refined chitin engraving. Clear vibrant colorful game art legible at small size, NOT gray green realistic dead sea animals, NOT washed-out ghostly white, NOT desaturated. Preserve black background, empty margins and existing atlas layout EXACTLY. No new subjects, text, grid, scenery or extra tentacles. Improve finesse and vividness only.",
+      "reference": "D:/轻度幻想进行中/轻度幻想进行项目/Process Garden/public/assets/generated/eldritch/creatures/eldritch-process-atlas-v1.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-baef6b2c-66a3-4daf-b819-da7f93f53fa9.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1365853
+    },
+    {
+      "family": "eldritch",
+      "role": "process2",
+      "dest": "public/assets/generated/refined/eldritch-blue/process2.png",
+      "prompt": "Refine this EXACT existing Process Garden BLUE deep-sea Cthulhu game artwork, not a redesign. Preserve every subject's original silhouette, placement, anatomy, scale, camera, expressive eyes, coils and glossy translucent material. Keep the original saturated cyan/teal/azure, emerald and violet accents. Increase crisp sculpted detail, rich color depth and strong luminous cyan rim lighting, clean dark recesses, jewel-like iris microstructure, refined chitin engraving. Clear vibrant colorful game art legible at small size, NOT gray green realistic dead sea animals, NOT washed-out ghostly white, NOT desaturated. Preserve black background, empty margins and existing atlas layout EXACTLY. No new subjects, text, grid, scenery or extra tentacles. Improve finesse and vividness only.",
+      "reference": "D:/轻度幻想进行中/轻度幻想进行项目/Process Garden/public/assets/generated/eldritch/creatures/eldritch-process-atlas-v2.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-93da306c-2968-49c4-b77d-92e7c7e1cd78.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1888280
+    },
+    {
+      "family": "eldritch",
+      "role": "habitat",
+      "dest": "public/assets/generated/refined/eldritch-blue/habitat.png",
+      "prompt": "Refine this EXACT existing Process Garden BLUE deep-sea Cthulhu game artwork, not a redesign. Preserve every subject's original silhouette, placement, anatomy, scale, camera, expressive eyes, coils and glossy translucent material. Keep the original saturated cyan/teal/azure, emerald and violet accents. Increase crisp sculpted detail, rich color depth and strong luminous cyan rim lighting, clean dark recesses, jewel-like iris microstructure, refined chitin engraving. Clear vibrant colorful game art legible at small size, NOT gray green realistic dead sea animals, NOT washed-out ghostly white, NOT desaturated. Preserve black background, empty margins and existing atlas layout EXACTLY. No new subjects, text, grid, scenery or extra tentacles. Improve finesse and vividness only.",
+      "reference": "D:/轻度幻想进行中/轻度幻想进行项目/Process Garden/public/assets/generated/eldritch/habitats/eldritch-habitat-atlas-v1.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-1a30712d-a147-449b-bcbe-8b777487822f.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1793031
+    },
+    {
+      "family": "eldritch",
+      "role": "pollinator",
+      "dest": "public/assets/generated/refined/eldritch-blue/pollinator.png",
+      "prompt": "Refine this EXACT existing Process Garden BLUE deep-sea Cthulhu game artwork, not a redesign. Preserve every subject's original silhouette, placement, anatomy, scale, camera, expressive eyes, coils and glossy translucent material. Keep the original saturated cyan/teal/azure, emerald and violet accents. Increase crisp sculpted detail, rich color depth and strong luminous cyan rim lighting, clean dark recesses, jewel-like iris microstructure, refined chitin engraving. Clear vibrant colorful game art legible at small size, NOT gray green realistic dead sea animals, NOT washed-out ghostly white, NOT desaturated. Preserve black background, empty margins and existing atlas layout EXACTLY. No new subjects, text, grid, scenery or extra tentacles. Improve finesse and vividness only.",
+      "reference": "D:/轻度幻想进行中/轻度幻想进行项目/Process Garden/public/assets/generated/eldritch/pollinators/eldritch-pollinator-atlas-v1.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-6086d876-6c4b-4999-9046-a3087dcb7298.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1358325
+    },
+    {
+      "family": "eldritch",
+      "role": "agent",
+      "dest": "public/assets/generated/refined/eldritch-blue/agent.png",
+      "prompt": "Refine this EXACT existing Process Garden BLUE deep-sea Cthulhu game artwork, not a redesign. Preserve every subject's original silhouette, placement, anatomy, scale, camera, expressive eyes, coils and glossy translucent material. Keep the original saturated cyan/teal/azure, emerald and violet accents. Increase crisp sculpted detail, rich color depth and strong luminous cyan rim lighting, clean dark recesses, jewel-like iris microstructure, refined chitin engraving. Clear vibrant colorful game art legible at small size, NOT gray green realistic dead sea animals, NOT washed-out ghostly white, NOT desaturated. Preserve black background, empty margins and existing atlas layout EXACTLY. No new subjects, text, grid, scenery or extra tentacles. Improve finesse and vividness only.",
+      "reference": "D:/轻度幻想进行中/轻度幻想进行项目/Process Garden/public/assets/generated/eldritch/agents/eldritch-agent-growth-atlas-v1.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-e79f51ac-b998-4abc-b13f-baed426c39f5.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1495017
+    },
+    {
+      "family": "eldritch",
+      "role": "capture",
+      "dest": "public/assets/generated/refined/eldritch-blue/capture.png",
+      "prompt": "Refine this EXACT existing Process Garden BLUE deep-sea Cthulhu game artwork, not a redesign. Preserve every subject's original silhouette, placement, anatomy, scale, camera, expressive eyes, coils and glossy translucent material. Keep the original saturated cyan/teal/azure, emerald and violet accents. Increase crisp sculpted detail, rich color depth and strong luminous cyan rim lighting, clean dark recesses, jewel-like iris microstructure, refined chitin engraving. Clear vibrant colorful game art legible at small size, NOT gray green realistic dead sea animals, NOT washed-out ghostly white, NOT desaturated. Preserve black background, empty margins and existing atlas layout EXACTLY. No new subjects, text, grid, scenery or extra tentacles. Improve finesse and vividness only. This is a 2x2 modular capture atlas: preserve horizontal shaft TL, right-pointing tip TR, socket BL, open gripping loop BR; cyan luminous suckers and midnight blue chitin matching the original BLUE core.",
+      "reference": "D:/轻度幻想进行中/轻度幻想进行项目/Process Garden/public/assets/generated/lifecycle/tentacle-capture-atlas-v1.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-e2107415-44bc-4074-b884-c5c1f9a0d25c.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1684363
+    },
+    {
+      "family": "cyberpunk",
+      "role": "core",
+      "dest": "public/assets/generated/refined/cyberpunk/core.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its cyberpunk core to premium art-directed quality. Precision cybernetic ecosystem, midnight titanium, brushed gunmetal, ceramic panels, optical glass, narrow cyan emission with restrained violet and amber functional accents. Premium industrial design, real joints and layered construction, strong silhouettes, no noisy greeble or excessive neon. One ecosystem heart, centered at 50%/50%, circular overall body occupying 66% image width, all appendages within central 78%. A clear luminous central focal organ with elegant concentric living/engineered layers. Black fading silhouette edges. No detached orbiting objects.  PNG, square. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-35a1db9b-f174-4d40-aae1-363709ecdd2c.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1936104
+    },
+    {
+      "family": "cyberpunk",
+      "role": "background",
+      "dest": "public/assets/generated/refined/cyberpunk/background.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its cyberpunk background to premium art-directed quality. Precision cybernetic ecosystem, midnight titanium, brushed gunmetal, ceramic panels, optical glass, narrow cyan emission with restrained violet and amber functional accents. Premium industrial design, real joints and layered construction, strong silhouettes, no noisy greeble or excessive neon. Wide landscape 16:9 background environment. Extremely dark quiet central 65% negative space, rich but low-contrast environmental details restricted to edges and lower corners, delicate depth and cinematic light. No central protagonist, no core, no creatures, no UI, no bright central object.  PNG, landscape 16:9.  Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-3ccd9ff1-4d69-487f-a181-24e3994eb0f6.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1866160
+    },
+    {
+      "family": "cyberpunk",
+      "role": "process1",
+      "dest": "public/assets/generated/refined/cyberpunk/process1.png",
+      "prompt": "Use case: stylized-concept. Finished production PNG game asset for Process Garden's distinct cyberpunk world. EXACT 2x2 atlas of completely non-animal precision computing machines. TOP LEFT triangular reconnaissance drone with one optical lens and three articulated sensor arms; TOP RIGHT cubic translucent data vault containing stacked violet optical plates; BOTTOM LEFT short horizontal cylindrical compute cartridge with cooling fins and amber connectors; BOTTOM RIGHT compact four-rotor maintenance drone with rectangular chassis. Silver ceramic, midnight titanium, cyan interface light. NO insects, leaves, brains, larvae, shells or animal bodies. Premium cinematic sculptural render, physically nuanced surfaces, readable broad forms at 48-96px, limited fine detail, restrained luminous accents, soft upper left key light. Strict equal 2x2 square atlas, one isolated subject centered within each cell, 15% clear margins per cell, no crossing cell boundaries. Uniform pure black #000000 background, bright enough interior to survive black removal. No text, grid, labels, logos, floor, cast shadows, haze or loose particles. Do not imitate the shapes of other themes.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-e97b9f61-68b7-4228-b7b0-ebc8a5fe1c33.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1536447
+    },
+    {
+      "family": "cyberpunk",
+      "role": "process2",
+      "dest": "public/assets/generated/refined/cyberpunk/process2.png",
+      "prompt": "Use case: stylized-concept. Finished production PNG game asset for Process Garden's distinct cyberpunk world. EXACT 2x2 atlas of non-biological cybernetic hardware. TOP LEFT hexagonal rack of three battery/energy canisters; TOP RIGHT segmented robotic manipulator folded in a compact angular S; BOTTOM LEFT three suspended holographic data rings around a thin vertical emitter; BOTTOM RIGHT heavy square shielding module with shutter panels and a recessed amber power socket. Each distinct engineering object. No animals, no snails, no plants, no organic creature equivalents. Premium cinematic sculptural render, physically nuanced surfaces, readable broad forms at 48-96px, limited fine detail, restrained luminous accents, soft upper left key light. Strict equal 2x2 square atlas, one isolated subject centered within each cell, 15% clear margins per cell, no crossing cell boundaries. Uniform pure black #000000 background, bright enough interior to survive black removal. No text, grid, labels, logos, floor, cast shadows, haze or loose particles. Do not imitate the shapes of other themes.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-e26906c7-6150-4c2c-b8fc-5e2d25002b26.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1756373
+    },
+    {
+      "family": "cyberpunk",
+      "role": "habitat",
+      "dest": "public/assets/generated/refined/cyberpunk/habitat.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its cyberpunk habitat to premium art-directed quality. Precision cybernetic ecosystem, midnight titanium, brushed gunmetal, ceramic panels, optical glass, narrow cyan emission with restrained violet and amber functional accents. Premium industrial design, real joints and layered construction, strong silhouettes, no noisy greeble or excessive neon. EXACT 2x2 atlas: top-left low angular server docking station; top-right vertical cooling fin tower; bottom-left contained recessed plasma reservoir; bottom-right cluster of precision crystalline memory blocks. Square PNG, exact equal 2x2 grid with NO visible dividers. Each of four subjects centered in its own quadrant, occupying 65-72% of the cell, at least 14% padding on ALL sides, nothing touching or crossing the cell boundaries. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-e238f947-9883-483d-9d9d-2c6b21710acd.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1638692
+    },
+    {
+      "family": "cyberpunk",
+      "role": "pollinator",
+      "dest": "public/assets/generated/refined/cyberpunk/pollinator.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its cyberpunk pollinator to premium art-directed quality. Precision cybernetic ecosystem, midnight titanium, brushed gunmetal, ceramic panels, optical glass, narrow cyan emission with restrained violet and amber functional accents. Premium industrial design, real joints and layered construction, strong silhouettes, no noisy greeble or excessive neon. EXACT 2x2 atlas: top-left tiny triangular delivery drone; top-right twin-boom sensor scout; bottom-left compact disk maintenance bot; bottom-right folding rectangular surveillance satellite. No insect wings, organic animals or plants. Square PNG, exact equal 2x2 grid with NO visible dividers. Each of four subjects centered in its own quadrant, occupying 65-72% of the cell, at least 14% padding on ALL sides, nothing touching or crossing the cell boundaries. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-b9cd1505-cca7-4abb-b910-e1a5a99f8520.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1312420
+    },
+    {
+      "family": "cyberpunk",
+      "role": "agent",
+      "dest": "public/assets/generated/refined/cyberpunk/agent.png",
+      "prompt": "Use case: stylized-concept. Finished production PNG game asset for Process Garden's distinct cyberpunk world. EXACT 2x2 atlas. TOP LEFT advanced AI command satellite, black cubic central processor, asymmetric deployable cyan optical panels. TOP RIGHT transparent rectangular fabrication capsule containing a single luminous circuit wafer; BOTTOM LEFT same exact capsule and orientation with half-assembled tiny angular robot; BOTTOM RIGHT same capsule with fully assembled folded maintenance drone. Consistent capsule size across last three; mechanical assembly progression NOT biological embryos. No round eggs, humanoids, dragons, or animal anatomy. Premium cinematic sculptural render, physically nuanced surfaces, readable broad forms at 48-96px, limited fine detail, restrained luminous accents, soft upper left key light. Strict equal 2x2 square atlas, one isolated subject centered within each cell, 15% clear margins per cell, no crossing cell boundaries. Uniform pure black #000000 background, bright enough interior to survive black removal. No text, grid, labels, logos, floor, cast shadows, haze or loose particles. Do not imitate the shapes of other themes.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-691a6e29-4f9b-4ef3-ba41-0b9999243d9e.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1551148
+    },
+    {
+      "family": "cyberpunk",
+      "role": "capture",
+      "dest": "public/assets/generated/refined/cyberpunk/capture.png",
+      "prompt": "Use case: stylized-concept. Production game art for Process Garden. Redesign its cyberpunk capture to premium art-directed quality. Precision cybernetic ecosystem, midnight titanium, brushed gunmetal, ceramic panels, optical glass, narrow cyan emission with restrained violet and amber functional accents. Premium industrial design, real joints and layered construction, strong silhouettes, no noisy greeble or excessive neon. EXACT 2x2 atlas of modular capture appendage parts: TOP LEFT horizontal straight shaft, left to right, uniform diameter and seamless material along length, 72% cell width and 13% cell height; TOP RIGHT right-facing gripping tip matching shaft; BOTTOM LEFT small circular root socket; BOTTOM RIGHT empty-center open elliptical wrapping loop, opening at right. Same material scale and lighting on all four parts. Separate cutout parts, not a complete action scene.  Use an articulated flexible metal cable and precision claw. Square PNG, exact equal 2x2 grid with NO visible dividers. Each of four subjects centered in its own quadrant, occupying 65-72% of the cell, at least 14% padding on ALL sides, nothing touching or crossing the cell boundaries. Uniform pure black #000000 background. No ground, cast shadow, gray haze or backdrop. Subject interiors sufficiently lit for black-background removal. Consistent upper-left soft key and subtle rim lighting. Physically rich materials, deliberate large/medium/small detail hierarchy. Must remain recognizable at 48-96 px, crisp clean edges, no noisy sparks or tiny floating particles. No text, letters, symbols, logos, labels, frames, borders, UI or watermark. This is a finished raster asset, not a concept board.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-1f88d229-66f9-4db1-b2d6-5b8711f266c3.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1223040
+    },
+    {
+      "family": "shared",
+      "role": "celestial",
+      "prompt": "Finished premium game art PNG, strict equal 2x2 square atlas, four isolated celestial bodies on pure black. TOP LEFT warm amber solar seed sphere with delicate botanical corona; TOP RIGHT pearly cool full moon with subtle leaflike surface veins; BOTTOM LEFT ominous black sun eclipse with sickly green corona and organic fissures; BOTTOM RIGHT ancient Cthulhu eye-moon with dark stone crust, subtly visible enormous slit pupil and short coiled tendrils at rim. First two lyrical natural garden, last two unmistakable cosmic horror. Real dimensional materials, restrained glows, no sky, no text or stars. Each centered in cell, 18% margin each side, no crossing cell bounds.",
+      "dest": "public/assets/generated/refined/shared/celestial.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-07b6c91c-a964-4e64-b27d-e821e5e64cd0.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2655207
+    },
+    {
+      "family": "cyberpunk",
+      "role": "celestial",
+      "prompt": "Finished premium precision science-fiction game art PNG strict 2x2 atlas on pure black. TOP LEFT artificial amber miniature fusion sun enclosed in sparse engineering rings; TOP RIGHT silver-blue orbital station moon with craterlike docking bays; BOTTOM LEFT alternate cyan plasma stellar reactor; BOTTOM RIGHT dark violet surveillance satellite sphere. Four separate round celestial objects with clearly different mechanical design, coherent midnight titanium, ceramic and optical materials. Restrained narrow emission, realistic dimensional render, no animals, no plants, no sky, no text, no grid. Each centered within its cell, 18% margins, no clipping.",
+      "dest": "public/assets/generated/refined/cyberpunk/celestial.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-08aa305d-31bd-4b3c-b456-cb1a0e038925.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2064346
+    },
+    {
+      "family": "eldritch",
+      "role": "maw",
+      "prompt": "Edit ONLY the large CENTRAL eye of this exact reference blue Cthulhu core into its devouring state: vertical pupil opens into a wide oval black portal edged with luminous turquoise iris and tiny inward ivory teeth. Preserve ALL other anatomy, blue cyan saturated colors, tentacles, crown, smaller eyes, image alignment, subject scale, margins and pure black background EXACTLY. No added creatures or redesigned shell. Only central iris changes.",
+      "dest": "public/assets/generated/refined/eldritch-blue/maw.png",
+      "reference": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-d9757489-b9aa-43e0-a07b-e9a67bba0315.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-0079715b-4808-4af1-b54e-b433019112e1.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1647526
+    },
+    {
+      "family": "crimson",
+      "role": "core",
+      "dest": "public/assets/generated/refined/crimson/core.png",
+      "prompt": "Premium dark fantasy game sprite art, independent BLACK AND CRIMSON CTHULHU OCULAR GOD theme. Obsidian carapace, wine-red folded membranes, ruby irises, restrained ivory highlights. Predominantly EYES and eyelids, uncanny ancient intelligence, NOT teal ocean octopus, NOT generic spherical microbes. Intricate physically lit sculptural materials with strong silhouettes readable at 48 pixels. No text UI logos. One centered colossal ancient eye with vertical black pupil, luminous deep crimson iris, concentric armored eyelids, asymmetrical crown of six smaller watchful eyes and fine black tendrils. Closed resting central pupil. Isolated pure black background, square, entire silhouette within 12% margin.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-90dee7cb-e1ec-454c-88cb-7ee7573185be.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2330627
+    },
+    {
+      "family": "crimson",
+      "role": "background",
+      "dest": "public/assets/generated/refined/crimson/background.png",
+      "prompt": "Premium dark fantasy game sprite art, independent BLACK AND CRIMSON CTHULHU OCULAR GOD theme. Obsidian carapace, wine-red folded membranes, ruby irises, restrained ivory highlights. Predominantly EYES and eyelids, uncanny ancient intelligence, NOT teal ocean octopus, NOT generic spherical microbes. Intricate physically lit sculptural materials with strong silhouettes readable at 48 pixels. No text UI logos. Widescreen 16:9 panoramic obsidian cathedral of an ocular elder god. Vast black stone arches and embedded red eyes only around outer edges, suspended crimson dust, low red underlighting. Central 65% almost empty black negative space for moving sprites. No central eye or main subject. Rich restrained cinematic environmental painting.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-e688a4ad-9820-481b-b166-0c6455fb84fb.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2224041
+    },
+    {
+      "family": "crimson",
+      "role": "process1",
+      "dest": "public/assets/generated/refined/crimson/process1.png",
+      "prompt": "Premium dark fantasy game sprite art, independent BLACK AND CRIMSON CTHULHU OCULAR GOD theme. Obsidian carapace, wine-red folded membranes, ruby irises, restrained ivory highlights. Predominantly EYES and eyelids, uncanny ancient intelligence, NOT teal ocean octopus, NOT generic spherical microbes. Intricate physically lit sculptural materials with strong silhouettes readable at 48 pixels. No text UI logos. Square exact 2x2 equal-cell atlas, four separate subjects with generous 14% cell margins on pure black. TL winged single red eye with folded black membranes; TR triangular shrine carrying three stacked eyes; BL slender serpentine chain of tiny eyes; BR armored diamond-shaped ocular sentinel.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-38920f20-a59f-4a7c-8970-0592b7ba3e40.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1611078
+    },
+    {
+      "family": "crimson",
+      "role": "process2",
+      "dest": "public/assets/generated/refined/crimson/process2.png",
+      "prompt": "Premium dark fantasy game sprite art, independent BLACK AND CRIMSON CTHULHU OCULAR GOD theme. Obsidian carapace, wine-red folded membranes, ruby irises, restrained ivory highlights. Predominantly EYES and eyelids, uncanny ancient intelligence, NOT teal ocean octopus, NOT generic spherical microbes. Intricate physically lit sculptural materials with strong silhouettes readable at 48 pixels. No text UI logos. Square exact 2x2 equal-cell atlas, four separate subjects with generous 14% cell margins on pure black. TL cluster of ruby tear-shaped eyeball seeds; TR curled red eyelid ribbon enclosing one pearl eye; BL thin black floating veil with glowing eyes in its folds; BR bony crescent containing a red iris.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-e2ba2830-a189-4cf6-8c8c-583b5a61929c.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1817169
+    },
+    {
+      "family": "crimson",
+      "role": "habitat",
+      "dest": "public/assets/generated/refined/crimson/habitat.png",
+      "prompt": "Premium dark fantasy game sprite art, independent BLACK AND CRIMSON CTHULHU OCULAR GOD theme. Obsidian carapace, wine-red folded membranes, ruby irises, restrained ivory highlights. Predominantly EYES and eyelids, uncanny ancient intelligence, NOT teal ocean octopus, NOT generic spherical microbes. Intricate physically lit sculptural materials with strong silhouettes readable at 48 pixels. No text UI logos. Square exact 2x2 equal-cell atlas, separate small landscape props pure black background 14% margins. TL broken black altar with red eye; TR branching obsidian eye-stalk shrine; BL shallow crimson reflecting basin; BR cluster of dark ruby crystals containing eyes.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-ce960bdf-5a90-4bfd-a316-442eb95d1751.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2259056
+    },
+    {
+      "family": "crimson",
+      "role": "pollinator",
+      "dest": "public/assets/generated/refined/crimson/pollinator.png",
+      "prompt": "Premium dark fantasy game sprite art, independent BLACK AND CRIMSON CTHULHU OCULAR GOD theme. Obsidian carapace, wine-red folded membranes, ruby irises, restrained ivory highlights. Predominantly EYES and eyelids, uncanny ancient intelligence, NOT teal ocean octopus, NOT generic spherical microbes. Intricate physically lit sculptural materials with strong silhouettes readable at 48 pixels. No text UI logos. Square exact 2x2 equal-cell atlas four tiny distinct floating familiars, pure black and 14% margin. TL tiny winged eye; TR black needle with ruby eye; BL armored little eyeball scarab; BR crescent veil with single red eye.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-1889b259-cdaa-4003-9baa-55155b446193.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1239244
+    },
+    {
+      "family": "crimson",
+      "role": "agent",
+      "dest": "public/assets/generated/refined/crimson/agent.png",
+      "prompt": "Premium dark fantasy game sprite art, independent BLACK AND CRIMSON CTHULHU OCULAR GOD theme. Obsidian carapace, wine-red folded membranes, ruby irises, restrained ivory highlights. Predominantly EYES and eyelids, uncanny ancient intelligence, NOT teal ocean octopus, NOT generic spherical microbes. Intricate physically lit sculptural materials with strong silhouettes readable at 48 pixels. No text UI logos. Square exact 2x2 equal-cell atlas pure black 14% margins. TL commanding crowned ancient eye with orbiting smaller eyes; TR sealed crimson eyelid cocoon; BL same cocoon half opening to reveal small iris; BR same cocoon fully awakened with mature ruby eye. Last three matching alignment evolving stages.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-edccf53a-030d-4a8a-8c45-9dd51f2e2ff6.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1776544
+    },
+    {
+      "family": "crimson",
+      "role": "capture",
+      "dest": "public/assets/generated/refined/crimson/capture.png",
+      "prompt": "Premium dark fantasy game sprite art, independent BLACK AND CRIMSON CTHULHU OCULAR GOD theme. Obsidian carapace, wine-red folded membranes, ruby irises, restrained ivory highlights. Predominantly EYES and eyelids, uncanny ancient intelligence, NOT teal ocean octopus, NOT generic spherical microbes. Intricate physically lit sculptural materials with strong silhouettes readable at 48 pixels. No text UI logos. Square exact 2x2 equal-cell modular animation parts on pure black, no overlap. TL straight horizontal black-red sinewy shaft, evenly spaced tiny red eyes, uniform thickness; TR right-pointing claw-shaped eyelid gripping tip; BL circular obsidian root socket with red iris; BR OPEN elliptical looping ocular tendon, large empty black center. Every part centered with 14% margin, exquisitely detailed organic material.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-30c77f94-e00e-41c5-9428-9cea148e58de.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1517876
+    },
+    {
+      "family": "crimson",
+      "role": "celestial",
+      "dest": "public/assets/generated/refined/crimson/celestial.png",
+      "prompt": "Premium dark fantasy game sprite art, independent BLACK AND CRIMSON CTHULHU OCULAR GOD theme. Obsidian carapace, wine-red folded membranes, ruby irises, restrained ivory highlights. Predominantly EYES and eyelids, uncanny ancient intelligence, NOT teal ocean octopus, NOT generic spherical microbes. Intricate physically lit sculptural materials with strong silhouettes readable at 48 pixels. No text UI logos. Square exact 2x2 equal-cell atlas, pure black, 14% margin. TL dark crimson eclipsed sun with thin ruby corona; TR ivory crescent enclosing watchful red eye; BL black solar eye with red iris corona; BR blood-red eclipse eye with obsidian eyelids. Isolated bodies no sky.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-d4a264c4-ce03-4584-8002-efdbe964f338.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2191124
+    },
+    {
+      "family": "crimson",
+      "role": "maw",
+      "dest": "public/assets/generated/refined/crimson/maw.png",
+      "prompt": "Edit the reference core sprite for its active devouring state. Preserve EXACT entire outer silhouette, crown, small eyes, framing, scale, camera and black background. Change ONLY central giant iris: its vertical pupil dilates to a wide pitch-black oval void ringed by ruby iris tissue and tiny inward ivory teeth, as an impossible ocular portal swallowing energy. Still reads as a huge EYE, not octopus mouth. No new appendages, no debris, no scene. Same image dimensions.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-c6e3ef65-6713-4483-bb80-2b99998c5a63.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1954214
+    }
+  ]
+}

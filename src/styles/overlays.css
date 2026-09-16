@@ -48,3 +48,33 @@
 html[data-reduced-motion="true"] [data-overlay-root][data-state],
 html[data-reduced-motion="true"] [data-overlay-root][data-state] * { animation: none !important; transition: none !important; }
 html[data-paused="true"] .preview-orbit > span { animation-play-state: paused; }
+
+.artwork-authoring { border-top: 1px solid var(--color-border); padding-top: 12px; }
+.artwork-authoring summary { color: var(--color-primary); font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 0; }
+.artwork-authoring p, .theme-import-preview p { color: var(--color-text-muted); font-size: 12px; line-height: 1.6; }
+.artwork-authoring textarea { box-sizing: border-box; width: 100%; resize: vertical; padding: 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-background); color: var(--color-text); font: inherit; line-height: 1.6; }
+.artwork-authoring .studio-actions { flex-wrap: wrap; margin: 10px 0; }
+.artwork-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.artwork-slot { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 9px; background: var(--color-background); }
+.artwork-slot label { gap: 6px; }
+.artwork-slot img { width: 100%; height: 90px; object-fit: contain; background: #000; }
+.artwork-slot .artwork-inherited { display: grid; place-items: center; min-height: 54px; font-size: 11px; color: var(--color-text-muted); background: var(--color-background-elevated); }
+.artwork-slot input[type="file"] { width: 100%; padding: 4px 0; height: auto; font-size: 10px; border: 0; }
+.artwork-slot small { display: block; font-size: 10px; color: var(--color-text-muted); overflow-wrap: anywhere; }
+.artwork-remove { color: var(--color-text-muted); font-size: 11px; margin-top: 6px; text-decoration: underline; }
+.studio-preview { position: sticky; top: 12px; align-self: start; }
+.preview-artwork-core { width: 160px; height: 160px; object-fit: contain; mix-blend-mode: screen; }
+.studio-preview .preview-core.with-artwork { width: 160px; height: 160px; background: none; box-shadow: none; mix-blend-mode: screen; }
+.installed-theme { grid-template-columns: 24px minmax(0, 1fr) auto auto auto; }
+.studio-form .artwork-slot input[type="file"] { height: auto; padding: 6px 0; border: 0; border-radius: 0; background: transparent; }
+.artwork-remove { background: none; border: 0; cursor: pointer; padding: 0; }
+.theme-import-preview { padding: 18px; border-bottom: 1px solid var(--color-border); }
+.theme-import-preview h3 { margin: 0; font-size: 15px; }
+.artwork-import-images { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.artwork-import-images img { width: 90px; height: 90px; object-fit: contain; background: #000; border-radius: 6px; }
+@media (max-width: 760px) { .studio-preview { position: static; } }
+.asset-checklist { margin: 14px 0; overflow-x: auto; }
+.asset-checklist table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.asset-checklist th, .asset-checklist td { padding: 10px 8px; border-bottom: 1px solid var(--color-border); text-align: left; vertical-align: top; }
+.asset-checklist small { display: block; margin-top: 5px; color: var(--color-text-muted); line-height: 1.5; }
+.capture-module-note { color: var(--color-text-muted); font-size: 12px; line-height: 1.6; }

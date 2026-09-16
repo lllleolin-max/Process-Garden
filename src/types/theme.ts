@@ -1,4 +1,4 @@
-export type BuiltInThemeId = "garden" | "eldritch";
+export type BuiltInThemeId = "garden" | "eldritch" | "cyberpunk" | "crimson" | "angel" | "olympus" | "minimal";
 export type ThemeId = string;
 
 export interface ThemeTypography {
@@ -41,7 +41,7 @@ export interface ThemeMotion {
 }
 
 export interface ThemeManifest {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   id: ThemeId;
   name: { "en-US": string; "zh-CN": string };
   version: string;
@@ -51,4 +51,12 @@ export interface ThemeManifest {
   typography: ThemeTypography;
   effects: ThemeEffects;
   motion: ThemeMotion;
+  assets?: Partial<Record<ThemeAssetRole, string>>;
+  captureStyle?: CaptureStyle;
 }
+
+export const captureStyles = ["vine", "tentacle", "cable", "beam", "wing", "laurel", "spear"] as const;
+export type CaptureStyle = typeof captureStyles[number];
+
+export const themeAssetRoles = ["background", "core", "process1", "process2", "process3", "process4", "habitat", "pollinator", "agent", "celestial", "capture", "maw"] as const;
+export type ThemeAssetRole = typeof themeAssetRoles[number];

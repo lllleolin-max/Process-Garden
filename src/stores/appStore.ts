@@ -4,7 +4,7 @@ import { demoEvents, makeDemoSnapshot } from "../data/demo";
 import { deriveDemoEvent, deriveProcessEvents } from "../data/events";
 import { normalizeProcessName, sanitizeOrganismStyleOverrides, type OrganismStyleId } from "../ecology/organisms";
 import type { AppLocale } from "../i18n/config";
-import type { ProcessEvent, SystemSnapshot } from "../types/system";
+import type { ProcessEvent, ProcessSnapshot, SystemSnapshot } from "../types/system";
 import type { ThemeId, ThemeManifest } from "../types/theme";
 
 export type DisplayMode = "windowed" | "fullscreen" | "wallpaper";
@@ -39,6 +39,8 @@ interface AppState extends Preferences {
   history: SystemSnapshot[];
   events: ProcessEvent[];
   collector: "native" | "demo";
+  endedDemoProcesses: Record<number, number>;
+  completeProcessTermination: (process: ProcessSnapshot, collector: "native" | "demo") => void;
   setTheme: (id: ThemeId) => void;
   setLocale: (locale: AppLocale) => void;
   setDisplayMode: (mode: DisplayMode) => void;
@@ -156,6 +158,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   history: initialHistory,
   events: demoEvents,
   collector: "demo",
+  endedDemoProcesses: {},
+  completeProcessTermination: (process, collector) => set((state) => {
+    if (state.collector !== collector || !state.snapshot.processes.some((item) => item.pid === process.pid && item.startedAt === process.startedAt)) return state;
+    const snapshot = { ...state.snapshot, processes: state.snapshot.processes.filter((item) => item.pid !== process.pid), processCount: Math.max(0, state.snapshot.processCount - 1) };
+    return {
+      snapshot,
+      selectedPid: state.selectedPid === process.pid ? null : state.selectedPid,
+      endedDemoProcesses: collector === "demo" ? { ...state.endedDemoProcesses, [process.pid]: process.startedAt } : state.endedDemoProcesses,
+      events: [{ id: `manual-exit-${process.pid}-${Date.now()}`, timestamp: Date.now(), kind: "exit" as const, processName: process.name, pid: process.pid, messageKey: "events.exited" }, ...state.events].slice(0, 80)
+    };
+  }),
   setTheme: (themeId) => set((state) => { const next = { ...state, themeId, themeMenuOpen: false }; queueMicrotask(() => persist(get())); return next; }),
   setLocale: (locale) => set((state) => { const next = { ...state, locale }; queueMicrotask(() => persist(get())); return next; }),
   setDisplayMode: (displayMode) => set({ displayMode }),
@@ -203,6 +216,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   ingestSnapshot: (snapshot, collector) => set((state) => {
     const sameCollector = collector === state.collector;
     if (state.paused || (sameCollector && snapshot.timestamp <= state.snapshot.timestamp)) return state;
+    if (collector === "demo") {
+      const processes = snapshot.processes.filter((process) => state.endedDemoProcesses[process.pid] !== process.startedAt);
+      snapshot = { ...snapshot, processes, processCount: Math.max(0, snapshot.processCount - (snapshot.processes.length - processes.length)) };
+    }
     const lifecycleEvents = collector === "native" && sameCollector ? deriveProcessEvents(state.snapshot, snapshot) : [];
     const demoEvent = collector === "demo" && sameCollector ? deriveDemoEvent(state.snapshot, snapshot) : null;
     const newEvents = [...lifecycleEvents, ...(demoEvent ? [demoEvent] : [])];
@@ -216,7 +233,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
   }),
   resetPreferences: () => set((state) => {
-    const next = { ...state, ...defaultPreferences, customThemes: [], themeId: "garden" };
+    const next = { ...state, ...defaultPreferences, customThemes: [], themeId: "garden", endedDemoProcesses: {} };
     queueMicrotask(() => persist(get()));
     return next;
   })

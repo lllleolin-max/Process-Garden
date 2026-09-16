@@ -31,7 +31,7 @@ async function mount() {
   tick();
   return view;
 }
-const embryos = () => paint.filter((item) => item.path.includes("/agents/") && item.cell > 0);
+const embryos = () => paint.filter((item) => item.path.includes("/agent.png") && item.cell > 0);
 
 beforeEach(() => {
   images = []; frames = new Map(); nextId = 0; now = 1_000; paint = [];
@@ -85,7 +85,7 @@ describe("embryos in the real Canvas render path", () => {
     act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, processes: [parent] } }));
     advance(400);
     expect(embryos().length).toBeGreaterThan(0);
-    expect(paint.some((item) => item.path.endsWith("eldritch-core-maw-v3.png"))).toBe(true);
+    expect(paint.some((item) => item.path.endsWith("maw.png"))).toBe(true);
     advance(2_000);
     expect(embryos()).toHaveLength(0);
   });
@@ -98,7 +98,7 @@ describe("embryos in the real Canvas render path", () => {
     fireEvent.keyDown(canvas, { key: "ArrowRight" });
     expect(useAppStore.getState().selectedPid).toBe(child.pid);
     tick(40);
-    expect(paint.some((item) => item.path.includes("/agents/") && item.cell === 0)).toBe(true);
+    expect(paint.some((item) => item.path.includes("/agent.png") && item.cell === 0)).toBe(true);
     expect(embryos()).toHaveLength(1);
   });
 
@@ -106,7 +106,7 @@ describe("embryos in the real Canvas render path", () => {
     const siblings = [child, { ...child, pid: 3 }, { ...child, pid: 4 }, { ...child, pid: 5, name: "needle-child" }];
     useAppStore.setState({ searchQuery: "needle-child", snapshot: { ...useAppStore.getState().snapshot, processes: [parent, ...siblings] } });
     const view = await mount();
-    expect(paint.some((item) => item.path.includes("/agents/") && item.cell === 0)).toBe(true);
+    expect(paint.some((item) => item.path.includes("/agent.png") && item.cell === 0)).toBe(true);
     expect(embryos()).toHaveLength(3);
     const canvas = view.container.querySelector("canvas")!;
     fireEvent.keyDown(canvas, { key: "ArrowRight" });

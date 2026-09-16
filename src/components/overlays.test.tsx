@@ -87,6 +87,32 @@ describe("overlay interactions", () => {
 });
 
 describe("theme creation", () => {
+  it("shows a complete prompt and accepts a Chinese theme name", () => {
+    useAppStore.setState({ themeStudioOpen: true });
+    renderShell();
+    fireEvent.click(screen.getByText("AI prompts & custom artwork"));
+    fireEvent.click(screen.getByRole("button", { name: "View prompt" }));
+    expect((screen.getByRole("textbox", { name: "Complete AI artwork prompt" }) as HTMLTextAreaElement).value).toContain("process-atlas-v4.png");
+    fireEvent.change(screen.getByRole("textbox", { name: "Theme name" }), { target: { value: "雨夜温室" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(useAppStore.getState().customThemes[0].name["zh-CN"]).toBe("雨夜温室");
+    expect(useAppStore.getState().themeId).toMatch(/^[a-z0-9_-]+$/);
+  });
+
+  it("stages imports without changing the active theme until confirmed", async () => {
+    useAppStore.setState({ themeStudioOpen: true });
+    const { container } = renderShell();
+    const imported = { ...structuredClone(builtInThemes[0]), id: "preview-import" };
+    const file = new File([JSON.stringify(imported)], "preview.json", { type: "application/json" });
+    Object.defineProperty(file, "arrayBuffer", { value: async () => new TextEncoder().encode(JSON.stringify(imported)).buffer });
+    fireEvent.change(container.querySelector('input[accept*=".pgtheme"]')!, { target: { files: [file] } });
+    await screen.findByRole("button", { name: "Install and apply" });
+    expect(useAppStore.getState().themeId).toBe("garden");
+    expect(useAppStore.getState().customThemes).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: "Install and apply" }));
+    await waitFor(() => expect(useAppStore.getState().themeId).toBe("preview-import"));
+  });
+
   it("preserves an existing theme when a new theme name has the same id", () => {
     const existing = { ...structuredClone(builtInThemes[0]), id: "my-garden", name: { "en-US": "My Garden", "zh-CN": "我的花园" } };
     useAppStore.setState({ customThemes: [existing], themeStudioOpen: true });

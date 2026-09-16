@@ -1,0 +1,94 @@
+{
+  "tool": "image_gen.imagegen",
+  "assets": [
+    {
+      "role": "core",
+      "prompt": "Use case stylized-concept. Exquisite premium high fantasy game sprite, ONE full-bodied adult celestial ANGEL PERSON as central guardian. Clearly visible serene human face with flowing pale-gold hair, slender dignified upright body in long layered ivory robes and sculpted gold armor, two magnificent feather wings spread gracefully out and upward, golden halo above the head. Both hands held at chest/waist height cradle a luminous sapphire-white star. Feet and flowing robe fully visible. Rich saturated warm gold, ivory feathers, sapphire-blue gems, crisp finely sculpted materials. Recognizably an angel character, NOT abstract emblem, NOT only wings, NOT wheel or eyeball. Front view with subtle dimensional lighting, elegant clean silhouette legible at 150px. Full entire character occupies central 76% of square image with generous black margins on all sides. Isolated uniform pure black background, no floor or scenery, no text UI watermarks, restrained bloom.",
+      "dest": "public/assets/generated/refined/angel/core.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-232e1208-df42-43fa-bda5-7fbe2efad348.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1782534
+    },
+    {
+      "role": "background",
+      "prompt": "Use case: stylized-concept. Production sprite artwork for Process Garden SACRED ANGEL theme. Exquisite high fantasy craftsmanship, ivory layered feathers, polished sacred gold filigree, luminous sapphire-blue crystals, radiant warm halos. Rich saturated gold and azure, crisp readable silhouettes, controlled bloom, not pale washed-out white. Benevolent majestic celestial beings, no horror or tentacles, no text logos UI borders. 16:9 dark celestial sanctuary, midnight navy heaven, distant gold-and-ivory cathedral arches and luminous clouds confined to outer edges. Central 65% quiet near-black negative space for sprites, no central figure, subtle azure and gold rays. Rich cinematic painting.",
+      "dest": "public/assets/generated/refined/angel/background.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-39b26ab7-44db-41a9-b387-e44820f87f34.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2276306
+    },
+    {
+      "role": "process1",
+      "prompt": "Use case: stylized-concept. Production sprite artwork for Process Garden SACRED ANGEL theme. Exquisite high fantasy craftsmanship, ivory layered feathers, polished sacred gold filigree, luminous sapphire-blue crystals, radiant warm halos. Rich saturated gold and azure, crisp readable silhouettes, controlled bloom, not pale washed-out white. Benevolent majestic celestial beings, no horror or tentacles, no text logos UI borders. Square exact 2x2 equal-cell atlas, pure black, each subject contained in central 72% of its cell. TL two-winged golden halo with sapphire star; TR floating open illuminated tome with ivory feather wings; BL slender angelic spear with little wings and blue crystal; BR shield-shaped ivory guardian with golden feather crest. Four independent distinct sprites.",
+      "dest": "public/assets/generated/refined/angel/process1.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-fc1a3cb5-2bda-4655-a4db-c7236f98730a.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2442358
+    },
+    {
+      "role": "process2",
+      "prompt": "Use case: stylized-concept. Production sprite artwork for Process Garden SACRED ANGEL theme. Exquisite high fantasy craftsmanship, ivory layered feathers, polished sacred gold filigree, luminous sapphire-blue crystals, radiant warm halos. Rich saturated gold and azure, crisp readable silhouettes, controlled bloom, not pale washed-out white. Benevolent majestic celestial beings, no horror or tentacles, no text logos UI borders. Square exact 2x2 equal-cell atlas pure black with 14% cell margins. TL golden celestial wheel with tiny pearl feathers; TR folded ivory wings enclosing sapphire flame; BL delicate flying golden censer with azure incense ribbon; BR crystal chalice with small uplifted angel wings. Four distinct isolated sprites.",
+      "dest": "public/assets/generated/refined/angel/process2.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-5a4661c0-90fe-4100-a39f-9b8c5b5a7848.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2479162
+    },
+    {
+      "role": "habitat",
+      "prompt": "Use case: stylized-concept. Production sprite artwork for Process Garden SACRED ANGEL theme. Exquisite high fantasy craftsmanship, ivory layered feathers, polished sacred gold filigree, luminous sapphire-blue crystals, radiant warm halos. Rich saturated gold and azure, crisp readable silhouettes, controlled bloom, not pale washed-out white. Benevolent majestic celestial beings, no horror or tentacles, no text logos UI borders. Square exact 2x2 equal-cell atlas pure black with 14% margins. TL ivory sanctuary arch with golden halo; TR cluster of tall feather-like marble spires; BL shallow sapphire holy spring in gold basin; BR blue crystal reliquary with ivory feathers. Small isolated environment props.",
+      "dest": "public/assets/generated/refined/angel/habitat.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-ebee8c59-d0ce-4cec-b7b5-4f90c2924f02.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2457507
+    },
+    {
+      "role": "pollinator",
+      "prompt": "Use case: stylized-concept. Production sprite artwork for Process Garden SACRED ANGEL theme. Exquisite high fantasy craftsmanship, ivory layered feathers, polished sacred gold filigree, luminous sapphire-blue crystals, radiant warm halos. Rich saturated gold and azure, crisp readable silhouettes, controlled bloom, not pale washed-out white. Benevolent majestic celestial beings, no horror or tentacles, no text logos UI borders. Square exact 2x2 equal-cell atlas pure black with 14% margins. TL tiny ivory dove carrying golden star; TR two-winged sapphire spark; BL tiny golden cherub wheel with feather fins; BR floating paired ivory feathers with pearl. Clear distinct tiny celestial familiars.",
+      "dest": "public/assets/generated/refined/angel/pollinator.png",
+      "layoutRefinement": {
+        "prompt": "Edit this exact sprite atlas: retain the FOUR existing designs and their materials. Re-layout into exact 2x2 equal square quadrants. Each subject must fit inside the central 65% of its quadrant, with broad EMPTY PURE BLACK gutters. Subject centers precisely (25%,25%), (75%,25%), (25%,75%), (75%,75%). Reduce every subject including all glow and appendages to fit. Remove ALL grid lines, borders, grey haze and background colors. Entire horizontal band y=45%-55% and vertical band x=45%-55% must be absolutely pure black. No subject crossing quadrant boundaries. Square image. Preserve beautiful gold ivory and sapphire details.",
+        "reference": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-06f54f1f-08f0-4aef-8bb8-32dfe57a4df5.png"
+      },
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-eb71d6aa-7e9c-4faf-b247-3c10447c5212.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1035067
+    },
+    {
+      "role": "agent",
+      "prompt": "Use case: stylized-concept. Production sprite artwork for Process Garden SACRED ANGEL theme. Exquisite high fantasy craftsmanship, ivory layered feathers, polished sacred gold filigree, luminous sapphire-blue crystals, radiant warm halos. Rich saturated gold and azure, crisp readable silhouettes, controlled bloom, not pale washed-out white. Benevolent majestic celestial beings, no horror or tentacles, no text logos UI borders. Square exact 2x2 equal-cell atlas pure black 14% margins. TL majestic seraphic command seal with three pairs of ivory wings and sapphire star; TR sealed golden seed held in folded ivory wings; BL same seed unfolding wings and revealing blue light; BR same seed fully awakened as radiant little winged star. Last three matching scale, orientation and identity.",
+      "dest": "public/assets/generated/refined/angel/agent.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-12ecd39c-02f2-45b1-a75d-a2e7940a0126.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1849748
+    },
+    {
+      "role": "celestial",
+      "prompt": "Use case: stylized-concept. Production sprite artwork for Process Garden SACRED ANGEL theme. Exquisite high fantasy craftsmanship, ivory layered feathers, polished sacred gold filigree, luminous sapphire-blue crystals, radiant warm halos. Rich saturated gold and azure, crisp readable silhouettes, controlled bloom, not pale washed-out white. Benevolent majestic celestial beings, no horror or tentacles, no text logos UI borders. Square exact 2x2 equal-cell atlas pure black 14% margins. TL golden radiant sun with ivory feather corona; TR pearl crescent with sapphire jewel; BL gold solar halo and eight-point star; BR silver-blue moon encircled by delicate golden wings. Isolated celestial bodies, no sky.",
+      "dest": "public/assets/generated/refined/angel/celestial.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-58b58c08-1dbb-42eb-ae3b-839018ed7d83.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2611897
+    },
+    {
+      "role": "capture",
+      "prompt": "Use case: stylized-concept. Production sprite artwork for Process Garden SACRED ANGEL theme. Exquisite high fantasy craftsmanship, ivory layered feathers, polished sacred gold filigree, luminous sapphire-blue crystals, radiant warm halos. Rich saturated gold and azure, crisp readable silhouettes, controlled bloom, not pale washed-out white. Benevolent majestic celestial beings, no horror or tentacles, no text logos UI borders. Square exact 2x2 equal-cell atlas pure black generous 14% margins. Modular animation parts: TL straight horizontal narrow golden ribbon lined with small ivory feathers, uniform thickness; TR right-pointing graceful feather wing tip; BL small golden halo socket with sapphire star; BR open elliptical wreath of ivory feathers and gold light, large empty center. Separate parts used to extend a luminous wing ribbon and cradle a process. Not a complete scene.",
+      "dest": "public/assets/generated/refined/angel/capture.png",
+      "layoutRefinement": {
+        "prompt": "Edit this exact sprite atlas: retain the FOUR existing designs and their materials. Re-layout into exact 2x2 equal square quadrants. Each subject must fit inside the central 65% of its quadrant, with broad EMPTY PURE BLACK gutters. Subject centers precisely (25%,25%), (75%,25%), (25%,75%), (75%,75%). Reduce every subject including all glow and appendages to fit. Remove ALL grid lines, borders, grey haze and background colors. Entire horizontal band y=45%-55% and vertical band x=45%-55% must be absolutely pure black. No subject crossing quadrant boundaries. Square image. Preserve beautiful gold ivory and sapphire details.",
+        "reference": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-46c17d1b-0b08-49f8-9d94-ebb335609bc5.png"
+      },
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-77463bc4-2f4e-4c94-bd5f-ef4bc2115943.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 898639
+    }
+  ]
+}

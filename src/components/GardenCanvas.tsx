@@ -1,10 +1,16 @@
+import { drawAppLogo, drawCpu } from "../animation/minimalScene";
 import { Boxes, Focus, Orbit, ScanSearch } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { builtInThemes } from "../design-system/themes/builtIn";
+import { hasMaw } from "../themes/builtinArtwork";
 import { CelestialClock, type CelestialBodyState, type CelestialCycleState } from "../animation/celestialCycle";
 import { getCachedSceneAssets, loadSceneAssets, sceneAssetFamily, sceneBackground } from "../animation/sceneAssets";
-import { ELDRITCH_SWALLOW_DURATION_MS, getEldritchSwallowMotion } from "../animation/eldritchLifecycle";
+import { CAPTURE_DURATION_MS, getCaptureMotion } from "../animation/captureLifecycle";
+import { themeExitPose, drawWithering } from "../animation/themeExit";
+import { drawCaptureTentacle } from "../animation/captureTentacle";
+import { captureStyleFor } from "../themes/lifecycle";
+import { gazeTarget, paintCrimsonGaze, type GazePoint } from "../animation/crimsonGaze";
 import { decideAnimationFrame } from "../animation/frameRate";
 import { damp, stableProcessAngle } from "../animation/smoothing";
 import { SceneClock } from "../animation/sceneClock";
@@ -19,6 +25,8 @@ import { processIconKey, useProcessIconStore } from "../stores/processIconStore"
 import type { ProcessSnapshot } from "../types/system";
 import type { ThemeManifest } from "../types/theme";
 import { ProcessIcon } from "./ProcessIcon";
+import { EndProcessDialog } from "./EndProcessDialog";
+import { coreDropTarget, insideCore, sameProcess, type TerminationTarget } from "../processes/termination";
 import "./GardenCanvas.css";
 
 interface NodePosition { pid: number; x: number; y: number; radius: number }
@@ -39,6 +47,7 @@ interface VisualNode extends NodePosition {
   exitRadius: number;
   exitOpacity: number;
   exiting: boolean;
+  captured: boolean;
   emphasis: number;
   emphasisTarget: number;
 }
@@ -53,6 +62,9 @@ const nameColors: Record<string, string> = {
 };
 
 function processColor(process: ProcessSnapshot, theme: ThemeManifest, eldritch = false, styleIndex = -1) {
+  if (["angel", "olympus"].includes(sceneAssetFamily(theme))) return [theme.colors.primary, theme.colors.secondary, theme.colors.tertiary, "#f6c977"][(styleIndex >= 0 ? styleIndex : process.pid) % 4];
+  if (sceneAssetFamily(theme) === "crimson") return [theme.colors.primary, theme.colors.secondary, theme.colors.tertiary, "#f28387"][(styleIndex >= 0 ? styleIndex : process.pid) % 4];
+  if (sceneAssetFamily(theme) === "cyberpunk") return [theme.colors.primary, theme.colors.secondary, theme.colors.warning, theme.colors.tertiary][(styleIndex >= 0 ? styleIndex : process.pid) % 4];
   if (eldritch) return ["#79e395", "#a37af5", "#62d6ed", "#e9ad59", "#7ade86", "#57d9d6", "#a276ef", "#76e0b3"][styleIndex >= 0 ? styleIndex : process.pid % 8];
   return nameColors[process.name.toLowerCase()] ?? (process.cpuPercent > 12 ? theme.colors.warning : theme.colors.primary);
 }
@@ -221,7 +233,7 @@ function drawRasterCreature(
   selected: boolean
 ) {
   const pulse = 1 + Math.sin(time * 0.0012 + process.pid) * 0.035;
-  const size = radius * 4.15 * pulse;
+  const size = radius * 3.35 * pulse;
   context.save();
   const halo = context.createRadialGradient(x, y, radius * 0.18, x, y, radius * 1.75);
   halo.addColorStop(0, withAlpha(color, selected ? 0.28 : 0.17));
@@ -234,7 +246,7 @@ function drawRasterCreature(
   context.translate(x, y);
   context.rotate(Math.sin(time * 0.00035 + process.pid) * 0.035);
   context.globalCompositeOperation = "screen";
-  context.globalAlpha *= selected ? 1 : 0.9;
+  context.globalAlpha *= selected ? 1 : 0.98;
   context.drawImage(sprite, -size / 2, -size / 2, size, size);
   context.restore();
   context.save();
@@ -359,7 +371,7 @@ function drawCore(context: CanvasRenderingContext2D, x: number, y: number, radiu
       const openness = Math.min(1, mouthOpen);
       context.save();
       context.globalCompositeOperation = "screen";
-      context.globalAlpha = 0.82 * (1 - openness);
+      context.globalAlpha = 0.98 * (1 - openness);
       context.drawImage(maskedCore, x - imageSize / 2, y - imageSize / 2, imageSize, imageSize);
       context.restore();
       context.save();
@@ -370,8 +382,8 @@ function drawCore(context: CanvasRenderingContext2D, x: number, y: number, radiu
       context.ellipse(x, y + size * 0.08, size * 0.62, size * (0.14 + openness * 0.83), 0, 0, Math.PI * 2);
       context.fill();
       context.globalCompositeOperation = "screen";
-      const mawWidth = size * (2.22 + openness * 0.34);
-      const mawHeight = size * (1.55 + openness * 1.48);
+      const mawWidth = imageSize;
+      const mawHeight = imageSize;
       context.drawImage(maw, x - mawWidth / 2, y - mawHeight / 2, mawWidth, mawHeight);
       context.restore();
       return;
@@ -409,7 +421,7 @@ function drawCore(context: CanvasRenderingContext2D, x: number, y: number, radiu
     }
     context.save();
     context.globalCompositeOperation = "screen";
-    context.globalAlpha = 0.82;
+    context.globalAlpha = 0.98;
     context.drawImage(maskedCore, x - imageSize / 2, y - imageSize / 2, imageSize, imageSize);
     context.restore();
     return;
@@ -552,9 +564,33 @@ export function GardenCanvas() {
   const requestRenderRef = useRef<() => void>(() => {});
   const populationRef = useRef<number[]>([]);
   const [hoveredPid, setHoveredPid] = useState<number | null>(null);
+  const dragRef = useRef<{ target: TerminationTarget; pointerId: number; startX: number; startY: number; x: number; y: number; moved: boolean } | null>(null);
+  const suppressClick = useRef(false);
+  const [dragging, setDragging] = useState(false);
+  const [overCore, setOverCore] = useState(false);
+  const [endTarget, setEndTarget] = useState<TerminationTarget | null>(null);
+  const endTargetRef = useRef(endTarget);
+  endTargetRef.current = endTarget;
+  const capturePreview = useRef<{ target: TerminationTarget; x: number; y: number; radius: number; elapsed: number; opacity: number } | null>(null);
+  useEffect(() => { requestRenderRef.current(); }, [endTarget]);
+  const dropCore = useRef({ x: 0, y: 0, radius: 70 });
   const [systemReducedMotion, setSystemReducedMotion] = useState(() => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
   const state = useAppStore();
   const reducedMotion = state.reducedMotion || systemReducedMotion;
+  const cancelDrag = () => {
+    dragRef.current = null; setDragging(false); setOverCore(false);
+    requestRenderRef.current();
+  };
+  useEffect(() => {
+    const cancel = () => cancelDrag();
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && dragRef.current) { event.preventDefault(); event.stopPropagation(); suppressClick.current = true; cancelDrag(); }
+    };
+    window.addEventListener("blur", cancel);
+    window.addEventListener("keydown", escape, true);
+    return () => { window.removeEventListener("blur", cancel); window.removeEventListener("keydown", escape, true); };
+  }, []);
+  useEffect(() => { cancelDrag(); }, [state.themeId, state.demoMode, state.collector, state.displayMode]);
   const processIcons = useProcessIconStore((iconState) => iconState.icons);
   const themes = useMemo(() => [...builtInThemes, ...state.customThemes], [state.customThemes]);
   const requestedTheme = themes.find((item) => item.id === state.themeId) ?? builtInThemes[0];
@@ -565,8 +601,10 @@ export function GardenCanvas() {
   activeThemeRef.current = theme;
   const transitionRef = useRef<{ canvas: HTMLCanvasElement; startedAt: number | null; backdrop: number[] } | null>(null);
   const backdropRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const backdropOpacity = useRef([0, 0]);
+  const backdropOpacity = useRef(builtInThemes.map(() => 0));
   const visitedBackdrops = useRef(new Set<string>());
+  const visitedCustomBackdrop = useRef(false);
+  if (theme.assets?.background) visitedCustomBackdrop.current = true;
   visitedBackdrops.current.add(sceneAssetFamily(theme));
 
   useEffect(() => {
@@ -586,7 +624,7 @@ export function GardenCanvas() {
   }, []);
   const { processes, embryoFocusPid } = useMemo(() => {
     const query = state.searchQuery.trim().toLowerCase();
-    const agentPids = new Set(state.snapshot.processes.filter(isAgentProcess).map((process) => process.pid));
+    const agentPids = new Set(sceneAssetFamily(requestedTheme) === "minimal" ? [] : state.snapshot.processes.filter(isAgentProcess).map((process) => process.pid));
     const visibleProcesses = state.snapshot.processes.filter((process) => !agentPids.has(process.parentPid ?? -1));
     const matches = (process: ProcessSnapshot) => process.name.toLowerCase().includes(query) || String(process.pid).includes(query);
     const matchingParents = new Set(query ? state.snapshot.processes.filter((process) => agentPids.has(process.parentPid ?? -1) && matches(process)).map((process) => process.parentPid) : []);
@@ -600,7 +638,7 @@ export function GardenCanvas() {
       processes: selectPopulation(filtered, populationRef.current, limit, focusPid),
       embryoFocusPid: query ? matchingChild?.pid ?? null : selected && agentPids.has(selected.parentPid ?? -1) ? selected.pid : null
     };
-  }, [state.displayMode, state.nodeDensity, state.populationMode, state.searchQuery, state.snapshot.processes, state.selectedPid]);
+  }, [requestedTheme, state.displayMode, state.nodeDensity, state.populationMode, state.searchQuery, state.snapshot.processes, state.selectedPid]);
   useEffect(() => { populationRef.current = processes.map((process) => process.pid); }, [processes]);
 
   useEffect(() => {
@@ -613,7 +651,7 @@ export function GardenCanvas() {
 
   useEffect(() => {
     Object.entries(processIcons).forEach(([key, dataUrl]) => {
-      if (!dataUrl || processIconImageCache.has(key)) return;
+      if (!dataUrl || processIconImageCache.get(key)?.src === dataUrl) return;
       const image = new Image();
       processIconImageCache.set(key, image);
       image.onload = () => requestRenderRef.current();
@@ -624,6 +662,8 @@ export function GardenCanvas() {
   const renderState = useMemo(() => ({
     processes,
     allProcesses: state.snapshot.processes,
+    cpuPercent: state.snapshot.cpuPercent,
+    cpuModel: state.snapshot.cpuModel,
     snapshotAt: state.snapshot.timestamp,
     embryoFocusPid,
     animationFps: state.animationFps,
@@ -638,7 +678,7 @@ export function GardenCanvas() {
     reducedMotion,
     searchQuery: state.searchQuery,
     selectedPid: state.selectedPid
-  }), [processes, state.snapshot.processes, state.snapshot.timestamp, embryoFocusPid, state.animationFps, state.displayMode, hoveredPid, state.labelsAlwaysVisible, state.nodeDensity, state.particlesEnabled, state.celestialCycleEnabled, state.paused, state.processStyleOverrides, reducedMotion, state.searchQuery, state.selectedPid]);
+  }), [processes, state.snapshot.cpuModel, state.snapshot.cpuPercent, state.snapshot.processes, state.snapshot.timestamp, embryoFocusPid, state.animationFps, state.displayMode, hoveredPid, state.labelsAlwaysVisible, state.nodeDensity, state.particlesEnabled, state.celestialCycleEnabled, state.paused, state.processStyleOverrides, reducedMotion, state.searchQuery, state.selectedPid]);
   const renderStateRef = useRef(renderState);
   renderStateRef.current = renderState;
   useEffect(() => { requestRenderRef.current(); }, [renderState, assetState]);
@@ -669,6 +709,21 @@ export function GardenCanvas() {
     let layoutDirty = true;
     let disposed = false;
     let painted = false;
+    const isMinimal = sceneAssetFamily(theme) === "minimal";
+    const tracksGaze = sceneAssetFamily(theme) === "crimson" && !theme.assets?.core;
+    const gazeSurface = tracksGaze ? document.createElement("canvas") : null;
+    if (gazeSurface) gazeSurface.width = gazeSurface.height = 384;
+    let pointer: GazePoint | null = null;
+    let gaze: GazePoint = { x: 0, y: 0 };
+    let lastGaze = { x: NaN, y: NaN };
+    let gazeSource: HTMLCanvasElement | null = null;
+    const moveGaze = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      pointer = { x: event.clientX, y: event.clientY };
+      if (!renderStateRef.current.paused) requestRender();
+    };
+    const clearGaze = () => { pointer = null; if (!renderStateRef.current.paused) requestRender(); };
+    const leaveGaze = (event: PointerEvent) => { if (!event.relatedTarget) clearGaze(); };
     if (!assets) void loadSceneAssets(theme).then((ready) => {
       if (!disposed) { assets = ready; requestRender(); }
     }, () => { /* The theme status provides an explicit, retryable error. */ });
@@ -688,8 +743,8 @@ export function GardenCanvas() {
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
       vignette = context.createRadialGradient(width * 0.5, height * 0.47, Math.min(width, height) * 0.08, width * 0.5, height * 0.47, Math.max(width, height) * 0.65);
       vignette.addColorStop(0, withAlpha(theme.colors.primary, 0.07));
-      vignette.addColorStop(0.42, "rgba(2,12,10,.08)");
-      vignette.addColorStop(1, "rgba(0,4,4,.82)");
+      vignette.addColorStop(0.42, withAlpha(theme.colors.background, 0.08));
+      vignette.addColorStop(1, "rgba(0,0,0,.82)");
       layoutDirty = true;
       requestRender();
     };
@@ -731,7 +786,7 @@ export function GardenCanvas() {
       lastPaintedState = live;
       dirty = false;
       assets ??= getCachedSceneAssets(theme);
-      const maskedCore = assets?.core ?? null;
+      let maskedCore = assets?.core ?? null;
       const maskedMaw = assets?.maw ?? null;
       const creatureVariants = assets?.creatureVariants ?? [];
       const habitatSprites = assets?.habitats ?? [];
@@ -741,21 +796,36 @@ export function GardenCanvas() {
       context.clearRect(0, 0, width, height);
       const cx = width * 0.5;
       const cy = height * 0.47;
-      const isEldritch = theme.id === "eldritch" || theme.basedOn === "eldritch";
+      const isEldritch = hasMaw(sceneAssetFamily(theme));
       const coreRadius = Math.max(48, Math.min(isEldritch ? 82 : 74, Math.min(width, height) * (isEldritch ? 0.116 : 0.105)));
-      if (vignette) { context.fillStyle = vignette; context.fillRect(0, 0, width, height); }
+      if (gazeSurface && maskedCore) {
+        const rect = canvas.getBoundingClientRect();
+        const target = gazeTarget(pointer ? { x: pointer.x - rect.left, y: pointer.y - rect.top } : null, { x: cx, y: cy }, coreRadius);
+        if (!live.paused) {
+          gaze = live.reducedMotion ? target : { x: damp(gaze.x, target.x, deltaMs, 140), y: damp(gaze.y, target.y, deltaMs, 140) };
+        }
+        if (Math.abs(gaze.x) + Math.abs(gaze.y) > 0.001) {
+          if (gazeSource !== maskedCore || Math.abs(gaze.x - lastGaze.x) + Math.abs(gaze.y - lastGaze.y) > 0.0001 || !Number.isFinite(lastGaze.x)) {
+            paintCrimsonGaze(maskedCore, gazeSurface, gaze);
+            gazeSource = maskedCore; lastGaze = { ...gaze };
+          }
+          maskedCore = gazeSurface;
+        }
+      }
+      dropCore.current = coreDropTarget(width, height, isEldritch);
+      if (vignette && !isMinimal) { context.fillStyle = vignette; context.fillRect(0, 0, width, height); }
 
       const staticFrame = live.paused || live.reducedMotion;
       const celestialMode = live.paused || (live.reducedMotion && !sampleChanged) ? "freeze" : live.reducedMotion ? "settle" : "animate";
       const celestialCycle = celestialClockRef.current.sample(new Date(), deltaMs, celestialMode);
-      if (live.displayMode === "wallpaper" && live.celestialCycleEnabled) {
+      if (!isMinimal && live.displayMode === "wallpaper" && live.celestialCycleEnabled) {
         const offset = isEldritch ? 2 : 0;
         drawCelestialCycle(context, width, height, time, isEldritch, celestialCycle, celestialSprites[offset] ?? null, celestialSprites[offset + 1] ?? null);
       }
 
       const ambientTargets = `${live.particlesEnabled}:${habitatSprites.length}:${pollinatorSprites.length}`;
       if (!staticFrame || ambientTargets !== lastAmbientTargets) {
-        particleOpacity = ambientVisibility(particleOpacity, live.particlesEnabled, deltaMs, staticFrame);
+        particleOpacity = ambientVisibility(particleOpacity, !isMinimal && live.particlesEnabled, deltaMs, staticFrame);
         habitatOpacity = ambientVisibility(habitatOpacity, live.particlesEnabled && habitatSprites.length === 4, deltaMs, staticFrame);
         pollinatorOpacity = ambientVisibility(pollinatorOpacity, live.particlesEnabled && pollinatorSprites.length === 4, deltaMs, staticFrame);
       }
@@ -862,6 +932,7 @@ export function GardenCanvas() {
             exitRadius: targetRadius,
             exitOpacity: 0,
             exiting: false,
+            captured: false,
             emphasis: 0,
             emphasisTarget: 0
           });
@@ -873,17 +944,18 @@ export function GardenCanvas() {
           if (settleStaticState) { visualNodes.delete(pid); return; }
           if (!node.exiting) {
             node.exiting = true;
-            node.transitionStartedAt = time;
+            node.captured = !isMinimal && !live.allProcesses.some((process) => sameProcess(process, node.process));
+            node.transitionStartedAt = time - (node.captured && captureStyleFor(theme) === "tentacle" && capturePreview.current && sameProcess(capturePreview.current.target.process, node.process) ? capturePreview.current.elapsed : 0);
             node.exitOriginX = node.x;
             node.exitOriginY = node.y;
             node.exitRadius = node.radius;
             node.exitOpacity = node.opacity;
             node.targetRadius = Math.max(2, node.radius * 0.22);
-            node.targetX = isEldritch ? cx : damp(node.targetX, cx, 280, 900);
-            node.targetY = isEldritch ? cy + Math.max(48, Math.min(82, Math.min(width, height) * 0.116)) * 0.22 : damp(node.targetY, cy, 280, 900);
+            node.targetX = isMinimal ? node.x : isEldritch ? cx : damp(node.targetX, cx, 280, 900);
+            node.targetY = isMinimal ? node.y : isEldritch ? cy + Math.max(48, Math.min(82, Math.min(width, height) * 0.116)) * 0.22 : damp(node.targetY, cy, 280, 900);
           }
           const exitProgress = Math.min(1, (time - node.transitionStartedAt) / 1_500);
-          node.targetOpacity = isEldritch ? node.exitOpacity : node.exitOpacity * (1 - exitProgress);
+          node.targetOpacity = node.captured ? node.exitOpacity : node.exitOpacity * (1 - exitProgress);
         }
         const birthProgress = Math.min(1, (time - node.bornAt) / 1_450);
         if (settleStaticState) {
@@ -894,21 +966,12 @@ export function GardenCanvas() {
           node.displayCpu = node.process.cpuPercent;
           node.displayMemory = node.process.memoryBytes;
           node.bornAt = Math.min(node.bornAt, time - 1_450);
-        } else if (isEldritch && node.exiting) {
-          const swallow = getEldritchSwallowMotion(time - node.transitionStartedAt);
-          const mouthX = cx;
-          const mouthY = cy + coreRadius * 0.12;
-          const deltaX = mouthX - node.exitOriginX;
-          const deltaY = mouthY - node.exitOriginY;
-          const distance = Math.max(1, Math.hypot(deltaX, deltaY));
-          const perpendicularX = -deltaY / distance;
-          const perpendicularY = deltaX / distance;
-          const spiralAmplitude = (1 - swallow.suction) * Math.min(78, node.exitRadius * 2.8) * Math.sin(swallow.spiralTurns * Math.PI * 2);
-          const lift = Math.sin(swallow.suction * Math.PI) * Math.min(86, distance * 0.22);
-          node.x = node.exitOriginX + deltaX * swallow.suction + perpendicularX * spiralAmplitude;
-          node.y = node.exitOriginY + deltaY * swallow.suction + perpendicularY * spiralAmplitude - lift;
-          node.radius = node.exitRadius * swallow.nodeScale;
-          node.opacity = node.exitOpacity * swallow.nodeOpacity;
+        } else if (node.captured && node.exiting) {
+          const pose = themeExitPose(captureStyleFor(theme), time - node.transitionStartedAt,
+            { x: node.exitOriginX, y: node.exitOriginY }, { x: cx, y: cy + coreRadius * (captureStyleFor(theme) === "wing" ? -0.6 : 0.12) }, node.exitRadius, node.pid);
+          node.x = pose.x; node.y = pose.y;
+          node.radius = node.exitRadius * pose.scale;
+          node.opacity = node.exitOpacity * pose.opacity;
         } else if (isEldritch && birthProgress < 1) {
           const expelled = 1 - Math.pow(1 - birthProgress, 3);
           const overshoot = Math.sin(birthProgress * Math.PI) * 0.08;
@@ -919,44 +982,84 @@ export function GardenCanvas() {
           node.x = damp(node.x, node.targetX, deltaMs, node.exiting ? (isEldritch ? 360 : 720) : 460);
           node.y = damp(node.y, node.targetY, deltaMs, node.exiting ? (isEldritch ? 360 : 720) : 460);
         }
-        if (!(isEldritch && node.exiting)) {
+        if (!(node.captured && node.exiting)) {
           node.radius = damp(node.radius, node.targetRadius, deltaMs, node.exiting ? 540 : 420);
           node.opacity = damp(node.opacity, node.targetOpacity, deltaMs, node.exiting ? 520 : 300);
         }
         node.displayCpu = damp(node.displayCpu, node.process.cpuPercent, deltaMs, 620);
         node.displayMemory = damp(node.displayMemory, node.process.memoryBytes, deltaMs, 760);
+        const drag = dragRef.current;
+        if (drag?.moved && sameProcess(drag.target.process, node.process) && !node.exiting) { node.x = drag.x; node.y = drag.y; }
         const emphasis = live.selectedPid === pid || live.hoveredPid === pid ? 1 : 0;
         if (!staticFrame) node.emphasis = damp(node.emphasis, emphasis, deltaMs, emphasis ? 120 : 220);
         else if (emphasis !== node.emphasisTarget) node.emphasis = emphasis;
         node.emphasisTarget = emphasis;
-        if (node.exiting && time - node.transitionStartedAt > (isEldritch ? ELDRITCH_SWALLOW_DURATION_MS + 80 : 1_800) && node.opacity < 0.035) visualNodes.delete(pid);
+        if (node.exiting && time - node.transitionStartedAt > (node.captured ? CAPTURE_DURATION_MS + 80 : 1_800) && node.opacity < 0.035) visualNodes.delete(pid);
       });
 
       const renderNodes = [...visualNodes.values()].filter((node) => node.opacity > 0.008);
       const embryoNodes = agentSprites.length === 4 ? embryosRef.current.update({
         processes: live.allProcesses, snapshotAt: live.snapshotAt,
         parents: new Map([...visualNodes.values()].filter((node) => isAgentProcess(node.process)).map((node) => [node.pid, node])),
-        time, deltaMs, width, height, core: { x: cx, y: cy + coreRadius * 0.12 },
-        eldritch: isEldritch, frozen: staticFrame, limit: live.displayMode === "wallpaper" ? 2 : 3,
+        time, deltaMs, width, height, core: { x: cx, y: cy + coreRadius * (captureStyleFor(theme) === "wing" ? -0.6 : 0.12) },
+        eldritch: isEldritch, exitStyle: captureStyleFor(theme), frozen: staticFrame, limit: live.displayMode === "wallpaper" ? 2 : 3,
         preferredPid: live.embryoFocusPid
       }) : [];
       const renderEmbryos = embryoNodes.filter((node) => node.opacity > 0.008);
+      for (const node of renderEmbryos) {
+        const held = capturePreview.current;
+        if (node.exiting && node.captured && captureStyleFor(theme) === "tentacle" && held && sameProcess(held.target.process, node.process) && time === node.transitionStartedAt) node.transitionStartedAt -= held.elapsed;
+      }
+      const draggedEmbryo = dragRef.current;
+      if (draggedEmbryo?.moved) renderEmbryos.forEach((node) => {
+        if (!node.exiting && sameProcess(node.process, draggedEmbryo.target.process)) { node.x = draggedEmbryo.x; node.y = draggedEmbryo.y; }
+      });
+      const captureCore = { x: cx, y: cy + coreRadius * (captureStyleFor(theme) === "wing" ? -0.6 : 0.12) };
+      const drag = dragRef.current;
+      const nearCore = drag?.moved && Math.hypot(drag.x - cx, drag.y - cy) < dropCore.current.radius * 1.6;
+      const previewTarget = isMinimal || captureStyleFor(theme) === "vine" ? null : nearCore ? drag.target : endTargetRef.current;
+      const previewNode = previewTarget && [...renderNodes, ...renderEmbryos].find((node) => !node.exiting && sameProcess(node.process, previewTarget.process));
+      if (previewNode && previewTarget) {
+        let preview = capturePreview.current;
+        if (!preview || !sameProcess(preview.target.process, previewTarget.process)) {
+          preview = { target: previewTarget, x: previewNode.x, y: previewNode.y, radius: previewNode.radius, elapsed: 0, opacity: 1 };
+          capturePreview.current = preview;
+        }
+        const angle = nearCore ? Math.atan2(drag.startY - cy, drag.startX - cx) : Math.atan2(preview.y - cy, preview.x - cx);
+        const holdRadius = coreRadius * 1.4 + previewNode.radius;
+        const approach = nearCore ? Math.max(0, Math.min(1, 1 - (Math.hypot(drag.x - cx, drag.y - cy) - dropCore.current.radius) / (dropCore.current.radius * 0.6))) : 1;
+        const holdX = cx + Math.cos(angle) * holdRadius, holdY = cy + Math.sin(angle) * holdRadius;
+        previewNode.x = nearCore ? drag.x + (holdX - drag.x) * approach : captureStyleFor(theme) === "spear" ? previewNode.x : holdX;
+        previewNode.y = nearCore ? drag.y + (holdY - drag.y) * approach : captureStyleFor(theme) === "spear" ? previewNode.y : holdY;
+        Object.assign(preview, { x: previewNode.x, y: previewNode.y, radius: previewNode.radius, opacity: 1, elapsed: staticFrame ? 675 : Math.min(675, preview.elapsed + deltaMs) });
+      } else if (capturePreview.current) {
+        const preview = capturePreview.current;
+        const stillLive = live.allProcesses.some((process) => sameProcess(process, preview.target.process));
+        preview.elapsed = Math.max(0, preview.elapsed - deltaMs * 2.5);
+        preview.opacity = Math.max(0, preview.opacity - deltaMs / 280);
+        if (!stillLive || staticFrame || preview.opacity === 0) capturePreview.current = null;
+      }
+      const preview = capturePreview.current;
       nodePositions.current = [...renderNodes, ...renderEmbryos].filter((node) => !node.exiting && node.opacity > 0.2).map(({ pid, x, y, radius }) => ({ pid, x, y, radius: Math.max(10, radius) }));
+      if (preview) drawCaptureTentacle(context, captureCore, { ...preview, pid: preview.target.process.pid }, preview.elapsed, assets?.capture, false, captureStyleFor(theme), preview.opacity, true);
+      for (const node of [...renderNodes, ...renderEmbryos]) {
+        if (node.exiting && node.captured) drawCaptureTentacle(context, captureCore, node, time - node.transitionStartedAt, assets?.capture, false, captureStyleFor(theme));
+      }
 
       renderNodes.forEach((position) => {
         const process = { ...position.process, cpuPercent: position.displayCpu, memoryBytes: Math.round(position.displayMemory) };
         const parent = visualNodes.get(process.parentPid ?? -1);
         const target = parent ?? { x: cx, y: cy };
         const styleIndex = organismVisualIndex(resolveOrganismStyle(process, live.processStyleOverrides));
-        const color = processColor(process, theme, isEldritch, styleIndex);
+        const color = isMinimal ? theme.colors.primary : processColor(process, theme, isEldritch, styleIndex);
         context.save();
         context.globalAlpha = Math.max(0, Math.min(1, position.opacity));
         const connectionPulse = 0.88 + Math.sin(time * 0.0011 + process.pid) * 0.12;
-        const bend = isEldritch ? Math.sin(process.pid * 4.3) * 38 : Math.cos(process.pid * 2.1) * 24;
+        const bend = isMinimal ? 0 : isEldritch ? Math.sin(process.pid * 4.3) * 38 : Math.cos(process.pid * 2.1) * 24;
         if (isEldritch) {
           drawUmbilicalCord(context, target.x, target.y, position.x, position.y, bend, color, time, process.pid, (live.selectedPid && live.selectedPid !== process.pid ? 0.42 : 0.82) * connectionPulse, live.selectedPid === process.pid);
           const birthProgress = Math.min(1, (time - position.bornAt) / 1_450);
-          const exitProgress = getEldritchSwallowMotion(time - position.transitionStartedAt).progress;
+          const exitProgress = getCaptureMotion(time - position.transitionStartedAt).progress;
           if (!position.exiting && birthProgress < 1) drawEldritchSlime(context, cx, cy, position.x, position.y, position.radius, birthProgress, process.pid, false);
           if (position.exiting) drawEldritchSlime(context, cx, cy, position.x, position.y, position.radius, exitProgress, process.pid, true);
         } else {
@@ -967,7 +1070,7 @@ export function GardenCanvas() {
           context.moveTo(target.x, target.y);
           context.bezierCurveTo((target.x + position.x) / 2 + bend, target.y, (target.x + position.x) / 2 - bend, position.y, position.x, position.y);
           context.stroke();
-          if (position.emphasis > 0.01 || process.cpuPercent > 2) {
+          if (!isMinimal && (position.emphasis > 0.01 || process.cpuPercent > 2)) {
             drawConnectionSignal(context, target.x, target.y, position.x, position.y, bend, color, time, process.pid, position.emphasis);
           }
         }
@@ -976,8 +1079,8 @@ export function GardenCanvas() {
 
       // Consumed nodes own the recoil until their lifecycle has fully settled.
       const eldritchCoreMotion = isEldritch ? [...visualNodes.values(), ...embryoNodes].reduce((motion, node) => {
-        if (node.exiting) {
-          const swallow = getEldritchSwallowMotion(time - node.transitionStartedAt);
+        if (node.exiting && node.captured) {
+          const swallow = getCaptureMotion(time - node.transitionStartedAt);
           return {
             mouthOpen: Math.max(motion.mouthOpen, swallow.mouthOpen),
             coreKick: Math.max(motion.coreKick, swallow.coreKick),
@@ -988,12 +1091,14 @@ export function GardenCanvas() {
         const birthProgress = Math.min(1, (time - node.bornAt) / 1_450);
         return { ...motion, mouthOpen: Math.max(motion.mouthOpen, birthProgress < 1 ? Math.sin(birthProgress * Math.PI) * 0.78 : 0) };
       }, { mouthOpen: 0, coreKick: 0, shockwave: 0, shockwaveRadius: 0 }) : { mouthOpen: 0, coreKick: 0, shockwave: 0, shockwaveRadius: 0 };
+      if (preview) eldritchCoreMotion.mouthOpen = Math.max(eldritchCoreMotion.mouthOpen, getCaptureMotion(preview.elapsed).mouthOpen * preview.opacity * 0.7);
       // Interruptions can change the desired mouth phase abruptly; the visible
       // jaw continues from its current pose, opening broadly and biting faster.
       coreMouthRef.current = !isEldritch || settleStaticState ? eldritchCoreMotion.mouthOpen
         : damp(coreMouthRef.current, eldritchCoreMotion.mouthOpen, deltaMs, eldritchCoreMotion.mouthOpen > coreMouthRef.current ? 95 : 55);
       eldritchCoreMotion.mouthOpen = coreMouthRef.current;
-      if (!isEldritch) drawCore(context, cx, cy, coreRadius, theme, time, false, maskedCore);
+      if (isMinimal) drawCpu(context, maskedCore, cx, cy, coreRadius, `${Math.round(live.cpuPercent)}%`, live.cpuModel);
+      else if (!isEldritch) drawCore(context, cx, cy, coreRadius * (1 + eldritchCoreMotion.mouthOpen * 0.09), theme, time, false, maskedCore);
 
       renderNodes.forEach((position, index) => {
         const process = { ...position.process, cpuPercent: position.displayCpu, memoryBytes: Math.round(position.displayMemory) };
@@ -1003,6 +1108,11 @@ export function GardenCanvas() {
         const selected = live.selectedPid === process.pid;
         const variants = creatureVariants[styleIndex] ?? [];
         const creatureSprite = style === "agent" ? agentSprites[0] : variants[organismVariantIndex(process, variants.length)];
+        if (isMinimal) {
+          context.save(); context.globalAlpha = Math.max(0, Math.min(1, position.opacity));
+          drawAppLogo(context, processIconImageCache.get(processIconKey(process)), process, position.x, position.y, position.radius, selected || position.emphasis > 0.5);
+          context.restore(); return;
+        }
         context.save();
         context.globalAlpha = Math.max(0, Math.min(1, position.opacity));
         if (position.emphasis > 0.01) {
@@ -1020,7 +1130,8 @@ export function GardenCanvas() {
           context.stroke();
           context.restore();
         }
-        if (creatureSprite) drawRasterCreature(context, creatureSprite, process, position.x, position.y, position.radius, color, time, selected);
+        if (creatureSprite && position.exiting && position.captured && captureStyleFor(theme) === "vine") drawWithering(context, creatureSprite, position, time - position.transitionStartedAt);
+        else if (creatureSprite) drawRasterCreature(context, creatureSprite, process, position.x, position.y, position.radius, color, time, selected);
         else drawGlowCircle(context, position.x, position.y, position.radius * (selected ? 1.12 : 1), color, theme.effects.glow);
         context.save();
         if (!creatureSprite) {
@@ -1049,7 +1160,7 @@ export function GardenCanvas() {
         const identityRadius = Math.max(7.5, position.radius * (style === "agent" ? 0.28 : 0.34));
         drawProcessIdentity(context, process, processIconImageCache.get(processIconKey(process)), position.x, position.y, identityRadius, color, selected, isEldritch, time);
         context.restore();
-        if (position.exiting && !isEldritch) {
+        if (position.exiting && !isEldritch && !position.captured) {
           context.save();
           context.globalCompositeOperation = "screen";
           context.fillStyle = color;
@@ -1068,10 +1179,10 @@ export function GardenCanvas() {
 
       renderEmbryos.forEach((node) => {
         const parent = visualNodes.get(node.parentPid);
-        const withdrawal = node.exiting && isEldritch ? getEldritchSwallowMotion(time - node.transitionStartedAt).suction : 0;
+        const withdrawal = node.exiting && isEldritch ? getCaptureMotion(time - node.transitionStartedAt).suction : 0;
         const anchor = node.exiting ? {
           x: node.tetherOrigin.x + (cx - node.tetherOrigin.x) * withdrawal,
-          y: node.tetherOrigin.y + (cy + coreRadius * 0.12 - node.tetherOrigin.y) * withdrawal
+          y: node.tetherOrigin.y + (cy + coreRadius * (captureStyleFor(theme) === "wing" ? -0.6 : 0.12) - node.tetherOrigin.y) * withdrawal
         } : parent;
         const color = theme.colors.secondary;
         const selected = live.selectedPid === node.pid || live.hoveredPid === node.pid;
@@ -1090,14 +1201,15 @@ export function GardenCanvas() {
           }
         }
         if (isEldritch) {
-          const progress = node.exiting ? getEldritchSwallowMotion(time - node.transitionStartedAt).progress : Math.min(1, (time - node.bornAt) / EMBRYO_BIRTH_MS);
+          const progress = node.exiting ? getCaptureMotion(time - node.transitionStartedAt).progress : Math.min(1, (time - node.bornAt) / EMBRYO_BIRTH_MS);
           if (progress < 1) drawEldritchSlime(context, cx, cy, node.x, node.y, node.radius, progress, node.pid, node.exiting);
         }
         node.weights.forEach((weight, stage) => {
           if (weight < 0.002) return;
           context.save();
           context.globalAlpha *= weight;
-          drawRasterCreature(context, agentSprites[stage + 1], node.process, node.x, node.y, node.radius, color, time, selected);
+          if (node.exiting && node.captured && captureStyleFor(theme) === "vine") drawWithering(context, agentSprites[stage + 1], node, time - node.transitionStartedAt);
+          else drawRasterCreature(context, agentSprites[stage + 1], node.process, node.x, node.y, node.radius, color, time, selected);
           context.restore();
         });
         // A small identity badge leaves the generated embryo silhouette readable.
@@ -1106,6 +1218,10 @@ export function GardenCanvas() {
         context.restore();
       });
 
+      for (const node of [...renderNodes, ...renderEmbryos]) {
+        if (node.exiting && node.captured) drawCaptureTentacle(context, captureCore, node, time - node.transitionStartedAt, assets?.capture, true, captureStyleFor(theme));
+      }
+      if (preview) drawCaptureTentacle(context, captureCore, { ...preview, pid: preview.target.process.pid }, preview.elapsed, assets?.capture, true, captureStyleFor(theme), preview.opacity, true);
       if (isEldritch) {
         drawCore(context, cx, cy, coreRadius, theme, time, true, maskedCore, eldritchCoreMotion.mouthOpen, eldritchCoreMotion.coreKick, maskedMaw);
         if (eldritchCoreMotion.shockwave > 0.01) {
@@ -1212,7 +1328,7 @@ export function GardenCanvas() {
         }
       }
       backdropRefs.current.forEach((layer, index) => {
-        const target = index === (isEldritch ? 1 : 0) ? 0.46 : 0;
+        const target = (theme.assets?.background ? index === builtInThemes.length : builtInThemes[index]?.id === sceneAssetFamily(theme)) ? 0.46 : 0;
         const from = transition?.backdrop[index] ?? target;
         const opacity = from + (target - from) * blend;
         if (layer && backdropOpacity.current[index] !== opacity) layer.style.opacity = String(opacity);
@@ -1235,6 +1351,11 @@ export function GardenCanvas() {
     observer.observe(container);
     resize();
     document.addEventListener("visibilitychange", visibilityChanged);
+    if (tracksGaze) {
+      window.addEventListener("pointermove", moveGaze, { passive: true });
+      window.addEventListener("pointerout", leaveGaze);
+      window.addEventListener("blur", clearGaze);
+    }
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
@@ -1255,6 +1376,10 @@ export function GardenCanvas() {
       }
       observer.disconnect();
       document.removeEventListener("visibilitychange", visibilityChanged);
+      window.removeEventListener("pointermove", moveGaze);
+      window.removeEventListener("pointerout", leaveGaze);
+      window.removeEventListener("blur", clearGaze);
+      if (gazeSurface) gazeSurface.width = gazeSurface.height = 0;
       requestRenderRef.current = () => {};
     };
   }, [theme]);
@@ -1265,12 +1390,17 @@ export function GardenCanvas() {
     return hitTestScene(nodePositions.current, x, y);
   };
   const hoveredProcess = state.snapshot.processes.find((process) => process.pid === hoveredPid);
+  const pointerPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  };
 
   return (
-    <section className="garden-panel panel-surface" ref={containerRef} aria-busy={assetState === "loading"} data-scene-theme={theme.id} style={{ "--theme-background-image": `url("${sceneBackground(theme)}")` } as CSSProperties}>
-      {builtInThemes.map((backdrop, index) => <div key={backdrop.id} className="canvas-backdrop" aria-hidden="true" ref={(element) => { backdropRefs.current[index] = element; }} style={{ backgroundImage: visitedBackdrops.current.has(backdrop.id) ? `linear-gradient(rgba(1,8,7,.30), rgba(1,8,7,.68)), url("${sceneBackground(backdrop)}")` : undefined }} />)}
+    <section className="garden-panel panel-surface" ref={containerRef} aria-busy={assetState === "loading"} data-scene-theme={theme.id} style={{ "--theme-background-image": sceneBackground(theme) ? `url("${sceneBackground(theme)}")` : "none" } as CSSProperties}>
+      {builtInThemes.map((backdrop, index) => <div key={backdrop.id} className="canvas-backdrop" aria-hidden="true" ref={(element) => { backdropRefs.current[index] = element; }} style={{ backgroundImage: sceneBackground(backdrop) && visitedBackdrops.current.has(backdrop.id) ? `linear-gradient(rgba(0,0,0,.30), rgba(0,0,0,.68)), url("${sceneBackground(backdrop)}")` : undefined }} />)}
+      {visitedCustomBackdrop.current && <div className="canvas-backdrop" aria-hidden="true" ref={(element) => { backdropRefs.current[builtInThemes.length] = element; }} style={{ backgroundImage: theme.assets?.background ? `linear-gradient(rgba(0,0,0,.30), rgba(0,0,0,.68)), url("${sceneBackground(theme)}")` : undefined }} />}
       <div className="canvas-heading">
-        <div><small>{t("garden.title")}</small><strong>{t("garden.subtitle")}</strong></div>
+        <div><small>{t(sceneAssetFamily(theme) === "minimal" ? "garden.minimalTitle" : "garden.title")}</small><strong>{t(sceneAssetFamily(theme) === "minimal" ? "garden.minimalSubtitle" : "garden.subtitle")}</strong></div>
         <div className="canvas-tools">
           <div className="segmented-control compact"><button className={state.populationMode === "ecological" ? "active" : ""} onClick={() => state.setPopulationMode("ecological")}><Orbit size={13} />{t("garden.ecological")}</button><button className={state.populationMode === "exact" ? "active" : ""} onClick={() => state.setPopulationMode("exact")}><Boxes size={13} />{t("garden.exact")}</button></div>
           <button className="icon-button" onClick={() => state.setSelectedPid(null)} aria-label={t("garden.focusCore")} title={t("garden.focusCore")}><Focus size={15} /></button>
@@ -1280,7 +1410,44 @@ export function GardenCanvas() {
         <span>{t(assetState === "error" ? "garden.assetError" : "garden.loadingTheme")}</span>
         {assetState === "error" && <button onClick={() => setAssetRetry((attempt) => attempt + 1)}>{t("garden.retryTheme")}</button>}
       </div>}
-      <canvas ref={canvasRef} tabIndex={0} role="group" onPointerMove={(event) => setHoveredPid(locate(event))} onPointerLeave={() => setHoveredPid(null)} onClick={(event) => state.setSelectedPid(locate(event))} onKeyDown={(event) => {
+      {dragging && <div className={`core-drop-zone${overCore ? " active" : ""}`} style={{ left: dropCore.current.x, top: dropCore.current.y, width: dropCore.current.radius * 2, height: dropCore.current.radius * 2 }}><span>{t(overCore ? "termination.release" : "termination.dragHint")}</span></div>}
+      <canvas ref={canvasRef} tabIndex={0} role="group" style={{ cursor: dragging ? "grabbing" : hoveredPid !== null ? "grab" : undefined, touchAction: "none" }}
+      onPointerDown={(event) => {
+        if (event.button !== 0 || dragRef.current || endTarget) return;
+        suppressClick.current = false;
+        const pid = locate(event);
+        const process = state.snapshot.processes.find((item) => item.pid === pid);
+        if (!process) return;
+        const point = pointerPoint(event);
+        dragRef.current = { target: { process: { ...process }, collector: state.collector, demoMode: state.demoMode }, pointerId: event.pointerId, startX: point.x, startY: point.y, ...point, moved: false };
+        event.currentTarget.setPointerCapture(event.pointerId);
+        event.currentTarget.focus();
+      }}
+      onPointerMove={(event) => {
+        const drag = dragRef.current;
+        if (!drag || drag.pointerId !== event.pointerId) { if (!drag) setHoveredPid(locate(event)); return; }
+        const point = pointerPoint(event);
+        drag.x = point.x; drag.y = point.y;
+        drag.moved ||= Math.hypot(point.x - drag.startX, point.y - drag.startY) >= 6;
+        if (drag.moved) { setDragging(true); setOverCore(insideCore(point, dropCore.current)); setHoveredPid(null); requestRenderRef.current(); }
+      }}
+      onPointerUp={(event) => {
+        const drag = dragRef.current;
+        if (!drag || drag.pointerId !== event.pointerId) return;
+        const point = pointerPoint(event);
+        suppressClick.current = drag.moved;
+        const current = useAppStore.getState();
+        if (drag.moved && insideCore(point, dropCore.current) && current.collector === drag.target.collector && current.demoMode === drag.target.demoMode && current.snapshot.processes.some((process) => sameProcess(process, drag.target.process))) setEndTarget(drag.target);
+        cancelDrag();
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+      }}
+      onPointerCancel={() => { suppressClick.current = true; cancelDrag(); }} onLostPointerCapture={() => { if (dragRef.current) { suppressClick.current = true; cancelDrag(); } }}
+      onPointerLeave={() => { if (!dragRef.current) setHoveredPid(null); }} onClick={(event) => { if (suppressClick.current) { suppressClick.current = false; return; } state.setSelectedPid(locate(event)); }} onKeyDown={(event) => {
+        if (event.key === "Delete" && state.selectedPid !== null) {
+          const process = state.snapshot.processes.find((item) => item.pid === state.selectedPid);
+          if (process) { event.preventDefault(); setEndTarget({ process: { ...process }, collector: state.collector, demoMode: state.demoMode }); }
+          return;
+        }
         if (event.key === "Escape" && state.displayMode !== "windowed") return;
         if (event.key === "Escape" || event.key === "Home") { event.preventDefault(); state.setSelectedPid(null); return; }
         if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key) || !processes.length) return;
@@ -1296,6 +1463,8 @@ export function GardenCanvas() {
       <div className="organism-dock" aria-label={t("status.searchResults", { count: processes.length })}>
         {processes.slice(0, 8).map((process) => <button key={process.pid} className={state.selectedPid === process.pid ? "active" : ""} aria-pressed={state.selectedPid === process.pid} onClick={() => state.setSelectedPid(process.pid)} onFocus={() => setHoveredPid(process.pid)} onBlur={() => setHoveredPid(null)} aria-label={t("a11y.selectProcess", { name: process.name })}><ProcessIcon process={process} className="dock-process-icon" /><small>{process.name}</small></button>)}
       </div>
+      <div className="termination-hint">{t("termination.hint")}</div>
+      {endTarget && <EndProcessDialog target={endTarget} onClose={() => { setEndTarget(null); canvasRef.current?.focus(); }} />}
     </section>
   );
 }

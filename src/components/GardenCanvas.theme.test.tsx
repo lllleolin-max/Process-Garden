@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SceneAssets } from "../animation/sceneAssets";
 import { useAppStore } from "../stores/appStore";
 import { GardenCanvas } from "./GardenCanvas";
+import * as crimsonGaze from "../animation/crimsonGaze";
 
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 const loader = vi.hoisted(() => ({
@@ -40,7 +41,8 @@ function tick(ms = 20) {
 function advance(ms: number) { for (let elapsed = 0; elapsed < ms; elapsed += 20) tick(); }
 function art(family: string): SceneAssets {
   const sprite = () => { const canvas = document.createElement("canvas"); canvas.width = canvas.height = 20; tags.set(canvas, family); return canvas; };
-  return { core: sprite(), maw: family === "eldritch" ? sprite() : null, creatureVariants: Array.from({ length: 8 }, () => [sprite()]), habitats: [], pollinators: [], agents: [], celestial: [] };
+  const capture = Array.from({ length: 4 }, () => { const canvas = sprite(); tags.set(canvas, `${family}-capture`); return canvas; });
+  return { core: sprite(), maw: (family === "eldritch" || family === "crimson") ? sprite() : null, creatureVariants: Array.from({ length: 8 }, () => [sprite()]), habitats: [], pollinators: [], agents: [], celestial: [], capture };
 }
 async function ready(family: string) {
   await act(async () => {
@@ -87,6 +89,72 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial); });
 
 describe("ready-to-ready Canvas theme transitions", () => {
+  it("renders only the CPU artwork in minimal mode and exposes agent child tasks as app nodes", async () => {
+    const view = await mount();
+    const parent = { ...initial.snapshot.processes[0], name: "codex", pid: 910 };
+    const child = { ...parent, name: "worker-task", pid: 911, parentPid: 910 };
+    act(() => useAppStore.setState({ snapshot: { ...initial.snapshot, processes: [parent, child] } }));
+    await request("minimal"); await ready("minimal"); tick(); advance(2000);
+    expect(view.container.querySelector("section")!.dataset.sceneTheme).toBe("minimal");
+    expect(view.getByText("worker-task")).toBeTruthy();
+    expect(paint.filter((draw) => draw.tag === "minimal")).toHaveLength(1);
+    expect(paint.some((draw) => draw.tag.endsWith("-capture"))).toBe(false);
+  });
+  it("tracks window pointers only for crimson, freezes on pause and recenters on leave", async () => {
+    const gaze = vi.spyOn(crimsonGaze, "paintCrimsonGaze").mockImplementation((source) => source);
+    await mount();
+    act(() => window.dispatchEvent(new MouseEvent("pointermove", { clientX: 1000, clientY: 200 })));
+    advance(400); expect(gaze).not.toHaveBeenCalled();
+    await request("crimson"); await ready("crimson"); tick(); advance(1000);
+    act(() => window.dispatchEvent(new MouseEvent("pointermove", { clientX: 1000, clientY: 200 })));
+    advance(600);
+    expect(gaze.mock.calls.at(-1)![2].x).toBeGreaterThan(0.9);
+    act(() => useAppStore.setState({ paused: true })); tick(); gaze.mockClear();
+    act(() => window.dispatchEvent(new MouseEvent("pointermove", { clientX: -300, clientY: 200 })));
+    advance(400); expect(gaze).not.toHaveBeenCalled();
+    act(() => useAppStore.setState({ paused: false })); advance(800);
+    expect(gaze.mock.calls.at(-1)![2].x).toBeLessThan(-0.9);
+    act(() => window.dispatchEvent(new MouseEvent("pointerout", { relatedTarget: null })));
+    advance(1400);
+    expect(Math.abs(gaze.mock.calls.at(-1)![2].x)).toBeLessThan(0.02);
+  });
+  it.each(["garden", "eldritch", "cyberpunk", "crimson", "angel", "olympus"])("uses the theme ending on actual %s exits but not search filtering", async (family) => {
+    await mount();
+    if (family !== "garden") { await request(family); await ready(family); tick(); advance(2000); }
+    act(() => useAppStore.setState({ searchQuery: "no-process-matches" }));
+    advance(400);
+    expect(paint.some((draw) => draw.tag.endsWith("-capture"))).toBe(false);
+    act(() => useAppStore.setState({ searchQuery: "" })); advance(2000);
+    act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, timestamp: initial.snapshot.timestamp + 1000, processes: [] } }));
+    advance(500);
+    expect(paint.some((draw) => draw.tag === `${family}-capture`)).toBe(true);
+    if (family === "garden") expect(paint.some((draw) => draw.tag === "garden")).toBe(true);
+    advance(2400);
+    expect(paint.some((draw) => draw.tag.endsWith("-capture"))).toBe(false);
+  });
+  it("holds generated coils while awaiting confirmation and releases them on cancel", async () => {
+    const view = await mount();
+    await request("eldritch"); await ready("eldritch"); tick(); advance(2000);
+    act(() => useAppStore.setState({ selectedPid: initial.snapshot.processes[0].pid })); tick();
+    fireEvent.keyDown(view.container.querySelector("canvas")!, { key: "Delete" });
+    advance(800);
+    expect(view.getByRole("alertdialog")).toBeTruthy();
+    expect(paint.some((draw) => draw.tag === "eldritch-capture")).toBe(true);
+    fireEvent.click(view.getByRole("button", { name: "common.cancel" })); advance(500);
+    expect(paint.some((draw) => draw.tag === "eldritch-capture")).toBe(false);
+    expect(useAppStore.getState().snapshot.processes).toHaveLength(1);
+  });
+  it("crossfades to the third theme's own backdrop and artwork", async () => {
+    const view = await mount();
+    await request("cyberpunk");
+    await ready("cyberpunk"); tick(); advance(600);
+    const panel = view.container.querySelector("section")!;
+    expect(panel.dataset.sceneTheme).toBe("cyberpunk");
+    expect(panel.getAttribute("aria-busy")).toBe("false");
+    expect(paint.length).toBeGreaterThan(0);
+    expect(paint.every((draw) => draw.tag === "cyberpunk")).toBe(true);
+    expect([...panel.querySelectorAll<HTMLDivElement>(".canvas-backdrop")].map((layer) => Number(layer.style.opacity))).toEqual([0, 0, 0.46, 0, 0, 0, 0]);
+  });
   it("keeps the old generated scene and backdrop until all new assets are ready, then crossfades", async () => {
     const view = await mount();
     await request("eldritch");
@@ -197,7 +265,7 @@ describe("ready-to-ready Canvas theme transitions", () => {
     expect(copies[0].width).toBe(0);
     expect(callbacks.size).toBe(0);
     const backdropOpacity = [...view.container.querySelectorAll<HTMLDivElement>(".canvas-backdrop")].map((layer) => Number(layer.style.opacity));
-    expect(backdropOpacity).toEqual([0, 0.46]);
+    expect(backdropOpacity).toEqual([0, 0.46, 0, 0, 0, 0, 0]);
   });
 
   it("finishes a frozen blend when the search changes but the matching population stays the same", async () => {

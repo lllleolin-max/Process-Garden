@@ -27,7 +27,7 @@ async function mount() {
   await act(async () => images.forEach((image) => { image.dispatchEvent(new Event("load")); image.onload?.(); }));
   tick();
 }
-function focalArt() { return paint.filter(({ path }) => /\/(creatures|cores)\//.test(path) || path.includes("celestial")); }
+function focalArt() { return paint.filter(({ path }) => /\/(process[1-4]|core|maw)\.png/.test(path) || path.includes("celestial")); }
 
 beforeEach(() => {
   images = []; frames = new Map(); paint = []; nextId = 0; now = 1_000;
@@ -96,8 +96,8 @@ describe("focal artwork phase continuity", () => {
 
   it("keeps a partial birth and its open maw through reduced motion and selection", async () => {
     useAppStore.setState({ themeId: "eldritch" }); await mount(); advance(300);
-    const body = () => paint.find(({ path }) => path.includes("/creatures/"));
-    const maw = () => paint.find(({ path }) => path.endsWith("eldritch-core-maw-v3.png"));
+    const body = () => paint.find(({ path }) => path.includes("/process"));
+    const maw = () => paint.find(({ path }) => path.endsWith("maw.png"));
     const before = { body: body(), maw: maw() };
     expect(before.body).toBeDefined(); expect(before.maw).toBeDefined();
     act(() => useAppStore.setState({ reducedMotion: true })); tick(40);
@@ -110,17 +110,17 @@ describe("focal artwork phase continuity", () => {
 
   it("settles an actual new sample while reduced, without restarting an idle loop", async () => {
     useAppStore.setState({ reducedMotion: true }); await mount();
-    const before = focalArt().find(({ path }) => path.includes("/creatures/"))!;
+    const before = focalArt().find(({ path }) => path.includes("/process"))!;
     act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, timestamp: noon.getTime() + 1_000, processes: [{ ...process, memoryBytes: 8 * process.memoryBytes }] } }));
     tick(40);
-    const after = focalArt().find(({ path }) => path.includes("/creatures/"))!;
+    const after = focalArt().find(({ path }) => path.includes("/process"))!;
     expect(after.rect[2]).toBeGreaterThan(before.rect[2]);
     expect(frames.size).toBe(0);
   });
 
   it("does not flash to full opacity when a partly born process exits, or replay birth when it returns", async () => {
     useAppStore.setState({ themeId: "eldritch" }); await mount(); advance(300);
-    const body = () => paint.find(({ path }) => path.includes("/creatures/"))!;
+    const body = () => paint.find(({ path }) => path.includes("/process"))!;
     const opacity = body().alpha;
     act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, processes: [] } })); tick();
     expect(body().alpha).toBeCloseTo(opacity, 12);
@@ -136,12 +136,12 @@ describe("focal artwork phase continuity", () => {
     useAppStore.setState({ themeId: "eldritch" }); await mount(); advance(2_200);
     act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, processes: [] } })); advance(600);
     const before = focalArt();
-    expect(before.some(({ path }) => path.endsWith("eldritch-core-maw-v3.png"))).toBe(true);
+    expect(before.some(({ path }) => path.endsWith("maw.png"))).toBe(true);
     act(() => useAppStore.setState({ reducedMotion: true })); tick(40);
     expect(focalArt()).toEqual(before);
     expect(frames.size).toBe(0);
     act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, timestamp: noon.getTime() + 2_000 } })); tick(40);
-    expect(focalArt().some(({ path }) => path.includes("/creatures/") || path.includes("maw"))).toBe(false);
+    expect(focalArt().some(({ path }) => path.includes("/process") || path.includes("maw"))).toBe(false);
     expect(frames.size).toBe(0);
   });
 });

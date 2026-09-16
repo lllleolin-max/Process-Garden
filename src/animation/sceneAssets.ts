@@ -1,5 +1,9 @@
-import type { ThemeManifest } from "../types/theme";
+import type { ThemeAssetRole, ThemeManifest } from "../types/theme";
+import { assetUrl, hydrateArtwork } from "../themes/assets";
+import { themeFamily } from "../design-system/themes/builtIn";
 import { removeBlackMatte } from "./spriteAlpha";
+import { captureStyleFor } from "../themes/lifecycle";
+import { builtinArtwork, hasMaw } from "../themes/builtinArtwork";
 
 export interface SceneAssets {
   core: HTMLCanvasElement;
@@ -9,15 +13,19 @@ export interface SceneAssets {
   pollinators: HTMLCanvasElement[];
   agents: HTMLCanvasElement[];
   celestial: HTMLCanvasElement[];
+  capture?: HTMLCanvasElement[];
 }
 
 export function sceneAssetFamily(theme: ThemeManifest) {
-  return theme.id === "eldritch" || theme.basedOn === "eldritch" ? "eldritch" : "garden";
+  return themeFamily(theme);
 }
 
 export function sceneBackground(theme: ThemeManifest) {
+  if (sceneAssetFamily(theme) === "minimal") return "";
+  const custom = assetUrl(theme, "background");
+  if (custom) return custom;
   const family = sceneAssetFamily(theme);
-  return `/assets/generated/${family}/backgrounds/${family}-canvas-bg-v${family === "garden" ? 2 : 1}.png`;
+  return builtinArtwork(family, "background");
 }
 
 // Cache prepared pixels, not a second copy of the full source images. Pending
@@ -60,23 +68,13 @@ function surface(width: number, height: number, readable = false) {
   return { canvas, context };
 }
 
-function prepareCore(image: HTMLImageElement, maw: boolean) {
-  const { canvas, context } = surface(image.naturalWidth, image.naturalHeight, maw);
+function prepareCore(image: HTMLImageElement) {
+  const { canvas, context } = surface(image.naturalWidth, image.naturalHeight, true);
   context.drawImage(image, 0, 0);
-  if (maw) {
-    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-    removeBlackMatte(pixels.data);
-    context.putImageData(pixels, 0, 0);
-  } else {
-    context.globalCompositeOperation = "destination-in";
-    const edge = context.createRadialGradient(canvas.width / 2, canvas.height / 2, canvas.width * 0.23, canvas.width / 2, canvas.height / 2, canvas.width * 0.49);
-    edge.addColorStop(0, "rgba(0,0,0,1)");
-    edge.addColorStop(0.68, "rgba(0,0,0,.95)");
-    edge.addColorStop(0.88, "rgba(0,0,0,.42)");
-    edge.addColorStop(1, "rgba(0,0,0,0)");
-    context.fillStyle = edge;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-  }
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+  removeBlackMatte(pixels.data);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.putImageData(pixels, 0, 0);
   return canvas;
 }
 
@@ -97,40 +95,73 @@ function prepareAtlas(image: HTMLImageElement, preserveAlpha = false) {
 }
 
 const coreAsset = assetCache<HTMLCanvasElement>();
+function prepareCaptureAtlas(image: HTMLImageElement) {
+  return prepareAtlas(image).map((cell) => {
+    const context = cell.getContext("2d", { willReadFrequently: true })!;
+    const { data } = context.getImageData(0, 0, cell.width, cell.height);
+    let left = cell.width, top = cell.height, right = 0, bottom = 0;
+    for (let y = 0; y < cell.height; y++) for (let x = 0; x < cell.width; x++) {
+      if (data[(y * cell.width + x) * 4 + 3] > 24) { left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y); }
+    }
+    if (left > right || top > bottom) return cell;
+    const { canvas, context: target } = surface(right - left + 1, bottom - top + 1);
+    target.drawImage(cell, left, top, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  });
+}
+const mawAsset = assetCache<HTMLCanvasElement>();
 const atlasAsset = assetCache<HTMLCanvasElement[]>();
 const backgroundAsset = assetCache<boolean>();
 const bundles = new Map<string, SceneAssets>();
 const pendingBundles = new Map<string, Promise<SceneAssets>>();
 
-export const getCachedSceneAssets = (theme: ThemeManifest) => bundles.get(sceneAssetFamily(theme));
+export const sceneAssetKey = (theme: ThemeManifest) => theme.assets || theme.captureStyle ? `${sceneAssetFamily(theme)}:${JSON.stringify([theme.assets, theme.captureStyle])}` : sceneAssetFamily(theme);
+export const getCachedSceneAssets = (theme: ThemeManifest) => bundles.get(sceneAssetKey(theme));
 
 export function loadSceneAssets(theme: ThemeManifest): Promise<SceneAssets> {
+  if (theme.assets) return hydrateArtwork(theme).then(() => loadPreparedSceneAssets(theme));
+  return loadPreparedSceneAssets(theme);
+}
+
+function loadPreparedSceneAssets(theme: ThemeManifest): Promise<SceneAssets> {
   const family = sceneAssetFamily(theme);
-  const cached = bundles.get(family);
+  const key = sceneAssetKey(theme);
+  const cached = bundles.get(key);
   if (cached) return Promise.resolve(cached);
-  const pending = pendingBundles.get(family);
+  const pending = pendingBundles.get(key);
   if (pending) return pending;
-  const root = `/assets/generated/${family}`;
-  const variants = family === "garden" ? [[1, 0], [3, 0], [2, 4], [4, 4]] : [[1, 0], [2, 4]];
+  if (family === "minimal") {
+    const ready = coreAsset(assetUrl(theme, "core") ?? builtinArtwork(family, "core"), prepareCore).then((core) => {
+      const bundle: SceneAssets = { core, maw: null, creatureVariants: [], habitats: [], pollinators: [], agents: [], celestial: [], capture: [] };
+      bundles.set(key, bundle);
+      return bundle;
+    });
+    pendingBundles.set(key, ready);
+    void ready.then(() => pendingBundles.delete(key), () => pendingBundles.delete(key));
+    return ready;
+  }
+  const variants = [[1, 0], ...(family === "garden" || theme.assets?.process3 ? [[3, 0]] : []), [2, 4], ...(family === "garden" || theme.assets?.process4 ? [[4, 4]] : [])];
+  const source = (role: ThemeAssetRole) => assetUrl(theme, role) ?? builtinArtwork(family, role);
   const ready = Promise.all([
-    coreAsset(`${root}/cores/${family}-core-main-v${family === "garden" ? 2 : 1}.png`, (image) => prepareCore(image, false)),
-    family === "eldritch" ? coreAsset(`${root}/cores/eldritch-core-maw-v3.png`, (image) => prepareCore(image, true)) : Promise.resolve(null),
-    Promise.all(variants.map(([version]) => atlasAsset(`${root}/creatures/${family}-process-atlas-v${version}.png`, prepareAtlas))),
-    atlasAsset(`${root}/habitats/${family}-habitat-atlas-v1.png`, prepareAtlas),
-    atlasAsset(`${root}/pollinators/${family}-pollinator-atlas-v1.png`, prepareAtlas),
-    atlasAsset(`${root}/agents/${family}-agent-growth-atlas-v1.png`, prepareAtlas),
-    atlasAsset("/assets/generated/shared/celestial-atlas-v1.png", (image) => prepareAtlas(image, true)),
-    backgroundAsset(sceneBackground(theme), () => true)
-  ]).then(([core, maw, atlases, habitats, pollinators, agents, celestial]) => {
+    coreAsset(source("core"), prepareCore),
+    hasMaw(family) ? mawAsset(source("maw"), prepareCore) : Promise.resolve(null),
+    Promise.all(variants.map(([version]) => atlasAsset(source(`process${version}` as ThemeAssetRole), prepareAtlas))),
+    atlasAsset(source("habitat"), prepareAtlas),
+    atlasAsset(source("pollinator"), prepareAtlas),
+    atlasAsset(source("agent"), prepareAtlas),
+    atlasAsset(source("celestial"), prepareAtlas),
+    backgroundAsset(sceneBackground(theme), () => true),
+    atlasAsset(assetUrl(theme, "capture") ?? (theme.captureStyle && theme.captureStyle !== captureStyleFor({ id: family }) ? theme.captureStyle === "spear" ? builtinArtwork("olympus", "capture") : theme.captureStyle === "laurel" ? "/assets/generated/refined/olympus/capture.png" : theme.captureStyle === "wing" ? builtinArtwork("angel", "capture") : `/assets/generated/lifecycle/${theme.captureStyle}-capture-atlas-v1.png` : builtinArtwork(family, "capture")), prepareCaptureAtlas)
+  ]).then(([core, maw, atlases, habitats, pollinators, agents, celestial, , capture]) => {
     const creatureVariants: HTMLCanvasElement[][] = Array.from({ length: 8 }, () => []);
     // Resolve in manifest order, never in network arrival order: a process keeps
     // the same generated variant after a cold load or a cached theme switch.
     atlases.forEach((sprites, atlas) => sprites.forEach((sprite, cell) => creatureVariants[variants[atlas][1] + cell].push(sprite)));
-    const bundle = { core, maw, creatureVariants, habitats, pollinators, agents, celestial };
-    bundles.set(family, bundle);
+    const bundle = { core, maw, creatureVariants, habitats, pollinators, agents, celestial, capture };
+    bundles.set(key, bundle);
     return bundle;
   });
-  pendingBundles.set(family, ready);
-  void ready.then(() => pendingBundles.delete(family), () => pendingBundles.delete(family));
+  pendingBundles.set(key, ready);
+  void ready.then(() => pendingBundles.delete(key), () => pendingBundles.delete(key));
   return ready;
 }

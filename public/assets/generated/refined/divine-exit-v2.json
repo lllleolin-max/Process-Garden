@@ -1,0 +1,17 @@
+{
+  "tool": "image_gen.imagegen",
+  "assets": [
+    {
+      "family": "olympus",
+      "prompt": "Use case stylized-concept. Premium game VFX sprite atlas, Greek Zeus thunder spear attack. Exact square 2x2 equal cells, PURE BLACK background, each sprite centered inside central 70% of own quadrant, broad empty gutters NO lines/text. TL: COMPLETE elegant horizontal golden spear pointing RIGHT, long narrow ornate gold shaft and sharp lapis-blue lightning spearhead, entire spear fits cell, blue electric wisps. TR: isolated radial cobalt-white lightning IMPACT explosion with fine gold sparks. BL: small concentrated golden divine casting star with blue center. BR: scattered luminous gold and blue crystal sparks, radial dissolution particle burst. Rich detailed high-end game art, matching ivory marble antique gold lapis Olympus, no characters no scenes no laurel wreaths. Four separate reusable animation sprites.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-3524167e-f5e6-4f3e-aa00-a4df33154957.png",
+      "dest": "public/assets/generated/refined/olympus/capture-v2.png"
+    },
+    {
+      "family": "angel",
+      "prompt": "Use case stylized-concept. Premium sacred angel game VFX sprite atlas. Exact square 2x2 equal cells PURE BLACK background, broad empty gutters no gridlines text or labels. Each effect contained in central 70% of quadrant. TL: horizontal luminous soft volumetric ivory-gold light beam, parallel featherlike fine luminous rays, no physical shaft. TR: soft radiant star cluster with tiny floating ivory feathers, gentle welcoming light. BL: warm golden luminous heart-shaped embrace glow framed by TWO delicate ivory feather wings opening in welcome, empty luminous center. BR: hollow elliptical luminous golden halo with airy feather motes. Refined ethereal soft gold-white light, sapphire accents, premium detailed celestial VFX, no solid ropes, no chains, no weapons, no figures or scenery. Four isolated sprites matching ornate gold and ivory angel art.",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-64c721cd-7fa9-4f6c-a071-3c2cb106c7b5.png",
+      "dest": "public/assets/generated/refined/angel/capture-v2.png"
+    }
+  ]
+}

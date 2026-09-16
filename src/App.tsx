@@ -10,19 +10,20 @@ import { PowerMetric } from "./components/PowerMetric";
 import { ThemeStudio } from "./components/ThemeStudio";
 import { Timeline } from "./components/Timeline";
 import { TopBar } from "./components/TopBar";
-import { applyTheme, builtInThemes } from "./design-system/themes/builtIn";
+import { applyTheme, builtInThemes, themeFamily } from "./design-system/themes/builtIn";
 import { useSystemFeed } from "./hooks/useSystemFeed";
 import { useProcessIcons } from "./hooks/useProcessIcons";
 import { formatBytes, formatPercent } from "./i18n/formatters";
 import { useAppStore } from "./stores/appStore";
 import { syncBrowserFullscreenExit, useDisplayMode } from "./hooks/useDisplayMode";
+import { hydrateArtwork } from "./themes/assets";
 
 export default function App() {
   const { t } = useTranslation();
   const state = useAppStore(useShallow(({ snapshot: _snapshot, history: _history, events: _events, ...shell }) => shell));
   const themes = useMemo(() => [...builtInThemes, ...state.customThemes], [state.customThemes]);
   const activeTheme = themes.find((theme) => theme.id === state.themeId) ?? builtInThemes[0];
-  const visualTheme = activeTheme.id === "eldritch" || activeTheme.basedOn === "eldritch" ? "eldritch" : "garden";
+  const visualTheme = themeFamily(activeTheme);
   const setDisplayMode = useDisplayMode();
   const [displayError, setDisplayError] = useState(false);
   const restoreWindowed = useCallback(async () => {
@@ -30,7 +31,12 @@ export default function App() {
     setDisplayError(!(await setDisplayMode("windowed")));
   }, [setDisplayMode]);
 
-  useEffect(() => applyTheme(activeTheme, state.locale), [activeTheme, state.locale]);
+  useEffect(() => {
+    let cancelled = false;
+    applyTheme(activeTheme, state.locale);
+    if (activeTheme.assets) void hydrateArtwork(activeTheme).then(() => { if (!cancelled) applyTheme(activeTheme, state.locale); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [activeTheme, state.locale]);
   useLayoutEffect(() => {
     document.documentElement.dataset.reducedMotion = String(state.reducedMotion);
     document.documentElement.dataset.paused = String(state.paused);

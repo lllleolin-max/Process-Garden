@@ -2,26 +2,26 @@
 
 > Your computer is alive. / 你的电脑，正在生长。
 
-Process Garden turns local CPU, memory, process and parent–child activity into a living digital ecosystem. It is a bilingual, local-first Windows desktop application with a calm Garden theme, a restrained Eldritch theme, fullscreen presentation and a true behind-the-icons wallpaper mode.
+Process Garden turns local CPU, memory, process and parent–child activity into a living digital ecosystem. It is a bilingual, local-first Windows desktop application with seven built-in themes, fullscreen presentation and a true behind-the-icons wallpaper mode. Released under the [MIT License](LICENSE).
 
 ![Process Garden — Garden theme](docs/screenshots/garden-windowed.png)
 
 ## Windows release
 
-For a ready-to-run Windows x64 build, use the [NSIS installer](release/Process-Garden_0.1.0_x64-setup.exe) (recommended), the [MSI installer](release/Process-Garden_0.1.0_x64_en-US.msi), or the [portable executable](release/Process-Garden.exe). Checksums and the native smoke-test result are recorded in [release/README.md](release/README.md).
+The current version is available as source; follow the build instructions below to run it on Windows. Published installers, when available, appear on [GitHub Releases](https://github.com/lllleolin-max/Process-Garden/releases). The files described in [release/README.md](release/README.md) are historical local build records, not downloads of the current source.
 
 ## Why it is different
 
 - **Real organisms, real processes** — size follows memory, motion follows CPU, branches follow parent PID, and births/exits become visible lifecycle events.
 - **Local power readings** — live watts and a recent trend appear in the sidebar and wallpaper HUD. On supported Windows hardware, the app reads battery discharge or the Intel driver's package energy counter. Each reading names its scope; package power is not total computer or wall-socket consumption. See [power sources and limitations](docs/power.md).
-- **Two complete visual languages** — Garden and Eldritch have separate imagery, silhouettes, motion, display typography and atmosphere; data semantics stay identical. The Garden renderer includes 16 stable process specimens, four habitat types and four animated pollinators.
+- **Seven built-in themes** — Garden, Deep Sea Cthulhu, Neon Matrix, Crimson Gaze, Sacred Angel, Olympus and Minimal share process semantics while providing their own visual presentation. The Garden renderer includes 16 stable process specimens, four habitat types and four animated pollinators.
 - **Application-aware ecology** — browsers, editors, runtimes, databases, containers, media, system work and heavy compute resolve to stable organism families. Any application can be pinned to a user-selected family in Settings.
 - **True application identity** — every desktop process uses the icon embedded in its own executable across the Canvas, process dock and Inspector. A bundled offline catalog covers common demo applications; initials are the final fallback.
 - **Refresh-matched motion** — global 30/60/120 Hz animation targets stay synchronized to the display while system sampling remains independently configurable.
 - **Flash-free sampling** — collector updates feed a persistent Canvas scene; CPU, memory, position and size interpolate between samples. Garden organisms grow/dissolve, while Eldritch births are expelled in slime and exits are spiralled into the central core's generated-art maw before a snapping bite and recoil.
 - **Agent lifecycle** — Claude, Codex, Trae, WorkBuddy and compatible Agent processes become theme-specific neural cores; direct child task processes grow around them as three-stage embryos.
 - **A real ambient mode** — on Windows the app can attach to the WorkerW wallpaper layer. A bilingual tray menu always provides a safe way back.
-- **Theme authoring** — create, preview, install, export and delete custom themes. `.pgtheme` files are validated ZIP containers and cannot execute code.
+- **Theme authoring** — describe a theme, copy AI artwork prompts, upload custom PNG backgrounds and sprites, preview, save and export the complete theme. Partial replacements inherit built-in artwork; images stay local and survive restarts. `.pgtheme` files are validated ZIP containers and cannot execute code.
 - **English + 简体中文** — instant, persistent switching with fully bundled offline fonts, including complete Noto SC coverage.
 - **Private by design** — no account, telemetry, cloud, remote fonts, process memory reading or file-content reading.
 
@@ -58,6 +58,7 @@ npm run tauri:build
 - Monitor button enters or exits wallpaper mode.
 - Expand button toggles fullscreen.
 - `Esc` closes the active dialog or returns from fullscreen/wallpaper.
+- Drag an organism onto the central core to review ending its process; release outside or press `Esc` to cancel. With the Canvas focused, `Delete` reviews the selected process. Confirmation ends only that PID, not its children. Demo mode removes only a simulated organism. Windows checks process identity and refuses protected processes; forced termination can lose unsaved work.
 - The system tray can always restore or quit a wallpaper session.
 
 ## Architecture

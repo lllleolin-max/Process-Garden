@@ -110,6 +110,7 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
             .map_err(|error| error.to_string())?
             .as_millis() as u64,
         cpu_percent: system.global_cpu_usage(),
+        cpu_model: system.cpus().first().map(|cpu| cpu.brand().trim().to_owned()).filter(|brand| !brand.is_empty()),
         memory_used_bytes: system.used_memory(),
         memory_total_bytes: system.total_memory(),
         process_count: system.processes().len(),
@@ -153,6 +154,7 @@ mod tests {
         let snapshot = sample(&SystemCollector::default()).expect("system sampling succeeds");
         assert!(snapshot.memory_total_bytes > 0);
         assert!(snapshot.logical_cpu_count > 0);
+        assert!(snapshot.cpu_model.as_ref().is_some_and(|model| !model.is_empty()));
         assert!(snapshot.process_count > 0);
         assert!(!snapshot.processes.is_empty());
     }

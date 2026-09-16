@@ -4,7 +4,7 @@ import { applyTheme, builtInThemes, gardenTheme, normalizeThemeManifest, validat
 import { MAX_THEME_MANIFEST_BYTES, parseThemePackage, serializeThemePackage } from "../themes/package";
 
 describe("theme contract", () => {
-  it("accepts both shipped themes", () => {
+  it("accepts all shipped themes", () => {
     expect(builtInThemes.every(validateThemeManifest)).toBe(true);
   });
 

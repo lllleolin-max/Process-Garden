@@ -1,6 +1,8 @@
+import { themeExitPose } from "./themeExit";
+import type { CaptureStyle } from "../types/theme";
 import { agentEmbryoStage } from "../ecology/organisms";
 import type { ProcessSnapshot } from "../types/system";
-import { ELDRITCH_SWALLOW_DURATION_MS, getEldritchSwallowMotion } from "./eldritchLifecycle";
+import { CAPTURE_DURATION_MS } from "./captureLifecycle";
 import { damp, stableProcessAngle } from "./smoothing";
 
 export const EMBRYO_BIRTH_MS = 1_450;
@@ -23,6 +25,7 @@ export interface EmbryoNode extends Point {
   origin: Point;
   tetherOrigin: Point;
   exiting: boolean;
+  captured: boolean;
   transitionStartedAt: number;
   exitOrigin: Point;
   exitRadius: number;
@@ -38,6 +41,7 @@ interface EmbryoFrame {
   height: number;
   core: Point;
   eldritch: boolean;
+  exitStyle?: CaptureStyle;
   frozen: boolean;
   limit: number;
   preferredPid?: number | null;
@@ -105,12 +109,13 @@ export class AgentEmbryoScene {
         this.nodes.delete(key);
       } else if (!node.exiting) {
         node.exiting = true;
+        node.captured = !frame.processes.some((current) => identity(current) === key);
         node.transitionStartedAt = time;
         node.exitOrigin = { x: node.x, y: node.y };
         node.exitRadius = node.radius;
         node.exitOpacity = node.opacity;
       }
-      const duration = frame.eldritch ? ELDRITCH_SWALLOW_DURATION_MS + 80 : GARDEN_EXIT_MS;
+      const duration = node.captured ? CAPTURE_DURATION_MS + 80 : GARDEN_EXIT_MS;
       if (node.exiting && time - node.transitionStartedAt >= duration) this.nodes.delete(key);
     }
 
@@ -131,7 +136,7 @@ export class AgentEmbryoScene {
         tetherOrigin: { x: parent.x, y: parent.y },
         radius: 1, targetRadius: 8, opacity: 0, displayCpu: process.cpuPercent,
         stage, weights: [0, 1, 2].map((value) => Number(value === stage)),
-        bornAt: time, exiting: false, transitionStartedAt: time,
+        bornAt: time, exiting: false, captured: false, transitionStartedAt: time,
         exitOrigin: { x: origin.x, y: origin.y }, exitRadius: 1, exitOpacity: 0
       });
       added.add(key);
@@ -142,16 +147,11 @@ export class AgentEmbryoScene {
       const parent = parents.get(node.parentPid);
       if (node.exiting) {
         const elapsed = time - node.transitionStartedAt;
-        if (frame.eldritch) {
-          const swallow = getEldritchSwallowMotion(elapsed);
-          const dx = frame.core.x - node.exitOrigin.x;
-          const dy = frame.core.y - node.exitOrigin.y;
-          const distance = Math.max(1, Math.hypot(dx, dy));
-          const spiral = (1 - swallow.suction) * Math.min(48, node.exitRadius * 2.8) * Math.sin(swallow.spiralTurns * Math.PI * 2);
-          node.x = node.exitOrigin.x + dx * swallow.suction - dy / distance * spiral;
-          node.y = node.exitOrigin.y + dy * swallow.suction + dx / distance * spiral - Math.sin(swallow.suction * Math.PI) * Math.min(54, distance * 0.2);
-          node.radius = node.exitRadius * swallow.nodeScale;
-          node.opacity = node.exitOpacity * swallow.nodeOpacity;
+        if (node.captured) {
+          const pose = themeExitPose(frame.exitStyle ?? (frame.eldritch ? "tentacle" : "vine"), elapsed, node.exitOrigin, frame.core, node.exitRadius, node.pid);
+          node.x = pose.x; node.y = pose.y;
+          node.radius = node.exitRadius * pose.scale;
+          node.opacity = node.exitOpacity * pose.opacity;
         } else {
           const progress = smooth(elapsed / GARDEN_EXIT_MS);
           node.x = node.exitOrigin.x + Math.sin(node.pid) * progress * 12;

@@ -59,7 +59,7 @@ beforeEach(() => {
       drawImage: (source: TestImage | HTMLCanvasElement) => {
         if (source instanceof TestImage) { spritePaths.set(canvas, source.src); return; }
         const path = spritePaths.get(source);
-        if (path && /\/(habitats|pollinators)\//.test(path)) draws.push({ path, alpha: context.globalAlpha, ...transform });
+        if (path && /\/(habitat|pollinator)\.png/.test(path)) draws.push({ path, alpha: context.globalAlpha, ...transform });
       },
       getImageData: () => ({ data: new Uint8ClampedArray(4) }),
       measureText: (text: string) => ({ width: text.length * 6 }),
@@ -88,11 +88,11 @@ describe("theme-specific ambient layers", () => {
     await loadAmbient();
     frameAt(1_000);
     expect(draws).toHaveLength(8);
-    expect(draws.every((draw) => draw.path.includes(`/generated/${themeId === "garden" ? "garden" : "eldritch"}/`))).toBe(true);
+    expect(draws.every((draw) => draw.path.includes(`/generated/refined/${themeId === "garden" ? "garden" : "eldritch-blue"}/`))).toBe(true);
     act(() => useAppStore.getState().setDisplayMode("wallpaper"));
     frameAt(1_100);
-    expect(draws.filter((draw) => draw.path.includes("/habitats/"))).toHaveLength(4);
-    expect(draws.filter((draw) => draw.path.includes("/pollinators/"))).toHaveLength(3);
+    expect(draws.filter((draw) => draw.path.includes("/habitat.png"))).toHaveLength(4);
+    expect(draws.filter((draw) => draw.path.includes("/pollinator.png"))).toHaveLength(3);
     act(() => useAppStore.getState().setDisplayMode("fullscreen"));
     frameAt(1_200);
     expect(draws).toHaveLength(8);

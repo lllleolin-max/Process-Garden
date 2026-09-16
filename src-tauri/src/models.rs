@@ -33,6 +33,7 @@ pub struct ProcessSnapshot {
 #[serde(rename_all = "camelCase")]
 pub struct SystemSnapshot {
     pub timestamp: u64,
+    pub cpu_model: Option<String>,
     pub cpu_percent: f32,
     pub memory_used_bytes: u64,
     pub memory_total_bytes: u64,
@@ -52,6 +53,7 @@ mod tests {
     fn serializes_frontend_field_names() {
         let value = serde_json::to_value(SystemSnapshot {
             timestamp: 1,
+            cpu_model: Some("Example CPU".into()),
             cpu_percent: 2.0,
             memory_used_bytes: 3,
             memory_total_bytes: 4,
@@ -64,6 +66,7 @@ mod tests {
         })
         .expect("snapshot serializes");
         assert_eq!(value["logicalCpuCount"], 8);
+        assert_eq!(value["cpuModel"], "Example CPU");
         assert_eq!(value["memoryUsedBytes"], 3);
         assert!(value["power"]["watts"].is_null());
         assert_eq!(value["power"]["source"], "unavailable");

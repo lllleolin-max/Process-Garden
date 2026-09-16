@@ -13,10 +13,11 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./i18n/config";
 import "./styles/global.css";
+import { collectUnusedArtwork } from "./themes/assets";
+import { useAppStore } from "./stores/appStore";
 
-createRoot(document.getElementById("root")!).render(
+void collectUnusedArtwork(useAppStore.getState().customThemes).catch(() => {}).finally(() => createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />
   </StrictMode>
-);
-
+));

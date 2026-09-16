@@ -1,0 +1,86 @@
+{
+  "tool": "image_gen.imagegen",
+  "assets": [
+    {
+      "role": "core",
+      "prompt": "Use case stylized-concept. Premium mythological game artwork for Process Garden OLYMPUS Greek mythology. Ancient Hellenic sculpture brought to life, luminous white Pentelic marble, rich antique gold, lapis cobalt enamel, restrained terracotta and olive accents. Beautiful classical proportions, sculpted acanthus and meander detail, legible silhouette, vivid colors with deep recesses. Not angel wings or Christian halos, not tentacles, not modern machines. No text logos UI or border. One majestic adult Zeus-like Olympian deity, recognizable serene bearded human face, flowing hair, white-and-gold himation, upright full body lightly floating, one hand bearing concentrated cobalt-gold lightning, other extended in welcome. A laurel crown and restrained circle of divine radiance. Single centered character, entire silhouette within central 76% of square. Pure black background, no floor or throne, no scenery.",
+      "dest": "public/assets/generated/refined/olympus/core.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-454cb38e-23d0-414b-ab55-fe1ff55ea764.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1434446
+    },
+    {
+      "role": "background",
+      "prompt": "Use case stylized-concept. Premium mythological game artwork for Process Garden OLYMPUS Greek mythology. Ancient Hellenic sculpture brought to life, luminous white Pentelic marble, rich antique gold, lapis cobalt enamel, restrained terracotta and olive accents. Beautiful classical proportions, sculpted acanthus and meander detail, legible silhouette, vivid colors with deep recesses. Not angel wings or Christian halos, not tentacles, not modern machines. No text logos UI or border. 16:9 midnight Mount Olympus sanctuary, monumental ivory Doric and Ionic columns at far sides, gold cornices, distant Aegean-blue mountains and clouds along lower perimeter, deep cobalt starry heavens. Central 65% quiet nearly black empty space for game organisms, no central statue. Warm braziers at edges.",
+      "dest": "public/assets/generated/refined/olympus/background.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-183feb16-e351-4dee-a590-14d349bef87b.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2381227
+    },
+    {
+      "role": "process1",
+      "prompt": "Use case stylized-concept. Premium mythological game artwork for Process Garden OLYMPUS Greek mythology. Ancient Hellenic sculpture brought to life, luminous white Pentelic marble, rich antique gold, lapis cobalt enamel, restrained terracotta and olive accents. Beautiful classical proportions, sculpted acanthus and meander detail, legible silhouette, vivid colors with deep recesses. Not angel wings or Christian halos, not tentacles, not modern machines. No text logos UI or border. Square 2x2 equal-cell sprite atlas pure black. Four entirely separated subjects centered precisely in each quarter with 16% margins. TL Athena owl on small gold shield; TR golden Apollo lyre with lapis strings; BL Poseidon trident with curled azure water ribbon; BR Hermes winged sandal with terracotta leather. Vivid individually distinct silhouettes.",
+      "dest": "public/assets/generated/refined/olympus/process1.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-8ffbfd37-796d-412a-9436-080db81092d3.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1665270
+    },
+    {
+      "role": "process2",
+      "prompt": "Use case stylized-concept. Premium mythological game artwork for Process Garden OLYMPUS Greek mythology. Ancient Hellenic sculpture brought to life, luminous white Pentelic marble, rich antique gold, lapis cobalt enamel, restrained terracotta and olive accents. Beautiful classical proportions, sculpted acanthus and meander detail, legible silhouette, vivid colors with deep recesses. Not angel wings or Christian halos, not tentacles, not modern machines. No text logos UI or border. Square 2x2 equal-cell sprite atlas pure black, each subject centered in quarter with 16% margins. TL golden laurel wreath enclosing a tiny solar jewel; TR coiled cobalt lightning bolt in golden clasp; BL elegant Greek amphora decorated with gold acanthus; BR small marble Pegasus with gold mane and cobalt harness, flying profile. No cross-cell elements.",
+      "dest": "public/assets/generated/refined/olympus/process2.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-812dca7f-27f6-4277-a9ec-7faef86fe07d.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1551778
+    },
+    {
+      "role": "habitat",
+      "prompt": "Use case stylized-concept. Premium mythological game artwork for Process Garden OLYMPUS Greek mythology. Ancient Hellenic sculpture brought to life, luminous white Pentelic marble, rich antique gold, lapis cobalt enamel, restrained terracotta and olive accents. Beautiful classical proportions, sculpted acanthus and meander detail, legible silhouette, vivid colors with deep recesses. Not angel wings or Christian halos, not tentacles, not modern machines. No text logos UI or border. Square exact 2x2 equal-cell atlas pure black broad margins. TL small white Doric temple facade; TR sacred olive tree growing through broken marble column; BL blue spring within classical marble basin; BR gold-lit Greek brazier on lapis-and-marble pedestal. Four isolated environment props, no floor or cast shadows.",
+      "dest": "public/assets/generated/refined/olympus/habitat.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-070661dd-dd55-4f84-9d05-8d0aee954ab9.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2152040
+    },
+    {
+      "role": "pollinator",
+      "prompt": "Use case stylized-concept. Premium mythological game artwork for Process Garden OLYMPUS Greek mythology. Ancient Hellenic sculpture brought to life, luminous white Pentelic marble, rich antique gold, lapis cobalt enamel, restrained terracotta and olive accents. Beautiful classical proportions, sculpted acanthus and meander detail, legible silhouette, vivid colors with deep recesses. Not angel wings or Christian halos, not tentacles, not modern machines. No text logos UI or border. Square exact 2x2 equal-cell atlas pure black, each subject inside central 65% of quadrant, NO gridlines. TL tiny golden eagle; TR little white dove with olive twig; BL miniature winged sandal; BR small lapis butterfly with gold meander wings. Clean sparse sprite sheet.",
+      "dest": "public/assets/generated/refined/olympus/pollinator.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-80d46d4f-3c53-4d91-8f7e-16af0733d054.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1136110
+    },
+    {
+      "role": "agent",
+      "prompt": "Use case stylized-concept. Premium mythological game artwork for Process Garden OLYMPUS Greek mythology. Ancient Hellenic sculpture brought to life, luminous white Pentelic marble, rich antique gold, lapis cobalt enamel, restrained terracotta and olive accents. Beautiful classical proportions, sculpted acanthus and meander detail, legible silhouette, vivid colors with deep recesses. Not angel wings or Christian halos, not tentacles, not modern machines. No text logos UI or border. Square exact 2x2 equal-cell atlas pure black, generous margins. TL marble-and-gold Athena bust with elegant helmet and blue plume; TR closed laurel-wrapped blue divine seed; BL same seed splitting to reveal miniature golden flame; BR same seed awakened into gold laurel-crowned star. Last three aligned consistent growth stages. No text.",
+      "dest": "public/assets/generated/refined/olympus/agent.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-71c23f64-145b-4ee5-83ca-30288d2f408c.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1753249
+    },
+    {
+      "role": "celestial",
+      "prompt": "Use case stylized-concept. Premium mythological game artwork for Process Garden OLYMPUS Greek mythology. Ancient Hellenic sculpture brought to life, luminous white Pentelic marble, rich antique gold, lapis cobalt enamel, restrained terracotta and olive accents. Beautiful classical proportions, sculpted acanthus and meander detail, legible silhouette, vivid colors with deep recesses. Not angel wings or Christian halos, not tentacles, not modern machines. No text logos UI or border. Square exact 2x2 equal-cell atlas pure black generous margins. TL radiant Helios gold sun disk with sculpted serene face; TR silver Selene crescent with cobalt jewel; BL solar chariot-wheel medallion; BR deep-blue moon encircled by golden laurel. No sky or text.",
+      "dest": "public/assets/generated/refined/olympus/celestial.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-fa48ddb4-a879-4db9-b32a-e229ddc50b1c.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2150297
+    },
+    {
+      "role": "capture",
+      "prompt": "Use case stylized-concept. Premium mythological game artwork for Process Garden OLYMPUS Greek mythology. Ancient Hellenic sculpture brought to life, luminous white Pentelic marble, rich antique gold, lapis cobalt enamel, restrained terracotta and olive accents. Beautiful classical proportions, sculpted acanthus and meander detail, legible silhouette, vivid colors with deep recesses. Not angel wings or Christian halos, not tentacles, not modern machines. No text logos UI or border. Square exact 2x2 equal-cell sprite atlas pure black, each part limited to central 65% of its quadrant, entirely black broad center gutters. TL straight horizontal braided golden laurel ribbon with cobalt energy vein; TR right-pointing sculpted acanthus tip; BL small golden thunderbolt medallion; BR open elliptical golden laurel wreath with large empty black center. Separate reusable animation parts. No scene, labels or gridlines.",
+      "dest": "public/assets/generated/refined/olympus/capture.png",
+      "source": "C:\\Users\\34178\\.codex\\generated_images\\01a0a8d5-ecaa-7f13-863b-2b49edfad839\\exec-5383e1ff-f47f-4bf4-8e04-100c50676cf7.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1328627
+    }
+  ]
+}

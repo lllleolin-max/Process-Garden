@@ -39,12 +39,13 @@ export function useOverlay<T extends HTMLElement = HTMLElement>(open: boolean, o
     if (modal) {
       // Inert each sibling branch up to body, preserving pre-existing inert state.
       let branch: HTMLElement = root;
-      while (branch.parentElement && branch.parentElement !== document.body) {
+      while (branch.parentElement) {
         for (const sibling of branch.parentElement.children) {
           if (!(sibling instanceof HTMLElement) || sibling === branch || sibling.matches('[data-overlay-root], script, style')) continue;
           inertElements.push({ element: sibling, wasInert: sibling.hasAttribute("inert") });
           sibling.setAttribute("inert", "");
         }
+        if (branch.parentElement === document.body) break;
         branch = branch.parentElement;
       }
     }

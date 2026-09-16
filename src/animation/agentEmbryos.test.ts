@@ -179,6 +179,7 @@ describe("persistent agent embryos", () => {
     f.update(); f.run(600);
     expect(node.exiting).toBe(true);
     expect(node.opacity).toBeGreaterThan(0);
+    expect(node.captured).toBe(false);
     expect(node.opacity).toBeLessThan(1);
     f.run(800);
     expect(f.scene.nodes.size).toBe(0);

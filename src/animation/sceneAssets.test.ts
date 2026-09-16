@@ -23,20 +23,84 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("atomic generated scene assets", () => {
+  it("loads only the CPU core for minimal themes, without unused scene atlases", async () => {
+    const { loadSceneAssets, sceneBackground } = await import("./sceneAssets");
+    const theme = builtInThemes.find((item) => item.id === "minimal")!;
+    const pending = loadSceneAssets(theme);
+    expect(images).toHaveLength(1);
+    expect(images[0].src).toBe("/assets/generated/refined/minimal/core.png");
+    images[0].dispatchEvent(new Event("load"));
+    const bundle = await pending;
+    expect(bundle.creatureVariants).toEqual([]);
+    expect(bundle.agents).toEqual([]);
+    expect(bundle.habitats).toEqual([]);
+    expect(bundle.capture).toEqual([]);
+    expect(sceneBackground(theme)).toBe("");
+    expect(await loadSceneAssets({ ...theme, id: "custom-minimal", basedOn: "minimal" })).toBe(bundle);
+  });
+  it("keeps ocular artwork independent from the deep-sea theme, including capture and maw", async () => {
+    const { loadSceneAssets } = await import("./sceneAssets");
+    const theme = builtInThemes.find((item) => item.id === "crimson")!;
+    const pending = loadSceneAssets(theme);
+    expect(images).toHaveLength(10);
+    expect(images.every((image) => image.src.startsWith("/assets/generated/refined/crimson/"))).toBe(true);
+    images.forEach((image) => image.dispatchEvent(new Event("load")));
+    const bundle = await pending;
+    expect(bundle.maw).not.toBeNull();
+    expect(bundle.capture).toHaveLength(4);
+    expect(await loadSceneAssets({ ...theme, id: "custom-eye", basedOn: "crimson" })).toBe(bundle);
+  });
+  it("keeps custom image bundles distinct from their base and supports extra variants", async () => {
+    const artwork = await import("../themes/assets");
+    vi.spyOn(artwork, "hydrateArtwork").mockResolvedValue(undefined);
+    vi.spyOn(artwork, "assetUrl").mockImplementation((theme, role) => theme.assets?.[role] ? `blob:${theme.assets[role]}` : undefined);
+    const { loadSceneAssets, getCachedSceneAssets, sceneBackground } = await import("./sceneAssets");
+    const base = builtInThemes.find((theme) => theme.id === "cyberpunk")!;
+    const first = { ...base, schemaVersion: 2 as const, id: "first-custom", basedOn: "cyberpunk" as const, assets: { core: "assets/first.png", background: "assets/backdrop.png", process3: "assets/variant.png" } };
+    const second = { ...first, id: "second-custom", assets: { core: "assets/second.png" } };
+    const promises = [loadSceneAssets(base), loadSceneAssets(first), loadSceneAssets(second)];
+    await Promise.resolve();
+    images.forEach((image) => image.dispatchEvent(new Event("load")));
+    const [original, a, b] = await Promise.all(promises);
+    expect(a.core).not.toBe(original.core);
+    expect(a.core).not.toBe(b.core);
+    expect(a.creatureVariants[0]).toHaveLength(2);
+    expect(b.creatureVariants[0]).toHaveLength(1);
+    expect(getCachedSceneAssets(first)).toBe(a);
+    expect(getCachedSceneAssets(second)).toBe(b);
+    expect(sceneBackground(first)).toBe("blob:assets/backdrop.png");
+  });
+  it("loads an independent cyberpunk bundle and reuses it for derived themes", async () => {
+    const { loadSceneAssets, sceneBackground } = await import("./sceneAssets");
+    const theme = builtInThemes.find((item) => item.id === "cyberpunk")!;
+    const pending = loadSceneAssets(theme);
+    expect(images).toHaveLength(9);
+    expect(images.filter((image) => !image.src.includes("/lifecycle/")).every((image) => image.src.startsWith("/assets/generated/refined/cyberpunk/"))).toBe(true);
+    expect(images.some((image) => image.src.endsWith("beam-capture-atlas-v1.png"))).toBe(true);
+    images.forEach((image) => image.dispatchEvent(new Event("load")));
+    const bundle = await pending;
+    expect(bundle.creatureVariants.every((variants) => variants.length === 1)).toBe(true);
+    expect(bundle.celestial).toHaveLength(4);
+    expect(bundle.capture).toHaveLength(4);
+    expect(bundle.maw).toBeNull();
+    const custom = { ...theme, id: "custom-neon", basedOn: "cyberpunk" as const };
+    expect(await loadSceneAssets(custom)).toBe(bundle);
+    expect(sceneBackground(custom)).toBe(sceneBackground(theme));
+  });
   it("shares pending work, waits for the backdrop, and preserves manifest variant order", async () => {
     const { loadSceneAssets, getCachedSceneAssets } = await import("./sceneAssets");
     const pending = loadSceneAssets(builtInThemes[0]);
     expect(loadSceneAssets(builtInThemes[0])).toBe(pending);
     const count = images.length;
-    const backdrop = images.find((image) => image.src.includes("/backgrounds/"))!;
+    const backdrop = images.find((image) => image.src.includes("/background.png"))!;
     [...images].reverse().filter((image) => image !== backdrop).forEach((image) => image.dispatchEvent(new Event("load")));
     await Promise.resolve();
     expect(getCachedSceneAssets(builtInThemes[0])).toBeUndefined();
     backdrop.dispatchEvent(new Event("load"));
     const ready = await pending;
     expect(ready.creatureVariants).toHaveLength(8);
-    expect(ready.creatureVariants[0].map((sprite) => sources.get(sprite)?.split("/").at(-1))).toEqual(["garden-process-atlas-v1.png", "garden-process-atlas-v3.png"]);
-    expect(ready.creatureVariants[4].map((sprite) => sources.get(sprite)?.split("/").at(-1))).toEqual(["garden-process-atlas-v2.png", "garden-process-atlas-v4.png"]);
+    expect(ready.creatureVariants[0].map((sprite) => sources.get(sprite)?.split("/").at(-1))).toEqual(["process1.png", "process3.png"]);
+    expect(ready.creatureVariants[4].map((sprite) => sources.get(sprite)?.split("/").at(-1))).toEqual(["process2.png", "process4.png"]);
     expect(await loadSceneAssets({ ...builtInThemes[0], id: "custom", basedOn: "garden" })).toBe(ready);
     expect(images).toHaveLength(count);
   });

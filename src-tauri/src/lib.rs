@@ -2,6 +2,14 @@ mod collector;
 mod icons;
 mod models;
 mod power;
+mod termination;
+
+#[cfg(not(test))]
+#[tauri::command]
+async fn terminate_process(pid: u32, started_at: u64, executable_path: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || termination::terminate(pid, started_at, &executable_path))
+        .await.map_err(|_| "failed".to_string())?
+}
 
 #[cfg(not(test))]
 use collector::SystemCollector;
@@ -77,7 +85,7 @@ pub fn run() {
             tray.build(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![sample_system, platform_name, process_icons])
+        .invoke_handler(tauri::generate_handler![sample_system, platform_name, process_icons, terminate_process])
         .run(tauri::generate_context!())
         .expect("error while running Process Garden");
 }

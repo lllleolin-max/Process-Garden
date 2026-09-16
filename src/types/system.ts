@@ -23,6 +23,7 @@ export interface PowerSnapshot {
 
 export interface SystemSnapshot {
   timestamp: number;
+  cpuModel?: string | null;
   cpuPercent: number;
   memoryUsedBytes: number;
   memoryTotalBytes: number;
