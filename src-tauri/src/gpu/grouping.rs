@@ -14,6 +14,7 @@ pub struct CounterCoverage {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupedSnapshot {
+    pub rate_baseline: bool,
     pub adapters: Vec<AdapterObservation>,
     pub engine_coverage: CounterCoverage,
     pub dedicated_coverage: CounterCoverage,
@@ -150,7 +151,8 @@ impl GpuCounterSnapshot {
                     .into_iter()
                     .map(|(id, engine)| {
                         let conflict = engine.types.len() > 1;
-                        let valid = engine.invalid == 0
+                        let valid = !self.rate_baseline
+                            && engine.invalid == 0
                             && engine.duplicates == 0
                             && !conflict
                             && engine.sum.is_finite()
@@ -184,6 +186,7 @@ impl GpuCounterSnapshot {
             })
             .collect();
         GroupedSnapshot {
+            rate_baseline: self.rate_baseline,
             adapters,
             engine_coverage,
             dedicated_coverage,
@@ -200,11 +203,27 @@ mod tests {
     }
     fn snapshot(rows: Vec<(String, Option<f64>)>) -> GpuCounterSnapshot {
         GpuCounterSnapshot {
+            rate_baseline: false,
             engine_utilization: Some(rows.into_iter().collect()),
             dedicated_bytes: None,
             shared_bytes: None,
         }
     }
+    #[test]
+    fn baseline_suppresses_rates_without_erasing_instantaneous_memory() {
+        let mut raw = snapshot(vec![(engine(1, 0, 0, "3D"), Some(0.0))]);
+        raw.rate_baseline = true;
+        raw.dedicated_bytes = Some(BTreeMap::from([(
+            "luid_0x0_0x1_phys_0".into(),
+            Some(128.0),
+        )]));
+        let grouped = raw.grouped();
+        assert!(grouped.rate_baseline);
+        assert_eq!(grouped.adapters[0].engines[0].observed_percent_sum, None);
+        assert_eq!(grouped.adapters[0].dedicated.bytes, Some(128.0));
+        assert_eq!(serde_json::to_value(grouped).unwrap()["rateBaseline"], true);
+    }
+
     #[test]
     fn isolates_physical_engines_and_keeps_zero_and_unknown_types() {
         let grouped = snapshot(vec![

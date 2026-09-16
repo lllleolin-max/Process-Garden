@@ -1,8 +1,45 @@
 # GPU monitoring: raw acquisition foundation
 
 Status: local PDH reader, identity parsing, per-engine experimental observation
-grouping and read-only host probes pass. No validated overall GPU percentage,
-background service, IPC or frontend is connected yet; GPU monitoring is not done.
+grouping and independent worker pass host probes. The `sample_gpu({ session })`
+Tauri command is registered and compile-checked, but actual desktop IPC and the
+frontend are not exercised/connected yet. No validated overall GPU percentage;
+GPU monitoring and Task Manager replacement are not done.
+
+## Independent worker and bridge
+
+`gpu/worker.rs` owns one GPU provider thread, separate from CPU/process and disk
+sampling. `provider_worker.rs` now shares the existing disk admission, timeout,
+deadline, idle-release and channel logic; disk and GPU each create their own worker.
+Native query handles are constructed/used/dropped on the owning thread, with no
+unsafe Send assertion. Initial construction does not open counters or auto-poll.
+
+One request may be queued/in flight; caller timeout is 4 seconds and does not
+release admission while native work continues. Closed-channel replies are dropped,
+expired requests are rejected before collection and after native initialization.
+15 seconds idle closes the query and waits without polling. A truly hung provider
+cannot be safely cancelled and keeps only its own worker busy, not other providers.
+Opening failures back off 5 seconds, including when callers change session tokens.
+
+Sessions are 1–128 ASCII alphanumeric/hyphen/underscore characters. A changed
+session reopens counters and returns an explicit `rateBaseline: true`. This flag
+also applies to cold/recovery/long-gap raw rate observations. PDH may omit the
+entire rate counter on its initial observation; that is not an observed zero.
+Baseline suppresses engine sums without erasing instantaneous memory readings.
+Once a contiguous observation exists, `rateBaseline` is false; per-counter and
+per-engine coverage still determines whether an individual value is available.
+
+Worker evidence: 52 Rust library tests passed / 11 manual probes ignored; locked,
+offline non-test cargo check passed. A blocked GPU fixture remains busy after the
+caller times out while real SystemCollector and an independent provider complete.
+The fixture is deliberately non-Send, verifying thread-local source construction.
+Existing disk concurrency/timeout/idle/expiry tests pass after extraction; native
+disk worker probe also passes (one instance, second response 0.355ms).
+
+The GPU native worker probe checks cold baseline, four contiguous readings, a
+renewed-session baseline and that the renewed session then warms up. This is a
+short read-only debug probe, not long-run overhead or controlled workload parity.
+Frontend demand/cancellation/history and real packaged IPC remain integration gates.
 
 ## Current implementation
 
@@ -80,9 +117,9 @@ the raw per-process/context PDH instances. Required before a total-usage display
   sharing hardware. Validate aggregation against controlled workloads and Windows.
 - Map to real adapter names/capacity with verified device identities; do not call
   the number of returned memory-counter instances the number of installed GPUs.
-- Reuse bounded demand-driven worker/session ownership, without putting provider
-  initialization under CPU/process locks or on the UI thread.
-- Add IPC, schema/history validation, adapter/engine views and per-process lifetime
+- Validate the registered worker/IPC path in the desktop runtime; provider
+  initialization is independent of CPU/process locks and the UI thread.
+- Add frontend schema/history validation, adapter/engine views and per-process lifetime
   safety. Handle unsupported drivers, hotplug, sleep and provider failures honestly.
 - Verify overhead, both-theme visuals, actual frame pacing and native UI behavior.
 

@@ -39,6 +39,14 @@ wildcard handle; this is not individual counter registration via expanded paths.
 
 ## Integration gates
 
+The bounded thread/admission/channel implementation now lives in
+`provider_worker.rs`, shared with GPU. Disk and GPU still own separate worker
+instances and native handles; neither serializes on the other provider. Disk
+errors, timeout/busy behavior, session and idle semantics are unchanged. Include
+the shared module and its lib.rs declaration when integrating disk_worker.rs.
+After extraction: six disk worker unit tests and the explicit native disk worker
+probe passed; the host's second response was 0.355ms (single debug observation).
+
 `disk_worker::DiskReader` owns one worker thread; the source and all PDH handles
 are created, used and dropped on that thread. No unsafe Send impl is required.
 The application manages one shared reader and exposes `sample_disks({ session })`.

@@ -4,6 +4,7 @@ use serde::Serialize;
 use std::collections::BTreeMap;
 
 pub mod grouping;
+pub mod worker;
 
 /// Session-local provider identity, not a durable hardware identifier.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -69,6 +70,7 @@ pub fn parse_engine_identity(name: &str) -> Option<EngineIdentity> {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GpuCounterSnapshot {
+    pub rate_baseline: bool,
     pub engine_utilization: Option<BTreeMap<String, Option<f64>>>,
     pub dedicated_bytes: Option<BTreeMap<String, Option<f64>>>,
     pub shared_bytes: Option<BTreeMap<String, Option<f64>>>,
@@ -173,6 +175,7 @@ mod windows {
             // Memory counters are instantaneous usage gauges, not rates; no
             // fabricated baseline zero and no sum across adapters or processes.
             Ok(GpuCounterSnapshot {
+                rate_baseline: !continuous,
                 engine_utilization: engine_utilization.ok(),
                 dedicated_bytes: dedicated_bytes.ok(),
                 shared_bytes: shared_bytes.ok(),
@@ -318,6 +321,7 @@ mod tests {
     #[test]
     fn unavailable_counter_empty_instances_and_observed_zero_remain_distinct() {
         let sample = GpuCounterSnapshot {
+            rate_baseline: false,
             engine_utilization: None,
             dedicated_bytes: Some(BTreeMap::new()),
             shared_bytes: Some(BTreeMap::from([("fixture".into(), Some(0.0))])),

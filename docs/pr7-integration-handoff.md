@@ -1,5 +1,21 @@
 # PR #7 integration handoff — 2026-09-16
 
+## Latest: independent GPU worker and command
+
+GPU now has a managed reader and registered `sample_gpu({ session })` command.
+The common bounded thread code is extracted from disk_worker.rs into
+provider_worker.rs; include BOTH modules plus the lib.rs declaration when merging.
+GPU and disk own separate threads, not a shared serial queue. Preserve the other
+task's lib.rs commands/state (especially termination) while adding this command;
+do not replace its invoke_handler wholesale. No changes to shared SystemSnapshot
+or collector schemas. Grouped GPU responses add explicit `rateBaseline` metadata.
+
+52 Rust unit tests passed / 11 manual probes ignored, cargo check passed. Native
+GPU worker cold/continuous/renewed-session probe and native disk worker probe pass.
+Blocked GPU fixture proves system sampling and another provider still complete.
+This does not prove desktop IPC, visuals, controlled GPU workload parity or signed
+release readiness; frontend GPU demand/history/presentation remains pending.
+
 Base inspected: `feat/motion-integration` at ee5dae4. Remote PR head at audit:
 a7b50ea; local follow-up test commit: 3619590. GitHub reported MERGEABLE while
 CI run 35086302970 was still running. This does **not** include the integration

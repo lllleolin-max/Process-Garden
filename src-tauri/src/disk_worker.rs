@@ -1,41 +1,13 @@
 //! A single owned disk-provider thread, independent of the system sampling lock.
 use crate::disk::DiskReading;
-use std::{
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        mpsc, Arc,
-    },
-    time::{Duration, Instant},
-};
+use crate::provider_worker::{Source, Worker, IDLE_RELEASE, RESPONSE_TIMEOUT};
+use std::time::{Duration, Instant};
 
 type Reading = Result<Vec<DiskReading>, String>;
-const RESPONSE_TIMEOUT: Duration = Duration::from_secs(4);
-const IDLE_RELEASE: Duration = Duration::from_secs(15);
-
-struct Permit(Arc<AtomicBool>);
-impl Drop for Permit {
-    fn drop(&mut self) {
-        self.0.store(false, Ordering::Release);
-    }
-}
-
-struct Request {
-    session: String,
-    deadline: Instant,
-    reply: mpsc::SyncSender<Reading>,
-    // A caller timeout cannot release this permit while the provider still runs.
-    _permit: Permit,
-}
-
-trait Source {
-    fn sample(&mut self, session: &str, deadline: Instant) -> Reading;
-    fn reset(&mut self);
-}
 
 #[derive(Clone)]
 pub struct DiskReader {
-    sender: Option<mpsc::SyncSender<Request>>,
-    busy: Arc<AtomicBool>,
+    worker: Worker<Vec<DiskReading>>,
 }
 
 impl Default for DiskReader {
@@ -45,89 +17,22 @@ impl Default for DiskReader {
 }
 
 impl DiskReader {
-    fn start<S: Source + 'static>(
+    fn start<S: Source<Output = Vec<DiskReading>> + 'static>(
         factory: impl FnOnce() -> S + Send + 'static,
         idle: Duration,
     ) -> Self {
-        let (sender, receiver) = mpsc::sync_channel::<Request>(1);
-        let busy = Arc::new(AtomicBool::new(false));
-        // The PDH source is constructed, used and dropped on this thread. No
-        // unsafe Send implementation for native query/counter handles is needed.
-        let started = std::thread::Builder::new()
-            .name("process-garden-disks".into())
-            .spawn(move || {
-                let mut source = factory();
-                let mut active = false;
-                loop {
-                    let request = if active {
-                        match receiver.recv_timeout(idle) {
-                            Ok(request) => request,
-                            Err(mpsc::RecvTimeoutError::Timeout) => {
-                                source.reset();
-                                active = false;
-                                continue;
-                            }
-                            Err(mpsc::RecvTimeoutError::Disconnected) => break,
-                        }
-                    } else {
-                        match receiver.recv() {
-                            Ok(request) => request,
-                            Err(_) => break,
-                        }
-                    };
-                    let result = if Instant::now() >= request.deadline {
-                        Err("disk request expired before collection".into())
-                    } else {
-                        active = true;
-                        source.sample(&request.session, request.deadline)
-                    };
-                    // Nonblocking and bounded: a timed-out caller may already be gone.
-                    // Release only after provider work finishes, but before a live
-                    // caller sees completion and can submit its next request.
-                    drop(request._permit);
-                    let _ = request.reply.try_send(result);
-                }
-            });
         Self {
-            sender: started.ok().map(|_| sender),
-            busy,
+            worker: Worker::start("disk", factory, idle),
         }
     }
 
     pub fn sample(&self, session: String) -> Reading {
-        self.sample_timeout(session, RESPONSE_TIMEOUT)
+        self.worker.sample(session, RESPONSE_TIMEOUT)
     }
 
+    #[cfg(test)]
     fn sample_timeout(&self, session: String, timeout: Duration) -> Reading {
-        if session.is_empty()
-            || session.len() > 128
-            || !session
-                .bytes()
-                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
-        {
-            return Err("invalid disk session".into());
-        }
-        let sender = self.sender.as_ref().ok_or("disk worker unavailable")?;
-        self.busy
-            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-            .map_err(|_| "disk query already in progress")?;
-        let permit = Permit(self.busy.clone());
-        let (reply, response) = mpsc::sync_channel(1);
-        sender
-            .try_send(Request {
-                session,
-                deadline: Instant::now() + timeout,
-                reply,
-                _permit: permit,
-            })
-            .map_err(|_| "disk worker unavailable")?;
-        response.recv_timeout(timeout).map_err(|error| {
-            match error {
-                mpsc::RecvTimeoutError::Timeout => "disk query timed out",
-                mpsc::RecvTimeoutError::Disconnected => "disk worker disconnected",
-            }
-            .to_string()
-        })?
+        self.worker.sample(session, timeout)
     }
 }
 
@@ -141,6 +46,7 @@ struct NativeSource {
 
 #[cfg(windows)]
 impl Source for NativeSource {
+    type Output = Vec<DiskReading>;
     fn sample(&mut self, session: &str, deadline: Instant) -> Reading {
         if self.session != session {
             self.query = None;
@@ -183,6 +89,7 @@ impl Source for NativeSource {
 struct NativeSource;
 #[cfg(not(windows))]
 impl Source for NativeSource {
+    type Output = Vec<DiskReading>;
     fn sample(&mut self, _: &str, _: Instant) -> Reading {
         Err("physical disk counters unsupported on this platform".into())
     }
@@ -192,7 +99,10 @@ impl Source for NativeSource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::AtomicUsize;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        mpsc, Arc,
+    };
 
     struct FakeSource {
         entered: mpsc::Sender<String>,
@@ -202,6 +112,7 @@ mod tests {
         calls: Arc<AtomicUsize>,
     }
     impl Source for FakeSource {
+        type Output = Vec<DiskReading>;
         fn sample(&mut self, session: &str, _: Instant) -> Reading {
             self.calls.fetch_add(1, Ordering::SeqCst);
             self.entered.send(session.to_owned()).unwrap();
@@ -325,6 +236,7 @@ mod tests {
     fn completed_responses_release_admission_before_the_next_call() {
         struct Immediate;
         impl Source for Immediate {
+            type Output = Vec<DiskReading>;
             fn sample(&mut self, _: &str, _: Instant) -> Reading {
                 Ok(vec![])
             }
@@ -333,7 +245,7 @@ mod tests {
         let reader = DiskReader::start(|| Immediate, Duration::from_secs(15));
         for _ in 0..100 {
             assert!(reader.sample("same-session".into()).unwrap().is_empty());
-            assert!(!reader.busy.load(Ordering::Acquire));
+            assert!(!reader.worker.busy.load(Ordering::Acquire));
         }
     }
 
@@ -352,7 +264,7 @@ mod tests {
             .expect("system sample completes while disk provider is still blocked");
         assert!(snapshot.memory_total_bytes > 0);
         assert!(snapshot.logical_cpu_count > 0);
-        assert!(reader.busy.load(Ordering::Acquire));
+        assert!(reader.worker.busy.load(Ordering::Acquire));
         release.send(()).unwrap();
         assert!(caller.join().unwrap().unwrap().is_empty());
         drop(reader);
@@ -404,6 +316,7 @@ mod tests {
             }
         }
         impl Source for CountSource {
+            type Output = Vec<DiskReading>;
             fn sample(&mut self, _: &str, _: Instant) -> Reading {
                 self.0.fetch_add(1, Ordering::SeqCst);
                 Ok(vec![])
@@ -425,11 +338,11 @@ mod tests {
                 .unwrap_err(),
             "disk query timed out"
         );
-        assert!(reader.busy.load(Ordering::Acquire));
+        assert!(reader.worker.busy.load(Ordering::Acquire));
         release.send(()).unwrap();
         // A channel barrier on the worker's ownership teardown avoids guessing
         // how long scheduling the expired request should take.
-        let busy = reader.busy.clone();
+        let busy = reader.worker.busy.clone();
         drop(reader);
         drops.recv_timeout(Duration::from_secs(2)).unwrap();
         assert!(!busy.load(Ordering::Acquire));
