@@ -67,3 +67,22 @@ it.each([30, 60, 120] as const)("bounds DOM writes at %i Hz and releases hidden 
   view.unmount();
   expect(frames.size).toBe(0);
 });
+
+it("does not interpolate demo observations into native measurements", () => {
+  const frames = new Map<number, FrameRequestCallback>();
+  let id = 0;
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; });
+  vi.stubGlobal("cancelAnimationFrame", (key: number) => frames.delete(key));
+  vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  vi.stubGlobal("matchMedia", () => ({ matches: false }));
+  useAppStore.setState({ collector: "demo", paused: false, reducedMotion: false, displayMode: "windowed" });
+  const format = (value: number) => value.toFixed(1);
+  const view = render(<AnimatedMetric value={10} format={format} />);
+  view.rerender(<AnimatedMetric value={30} format={format} />);
+  expect(frames.size).toBe(1);
+  act(() => useAppStore.setState({ collector: "native" }));
+  expect(view.container.textContent).toBe("30.0");
+  expect(frames.size).toBe(0);
+  view.rerender(<AnimatedMetric value={40} format={format} />);
+  expect(frames.size).toBe(1);
+});
