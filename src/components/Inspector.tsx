@@ -11,6 +11,7 @@ import { processHistory } from "../data/processHistory";
 import { processIdentity } from "../animation/processIdentity";
 import { ParentProcess } from "./ParentProcess";
 import { ProcessIo } from "./ProcessIo";
+import { isObservedMetric } from "../data/processTable";
 
 export function Inspector() {
   const { t } = useTranslation();
@@ -31,13 +32,14 @@ export function Inspector() {
   const statusKey = process.status === "stressed" ? "stressed" : process.status === "idle" ? "idle" : "running";
   const cpuLabel = Number.isFinite(process.cpuPercent) && process.cpuPercent >= 0 && process.cpuPercent <= 100
     ? formatPercent(process.cpuPercent, state.locale, 1) : "—";
+  const memoryLabel = isObservedMetric(process.memoryBytes) ? formatBytes(process.memoryBytes, state.locale) : "—";
   const agentTasks = isAgentProcess(process) ? state.snapshot.processes.filter((item) => item.parentPid === process.pid && item.status !== "dead") : [];
   const copyDetails = async () => {
     const request = ++copyRequest.current;
     clearTimeout(copyTimer.current);
     try {
       if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(`${process.name} · PID ${process.pid} · CPU ${cpuLabel} · ${formatBytes(process.memoryBytes, state.locale)}`);
+      await navigator.clipboard.writeText(`${process.name} · PID ${process.pid} · CPU ${cpuLabel} · ${memoryLabel}`);
       if (request !== copyRequest.current) return;
       setCopyStatus("copied");
     } catch {
@@ -63,7 +65,7 @@ export function Inspector() {
       <div id="inspector-tabpanel" className="inspector-tabpanel" role="tabpanel" aria-labelledby={`inspector-tab-${tab}`} tabIndex={0} key={`${process.pid}-${tab}`}>
       {tab === "overview" && <>
         <section className="resource-chart" title={state.locale === "zh-CN" ? "全机 CPU 容量 · 固定 0–100% 刻度" : "Whole-machine CPU capacity · fixed 0–100% scale"}><div className="resource-chart-title"><span><Cpu size={14} />{t("inspector.cpuUsage")}</span><strong>{cpuLabel}</strong></div><Sparkline key={`${selectedLifetime}-cpu`} values={history.map((item) => item.cpuPercent).slice(-42)} height={50} scale="percent" /></section>
-        <section className="resource-chart"><div className="resource-chart-title"><span><Activity size={14} />{t("inspector.memoryUsage")}</span><strong>{formatBytes(process.memoryBytes, state.locale)}</strong></div><Sparkline key={`${selectedLifetime}-memory`} values={history.map((item) => item.memoryBytes).slice(-42)} color="var(--color-tertiary)" height={44} /></section>
+        <section className="resource-chart"><div className="resource-chart-title"><span><Activity size={14} />{t("inspector.memoryUsage")}</span><strong>{memoryLabel}</strong></div><Sparkline key={`${selectedLifetime}-memory`} values={history.map((item) => isObservedMetric(item.memoryBytes) ? item.memoryBytes : NaN).slice(-42)} color="var(--color-tertiary)" height={44} /></section>
         <ProcessIo key={`${selectedLifetime}-io`} pid={process.pid} startedAt={process.startedAt} />
       </>}
       {tab === "threads" && <section className="inspector-tab-summary"><Workflow size={24} /><strong>{process.threadCount ?? t("common.unavailable")}</strong><p>{t("inspector.threadSummary")}</p></section>}
@@ -77,7 +79,7 @@ export function Inspector() {
         <Detail icon={Clock3} label={t("inspector.started")} value={formatDateTime(process.startedAt, state.locale)} />
       </div>
       <ParentProcess process={process} processes={state.snapshot.processes} locale={state.locale} />
-      <section className="activity-highlights"><h3>{t("inspector.activity")}</h3><p><span className="event-dot network" />{process.connections ?? "—"} {t("nav.connections").toLowerCase()}</p><p><span className="event-dot spawn" />{process.threadCount ?? "—"} {t("metrics.threads").toLowerCase()}</p><p><span className="event-dot io" />{formatBytes(process.memoryBytes, state.locale)} {t("metrics.memory").toLowerCase()}</p></section>
+      <section className="activity-highlights"><h3>{t("inspector.activity")}</h3><p><span className="event-dot network" />{process.connections ?? "—"} {t("nav.connections").toLowerCase()}</p><p><span className="event-dot spawn" />{process.threadCount ?? "—"} {t("metrics.threads").toLowerCase()}</p><p><span className="event-dot io" />{memoryLabel} {t("metrics.memory").toLowerCase()}</p></section>
       <section className="path-card"><span><FolderCog size={14} />{t("inspector.path")}</span><code>{process.executablePath ?? t("common.unavailable")}</code></section>
     </aside>
   );

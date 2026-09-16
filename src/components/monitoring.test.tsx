@@ -21,6 +21,20 @@ afterEach(() => {
 });
 
 describe("monitoring motion and feedback", () => {
+  it.each([NaN, Infinity, -1])("does not display invalid memory %s as observed zero or bridge its history", value => {
+    const process = { ...initial.snapshot.processes[0], memoryBytes: value };
+    const snapshot = { ...initial.snapshot, processes: [process] };
+    useAppStore.setState({ reducedMotion: true, selectedPid: process.pid, snapshot, history: [snapshot] });
+    const view = render(<Inspector />);
+    const chart = view.container.querySelectorAll(".resource-chart")[1];
+    expect(chart.querySelector("strong")).toHaveTextContent("—");
+    expect(chart.querySelector("polyline")).toHaveAttribute("points", "");
+    const zero = { ...snapshot, processes: [{ ...process, memoryBytes: 0 }] };
+    act(() => useAppStore.setState({ snapshot: zero, history: [snapshot, zero] }));
+    expect(chart.querySelector("strong")).toHaveTextContent("0 MB");
+    expect(chart.querySelector("polyline")).toHaveAttribute("points", "160.0,40.0");
+  });
+
   it("keeps process CPU on the same absolute percentage scale and marks invalid readings unavailable", () => {
     const process = { ...initial.snapshot.processes[0], cpuPercent: 0 };
     const history = [0, 1, 0].map(cpuPercent => ({ ...initial.snapshot, processes: [{ ...process, cpuPercent }] }));
