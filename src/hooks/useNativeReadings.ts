@@ -5,7 +5,10 @@ export type NativeStatus = "unavailable" | "paused" | "baseline" | "live" | "err
 export interface NativeReadingState<T> { status: NativeStatus; reading: T | null; history: T[]; session: string; stale: boolean }
 
 /** One admission channel per provider, shared across mount lifetimes. */
-export function createNativeReadings<T>(command: string, parse: (value: unknown) => T, classify: (reading: T) => NativeStatus) {
+export function createNativeReadings<T>(command: string, parse: (value: unknown) => T, classify: (reading: T) => NativeStatus,
+  options: { intervalMs?: number; historyLimit?: number } = {}) {
+  const intervalMs = options.intervalMs ?? 1000;
+  const historyLimit = options.historyLimit ?? 36;
   const empty = (status: NativeStatus, session = ""): NativeReadingState<T> => ({ status, reading: null, history: [], session, stale: false });
   let pending: Promise<unknown> | null = null;
   return function useNativeReadings(): NativeReadingState<T> {
@@ -51,13 +54,13 @@ export function createNativeReadings<T>(command: string, parse: (value: unknown)
           const reading = parse(response);
           const status = classify(reading);
           setState(previous => ({ status, reading, session, stale: false,
-            history: [...(previous.stale || previous.session !== session ? [] : previous.history), reading].slice(-36) }));
+            history: [...(previous.stale || previous.session !== session ? [] : previous.history), reading].slice(-historyLimit) }));
         } catch {
           // Keep the session after ordinary errors: a PDH rate's first invalid
           // sample needs a subsequent collection, not perpetual reinitialization.
           if (generation === run && !expired) retain("error", session);
         } finally {
-          if (generation === run) { clearTimeout(watchdog); timer = setTimeout(poll, 1000); }
+          if (generation === run) { clearTimeout(watchdog); timer = setTimeout(poll, intervalMs); }
         }
       };
       void poll();

@@ -47,3 +47,12 @@ actual IPC validation, bilingual service list/filter/sort and stale-state contin
 safe PID navigation, explicit permission/coverage disclosure and native UI QA.
 Service controls remain a later separately confirmed workflow, not enabled by
 this reader. Full task-manager replacement remains incomplete.
+
+Frontend client preparation: strict public-field projection rejects malformed
+tables, duplicate case-insensitive identities, invalid u32 fields and non-valid
+state/PID combinations. Future state codes are retained with an explicit unknown
+label. useServiceReadings reuses the serialized native sampler at 5-second
+post-response intervals and history limit 1 (not 36 copies of metadata). Tests
+cover errors retaining explicitly stale rows, pause, empty recovery and source
+clear. Full frontend verify: 500 tests/typecheck/build pass. No visible service
+view mounts this hook yet; do not claim UI delivery or actual IPC acceptance.
