@@ -414,3 +414,17 @@ Do not discard those engines or infer their type. All 700 engine and 3+3 memory
 instances parsed in the explicit native probe; 44 Rust tests passed / 10 ignored,
 and non-test cargo check passed. Raw maps remain unchanged. Aggregation, hardware
 name mapping, worker/IPC and GPU UI are still pending. No other worktree edited.
+# GPU grouped observations handoff — 2026-09-16
+
+`gpu/grouping.rs` adds experimental per-engine observed sums, separate adapter
+memory observations and explicit counter/identity/value coverage. No overall GPU
+percentage or per-process lifetime claim; no GPU IPC/UI yet. Unknown, duplicate,
+conflicting and out-of-range engine inputs suppress the affected sums rather than
+being clamped or zero-filled. Full LUID + physical index + engine ID separates
+providers. Raw PIDs are not serialized in the grouped result. Include the new
+submodule with `gpu.rs` when integrating; no shared collector/schema edits here.
+
+Validation: 50 Rust tests passed / 10 ignored, cargo check passed; explicit native
+probe grouped 700 records into 31 engines across 3 provider adapter identities,
+with no duplicates/type conflicts/unknown or out-of-range sums. This does not
+prove controlled-workload parity, physical GPU enumeration or visual acceptance.

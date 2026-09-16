@@ -1,6 +1,7 @@
 # GPU monitoring: raw acquisition foundation
 
-Status: local PDH reader and read-only host probe pass. No GPU aggregation,
+Status: local PDH reader, identity parsing, per-engine experimental observation
+grouping and read-only host probes pass. No validated overall GPU percentage,
 background service, IPC or frontend is connected yet; GPU monitoring is not done.
 
 ## Current implementation
@@ -25,6 +26,35 @@ keep them local and do not use a PID alone as process-lifetime attribution.
 
 ## Aggregation and integration gates
 
+`gpu/grouping.rs` creates ordered adapter/physical/engine observations. It sums
+only distinct process samples within one engine, not across engines/adapters.
+The field is deliberately `observedPercentSum`, not a Task Manager parity claim.
+Missing/invalid samples, normalized duplicate PID-engine identities, conflicting
+type labels, an out-of-range sum or any unmapped engine record suppress the sum
+to null. Genuine zero is preserved; no clamping or missing-value zero filling.
+Each engine includes coverage diagnostics; over-range sums have a separate flag.
+The adapter key retains both LUID components and physical index. PIDs are used
+locally to detect duplicates and are not present in the grouped serialized output.
+
+Dedicated/shared memory observations are joined by the same adapter identity.
+Missing counter, empty successful map, missing adapter field, invalid observation
+and duplicate normalized identity remain distinguishable through counter-level
+coverage and per-field sample counts. Duplicate memory records are never summed.
+`_Total` records are counted separately, never synthesized into a device. Unknown
+formats remain counted; raw input maps are not mutated or discarded by grouping.
+
+2026-09-16 grouping evidence: 50 Rust library tests passed / 10 manual probes
+ignored, non-test cargo check passed. Explicit host probe: 700 records, 3 provider
+adapter identities and 31 engine groups, zero duplicate identities/type conflicts,
+zero unavailable or out-of-range sums. Adapter-identity counts are NOT physical
+GPU enumeration. Query open 372.856ms, second collect/format 1.423ms (single debug
+sample, excluding grouping). Controlled GPU workload parity remains unverified.
+
+Independent implementation reference (reviewed, not copied):
+[System Informer counter processing](https://github.com/winsiderss/systeminformer/blob/master/plugins/ExtendedTools/counters.c)
+groups engine totals by adapter and engine. Our PDH reader, full LUID/physical key,
+unknown-value handling and validation differ; this reference is not a parity test.
+
 Identity parsing now separates session-local LUID high/low components, physical
 index, engine ID, PID and optional engine type. Numeric components are bounded
 unsigned integers; malformed names, `_Total` and duplicate suffixes are rejected.
@@ -33,7 +63,7 @@ underscores. An empty type label is **unknown**, not an invalid engine identity:
 the host probe initially rejected 210 of 700 records for this reason. After making
 type optional, all 700 engine and both sets of 3 memory instances parsed. This
 observed grammar is not a guarantee for every driver. Raw maps remain intact;
-the parser does not perform aggregation or process-lifetime attribution.
+the parser itself does not perform aggregation or process-lifetime attribution.
 
 Identity validation evidence: 44 Rust library tests passed, 10 manual probes
 ignored by default; explicit GPU probe passed with zero unmapped records and

@@ -3,6 +3,8 @@
 use serde::Serialize;
 use std::collections::BTreeMap;
 
+pub mod grouping;
+
 /// Session-local provider identity, not a durable hardware identifier.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AdapterIdentity {
@@ -51,8 +53,8 @@ pub fn parse_engine_identity(name: &str) -> Option<EngineIdentity> {
     let (adapter, rest) = rest.split_once("_eng_")?;
     let (engine, kind) = rest.split_once("_engtype_")?;
     if !kind
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+        .bytes()
+        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
     {
         return None;
     }
@@ -230,6 +232,30 @@ mod windows {
             eprintln!("GPU identity probe: {unmapped_engines} unmapped engine instances; {unmapped_memory} unmapped memory instances; no identities logged");
             assert_eq!(unmapped_engines, 0, "host engine grammar requires review");
             assert_eq!(unmapped_memory, 0, "host memory grammar requires review");
+            let grouped = result.grouped();
+            let groups: Vec<_> = grouped
+                .adapters
+                .iter()
+                .flat_map(|adapter| &adapter.engines)
+                .collect();
+            assert_eq!(
+                groups
+                    .iter()
+                    .map(|engine| engine.sample_count)
+                    .sum::<usize>(),
+                engines.len()
+            );
+            assert_eq!(
+                groups
+                    .iter()
+                    .map(|engine| engine.duplicate_samples)
+                    .sum::<usize>(),
+                0
+            );
+            assert!(groups.iter().all(|engine| !engine.type_conflict));
+            eprintln!("GPU grouping probe: {} provider adapter identities, {} engine groups, {} unavailable sums, {} out-of-range sums; not hardware enumeration or Task Manager parity",
+                grouped.adapters.len(), groups.len(), groups.iter().filter(|engine| engine.observed_percent_sum.is_none()).count(),
+                groups.iter().filter(|engine| engine.sum_out_of_range).count());
         }
     }
 }
@@ -254,7 +280,12 @@ mod tests {
         assert_eq!(engine.process_id, 42);
         assert_eq!(engine.engine_id, 2);
         assert_eq!(engine.engine_type.as_deref(), Some("Video_Decode"));
-        assert_eq!(parse_engine_identity("pid_42_luid_0x0_0x1_phys_0_eng_0_engtype_").unwrap().engine_type, None);
+        assert_eq!(
+            parse_engine_identity("pid_42_luid_0x0_0x1_phys_0_eng_0_engtype_")
+                .unwrap()
+                .engine_type,
+            None
+        );
         assert_eq!(
             parse_adapter_identity("luid_0x0_0xABCD_phys_1"),
             Some(engine.adapter)
