@@ -1172,9 +1172,11 @@ export function GardenCanvas() {
         if (!box) return;
         if (!node.exiting) occupied.push({ x: box.x - 4, y: box.y - 4, width: box.width + 8, height: box.height + 8 });
         visibleLabelKeys.add(key);
-        const visible = labelMotion.update(key, box, staticFrame ? 0 : deltaMs,
-          settleStaticState || viewportChanged || live.reducedMotion || (staticFrame && focusOrSearchChanged), { width, height });
-        placedLabels.push({ node, label, box: visible, focused, alpha });
+        const instant = settleStaticState || viewportChanged || live.reducedMotion || (staticFrame && focusOrSearchChanged);
+        const labelDelta = staticFrame ? 0 : deltaMs;
+        const visible = labelMotion.update(key, box, labelDelta, instant, { width, height });
+        const visibleAlpha = labelMotion.opacity(key, alpha, labelDelta, instant, node.exiting);
+        placedLabels.push({ node, label, box: visible, focused, alpha: visibleAlpha });
       });
       labelMotion.retain(visibleLabelKeys);
       // Reserve focus space first, then paint it last when a dense scene has unavoidable overlap.

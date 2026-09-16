@@ -10,7 +10,7 @@ export function labelExitOpacity(elapsedMs: number, reducedMotion: boolean) {
 
 /** Label actors use the scene clock, not independent timers or React updates. */
 export class LabelMotion {
-  private labels = new Map<string, { target: LabelBox; visible: LabelBox }>();
+  private labels = new Map<string, { target: LabelBox; visible: LabelBox; opacity: number }>();
 
   target(key: string) { return this.labels.get(key)?.target; }
 
@@ -29,8 +29,18 @@ export class LabelMotion {
       visible.x = Math.max(10, Math.min(Math.max(10, bounds.width - visible.width - 10), visible.x));
       visible.y = Math.max(70, Math.min(Math.max(70, bounds.height - visible.height - 70), visible.y));
     }
-    this.labels.set(key, { target: { ...target }, visible });
+    this.labels.set(key, { target: { ...target }, visible, opacity: previous?.opacity ?? 0 });
     return visible;
+  }
+
+  opacity(key: string, target: number, deltaMs: number, instant: boolean, retiring: boolean) {
+    const label = this.labels.get(key);
+    if (!label) return 0;
+    // A newly appearing label starts transparent; interrupted retirement resumes
+    // from the last visible alpha instead of jumping back to full brightness.
+    label.opacity = instant ? target : retiring ? Math.min(label.opacity, target)
+      : damp(label.opacity, target, deltaMs, 90);
+    return label.opacity;
   }
 
   retain(keys: Set<string>) {

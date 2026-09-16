@@ -4,6 +4,39 @@ import { placeSceneLabel } from "./sceneLayout";
 
 const box = { x: 100, y: 100, width: 110, height: 34 };
 describe("label motion", () => {
+  it("fades in and reverses interrupted retirement without a brightness jump", () => {
+    const motion = new LabelMotion();
+    motion.update("1", box, 16, false);
+    const first = motion.opacity("1", 1, 16, false, false);
+    expect(first).toBeGreaterThan(0);
+    expect(first).toBeLessThan(.2);
+    // Position updates must not reset the retained opacity.
+    motion.update("1", box, 16, false);
+    expect(motion.opacity("1", 1, 0, false, false)).toBe(first);
+    expect(motion.opacity("1", 1, 16, false, true)).toBe(first);
+    expect(motion.opacity("1", .05, 16, false, true)).toBe(.05);
+    const resumed = motion.opacity("1", 1, 16, false, false);
+    expect(resumed).toBeGreaterThan(.05);
+    expect(resumed).toBeLessThan(.25);
+    expect(motion.opacity("1", 1, 0, false, false)).toBe(resumed);
+    expect(motion.opacity("1", 1, 0, true, false)).toBe(1);
+    motion.retain(new Set());
+    expect(motion.opacity("1", 1, 16, false, false)).toBe(0);
+  });
+
+  it("uses the same fade-in duration across refresh-rate settings", () => {
+    const values = [30, 60, 120].map((fps) => {
+      const motion = new LabelMotion();
+      motion.update("1", box, 0, false);
+      let alpha = 0;
+      for (let index = 0; index < fps / 2; index++) alpha = motion.opacity("1", 1, 1000 / fps, false, false);
+      return alpha;
+    });
+    expect(values[0]).toBeCloseTo(values[1], 10);
+    expect(values[1]).toBeCloseTo(values[2], 10);
+    expect(values[0]).toBeGreaterThan(.99);
+  });
+
   it("fades exiting annotations on scene time and removes them before swallowing", () => {
     expect(labelExitOpacity(-1, false)).toBe(1);
     expect(labelExitOpacity(0, false)).toBe(1);

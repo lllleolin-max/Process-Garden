@@ -22,6 +22,14 @@ Scope: user requirement for gradual state changes and natural frontend motion. S
 
 ## Coordination and open gates
 
+### Fade-in and interrupted-retirement follow-up
+
+Retain opacity with each label's position. Newly visible labels in an already running scene fade toward full brightness with a 90 ms response; static/viewport settling remains immediate. If a retiring process returns before its label is removed, continue from the retained alpha rather than resetting to one. A label already partly faded in cannot brighten merely because retirement starts: outgoing alpha is capped by its previous visible value. Zero scene delta freezes incoming opacity; static/reduced-motion interactions settle it. The existing per-frame retention pass releases opacity and position together.
+
+Two new tests cover fade-in, preservation across position updates, interrupted exit, no outgoing brightening, pause/static behavior, removal and 30/60/120 time equivalence. Final `npm run verify`: **183 tests / 32 files**, typecheck and production build passed.
+
+Clean-browser Eldritch test, using demo snapshots only: remove Chrome PID 5521, then restore the same identity 140 ms later while its label is retiring. Actual Canvas `fillText` alpha decreased through 1.0, .875, .678 to **.49250**; after restoration it increased through **.59767, .65525, .72639, .76554, .79887**, reaching .99844 by 652 ms after removal. It did not jump straight back to full opacity. Browser warning/error logs were empty. Restored store/feed and Canvas prototype, closed the test page and stopped the dev server. This is continuity evidence, not a new FPS or native-release claim.
+
 ### Exit-label retirement follow-up
 
 Previously, `!node.exiting` immediately removed annotations even while their organisms were still beginning the exit/swallow lifecycle. Keep **previously visible** annotations at their existing placement and fade them with a 220 ms smoothstep on scene time. Do not introduce a new label for a retiring organism whose label was hidden. Retiring labels stop reserving collision space; remove their motion entries once the fade reaches zero. Reduced motion skips the fade. Existing pause/time semantics apply, with no separate timeout or RAF loop. Annotation retirement does not alter the generated-mouth or organism-swallow trajectory.
