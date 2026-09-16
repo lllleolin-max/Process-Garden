@@ -48,7 +48,19 @@ A separate 22.50-second CPU sample at the original Eldritch effects/120 target r
 
 ## Next work and remaining gates
 
-1. Prototype reuse of badge/cord glow rasterization while preserving breath, color, selection, opacity, geometry, high-DPI sharpness and bounded memory. Compare visual output and frame pacing; simply deleting effects is not an aligned fix.
+### Rejected badge-cache experiment
+
+Follow-up on the same isolated baseline: implement a 96-actor / 16 MiB two-layer LRU cache with explicit release on replacement, eviction and scene cleanup. Quantize only raster radius to 1/8 CSS pixel; keep actor position and icon geometry continuous. Use alternating original/cached three-second samples, 300 ms settling, the same 44-process Eldritch fixture at target 120.
+
+- **Full badge layers:** original 55.50 / 54.42 FPS versus cached 57.77 / 59.75 FPS; gap p95 26.1 / 25.1 ms versus 23.8 / 23.3 ms. Small benefit, but repeated raster interpolation changes sharp outline coverage. A 16-case real-browser pixel comparison (DPR 1/2, both shapes, selected/unselected, alpha .2/.91, fractional positions) found whole-128px-image channel RMS 0.46–1.93 and individual channel differences up to 55/255. Whole-image RMS dilutes localized edge differences; this is **not** evidence of visual equivalence. Reject this path.
+- **Shadow-only revision:** rasterize the shadow from an off-tile source, then draw fill and outline live at the exact radius. This avoids quantizing the sharp geometry but adds drawing operations. Original 56.54 / 58.13 FPS versus cached 55.34 / 58.51 FPS; gap p95 23.9 / 24.5 ms versus 25.2 / 23.7 ms. No stable benefit. Reject this path too; do not cite the earlier version's gain for this implementation.
+- The prototype passed 179 tests / 32 files, typechecking and production build, including cache reuse, radius/style/DPR invalidation, LRU eviction, byte budget and missing-context fallback. Passing tests did not satisfy the performance/appearance acceptance gates. Experimental cache code and its five prototype tests were removed, and the renderer was restored to its original source. These 179 tests describe the **discarded prototype**, not the delivered branch.
+- Browser overrides/store state were restored and the experimental preview was closed. No generated assets or shared-theme files were changed. Preserve this result to avoid repeating the same unhelpful cache design; prioritize appropriately sized sprite drawing and investigate raster/compositor costs next.
+- Restored source verified with `npm run verify`: 174 tests / 31 files, typecheck and production build passed. The output bundle was rebuilt from the restored renderer, not left on the discarded prototype.
+
+### Remaining acceptance work
+
+1. Per-badge caching has been tested and rejected above. Any alternative reuse/batching of glows must preserve breath, color, selection, opacity, geometry, high-DPI sharpness and bounded memory, and demonstrate a repeatable benefit. Simply deleting effects is not an aligned fix.
 2. Inspect generated-sprite drawing costs and backing sizes; do not lower art resolution indiscriminately, especially in fullscreen/wallpaper modes.
 3. Repeat on production builds, longer samples, multiple viewport sizes and native WebView2/WorkerW with live sampling. Current short desktop-browser results do not certify 30/60/120 across the app.
 4. `GardenCanvas.tsx` is concurrently modified by the theme task in the shared worktree. Coordinate any renderer edits and preserve that task's custom-art loading changes. This diagnostic commit edits documentation only.
