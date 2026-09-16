@@ -499,6 +499,15 @@ with no duplicates/type conflicts/unknown or out-of-range sums. This does not
 prove controlled-workload parity, physical GPU enumeration or visual acceptance.
 # Network continuity follow-up (2026-09-17)
 
+Summary metric motion follow-up: MetricCard accepts active/observationStatus.
+Sidebar CPU/memory/process/thread summaries stop numeric/curve/CSS progress
+transitions when snapshot status is stale or paused, retaining last observations
+and exposing the status through aria-description. Power's independent source logic
+unchanged. 505 frontend tests/typecheck/build pass; regression verifies pending
+frame cancellation, stable curve node, memory transition disable/recovery and
+status descriptions. Native/AT acceptance remains open; latest b82a95a EXE predates
+this patch. These component files do not overlap observed integration-tree edits.
+
 Service stack follow-up now ready to push after CI35124587808 succeeded:
 ServiceReader bounded worker and sample_services registration, strict frontend
 projection, five-second demand sampling with one retained table, collapsed

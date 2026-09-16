@@ -9,13 +9,15 @@ import { NetworkPanel } from "./NetworkPanel";
 import { DiskPanel } from "./DiskPanel";
 import { GpuPanel } from "./GpuPanel";
 import { ServicePanel } from "./ServicePanel";
-import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
+import { useSnapshotStatusDetails } from "../hooks/useSnapshotStatus";
 import { threadHistory } from "../data/threadHistory";
 import { useCallback } from "react";
 import { isObservedCount, isObservedMetric, isObservedPercent } from "../data/processTable";
 
 export function Sidebar() {
-  const snapshotStatus = useSnapshotStatus();
+  const status = useSnapshotStatusDetails();
+  const snapshotStatus = status.label;
+  const metricState = { active: status.animationState === "live" || status.animationState === "demo", observationStatus: status.label };
   const { t } = useTranslation();
   const snapshot = useAppStore((state) => state.snapshot);
   const history = useAppStore((state) => state.history);
@@ -30,7 +32,7 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar panel-surface">
-      <MetricCard
+      <MetricCard {...metricState}
         label={t("metrics.cpu")}
         value={formatPercent(cpuValue, locale)}
         animatedValue={cpuValue}
@@ -41,7 +43,7 @@ export function Sidebar() {
         values={history.slice(-36).map((item) => item.cpuPercent)}
         color="var(--color-primary)"
       />
-      <MetricCard
+      <MetricCard {...metricState}
         label={t("metrics.memory")}
         value={formatBytes(memoryValue, locale)}
         animatedValue={memoryValue}
@@ -58,7 +60,7 @@ export function Sidebar() {
       <GpuPanel />
       <ServicePanel />
       <PowerMetric />
-      <MetricCard
+      <MetricCard {...metricState}
         label={t("metrics.processes")}
         value={isObservedCount(snapshot.processCount) ? new Intl.NumberFormat(locale).format(snapshot.processCount) : "—"}
         detail={snapshotStatus}
@@ -66,7 +68,7 @@ export function Sidebar() {
         values={history.slice(-36).map((item) => isObservedCount(item.processCount) ? item.processCount : NaN)}
         color="var(--color-secondary)"
       />
-      <MetricCard
+      <MetricCard {...metricState}
         label={t("metrics.threads")}
         value={isObservedCount(snapshot.threadCount) ? new Intl.NumberFormat(locale).format(snapshot.threadCount) : "—"}
         detail={snapshotStatus}
