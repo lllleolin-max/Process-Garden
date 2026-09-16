@@ -499,6 +499,15 @@ with no duplicates/type conflicts/unknown or out-of-range sums. This does not
 prove controlled-workload parity, physical GPU enumeration or visual acceptance.
 # Network continuity follow-up (2026-09-17)
 
+Process list keyboard continuity: if a focused process button is removed by exit,
+PID lifetime replacement or moving off the current ranked page, focus returns to
+the existing scroll container, not another process activation button. Recovery
+only runs while open and when focus otherwise fell to body; intentionally moved
+focus (e.g. typing a filter) is preserved. Existing visible focus styling reused.
+489 frontend tests/typecheck/build pass; four added cases cover the above and
+Enter not activating another process. Actual WebView/AT keyboard testing is still
+required. No observed overlap with the other worktree's ProcessExplorer changes.
+
 OS motion preference follow-up: AnimatedMetric and Sparkline now subscribe to the
 live MediaQueryList change event during transitions. Enabling reduced motion
 settles the observed target and cancels queued shared frame work immediately,

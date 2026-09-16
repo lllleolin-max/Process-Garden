@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
@@ -25,6 +25,7 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
   const [page, setPage] = useState(0);
   const [heldOrder, setHeldOrder] = useState<{ collector: string; ids: string[] } | null>(null);
   const scroll = useRef<HTMLDivElement>(null);
+  const focusedRow = useRef<HTMLElement | null>(null);
   const formatCpu = useCallback((value: number) => formatPercent(value, state.locale, 1), [state.locale]);
   const formatMemory = useCallback((value: number) => formatBytes(value, state.locale), [state.locale]);
   const sortedRows = useMemo(() => state.snapshot ? queryProcesses(state.snapshot.processes, query, sort, ascending, state.locale) : [], [state.snapshot, query, sort, ascending, state.locale]);
@@ -55,6 +56,16 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
     // Commit the visible clamp so a later sample cannot resurrect a stale page.
     if (state.snapshot) setPage(previous => Math.min(previous, pageCount - 1));
   }, [pageCount, state.snapshot]);
+  useLayoutEffect(() => {
+    const previous = focusedRow.current;
+    if (!open) { focusedRow.current = null; return; }
+    if (previous && !previous.isConnected) {
+      focusedRow.current = null;
+      // Never transfer an activation key to a different process after a live
+      // reorder/removal. Also do not steal focus from a filter or another control.
+      if (document.activeElement === document.body) scroll.current?.focus({ preventScroll: true });
+    }
+  });
   if (!overlay.present || !state.snapshot) return null;
   const currentPage = Math.min(page, pageCount - 1);
   const shown = rows.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
@@ -82,7 +93,12 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
       {orderHeld && <p id="process-order-hint" className="process-list-summary">{state.locale === "zh-CN" ? "数值继续更新，新进程追加到末尾。更改筛选或排序将解除固定。" : "Readings still update; new processes append. Changing the filter or sort releases the order."}</p>}
       <p className="process-list-summary">{t("processList.count", { count: rows.length, received: state.snapshot.processes.length, total: state.snapshot.processCount })}</p>
       {missing > 0 && <p className="process-list-warning" role="status">{t("processList.partial", { count: missing })}</p>}
-      <div className="process-list-scroll" ref={scroll} tabIndex={0} aria-label={t("processList.title")}>
+      <div className="process-list-scroll" ref={scroll} tabIndex={0} aria-label={t("processList.title")}
+        onFocusCapture={event => {
+          const target = event.target as HTMLElement;
+          focusedRow.current = target.closest("tbody") ? target : null;
+        }}
+        onBlurCapture={() => { focusedRow.current = null; }}>
         <table><caption className="sr-only">{t("processList.title")}</caption><thead><tr>{columns.map(column => <th key={column.key} scope="col" aria-sort={!orderHeld && sort === column.key ? ascending ? "ascending" : "descending" : "none"}><button onClick={() => { setHeldOrder(null); setSort(column.key); setAscending(sort === column.key ? !ascending : column.key === "name" || column.key === "pid"); turnPage(0); }}>{column.label}<span aria-hidden="true">{!orderHeld && sort === column.key ? ascending ? " ↑" : " ↓" : ""}</span></button></th>)}<th scope="col">{t("inspector.path")}</th></tr></thead>
           <tbody>{shown.map(process => <tr key={`${state.collector}:${processIdentity(process)}`} className={process.pid === state.selectedPid ? "selected" : undefined}><td><button className="process-list-select" aria-label={t("processList.inspect", { name: process.name, pid: process.pid })} onClick={() => inspectProcess(process)}><ProcessIcon process={process} /><span>{process.name}</span></button></td><td>{process.pid}</td><td><AnimatedMetric active={open} value={isObservedPercent(process.cpuPercent) ? process.cpuPercent : NaN} format={formatCpu} /></td><td><AnimatedMetric active={open} value={isObservedMetric(process.memoryBytes) ? process.memoryBytes : NaN} format={formatMemory} /></td><td>{isObservedCount(process.threadCount) ? process.threadCount : "—"}</td><td className="process-list-path" title={process.executablePath}>{process.executablePath || "—"}</td></tr>)}</tbody>
         </table>{!rows.length && <p className="process-list-empty">{t(query.trim() ? "processList.noMatches" : "processList.noData")}</p>}

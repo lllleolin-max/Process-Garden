@@ -12,6 +12,33 @@ beforeEach(async () => {
 });
 afterEach(() => { cleanup(); useAppStore.setState(initial); localStorage.clear(); });
 
+it.each(["exit", "rank", "reuse"])("returns focus to the list, never another process, after focused row %s", reason => {
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  const button = screen.getByRole("button", { name: "Inspect app-120, PID 120" });
+  act(() => button.focus());
+  const snapshot = useAppStore.getState().snapshot;
+  const processes = reason === "exit" ? snapshot.processes.filter(p => p.pid !== 120)
+    : snapshot.processes.map(p => p.pid !== 120 ? p : reason === "rank" ? { ...p, cpuPercent: 0 } : { ...p, startedAt: p.startedAt + 1 });
+  act(() => useAppStore.setState({ snapshot: { ...snapshot, processes, processCount: processes.length } }));
+  expect(button.isConnected).toBe(false);
+  const list = screen.getByRole("table").parentElement!;
+  expect(list).toHaveFocus();
+  fireEvent.keyDown(list, { key: "Enter" });
+  expect(useAppStore.getState().selectedPid).toBeNull();
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
+});
+
+it("does not steal filter focus when the previously focused process disappears", () => {
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  act(() => screen.getByRole("button", { name: "Inspect app-120, PID 120" }).focus());
+  const filter = screen.getByRole("textbox", { name: "Filter processes" });
+  act(() => filter.focus());
+  fireEvent.change(filter, { target: { value: "app-1.exe" } });
+  expect(filter).toHaveFocus();
+});
+
 it("holds row position and keyboard focus while readings change, then releases to live sorting", () => {
   const snapshot = useAppStore.getState().snapshot;
   const processes = snapshot.processes.slice(0, 3);
