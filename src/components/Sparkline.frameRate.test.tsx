@@ -92,3 +92,43 @@ it("does not bridge invalid observations or display a stale tip when the latest 
   expect(view.container.querySelector("circle")).not.toBeNull();
   expect(frames.size).toBe(0);
 });
+
+it.each(["paused", "reducedMotion", "wallpaper"])("settles and releases frames when %s disables visible motion", reason => {
+  const view = render(<Sparkline values={[0, 10, 0]} />);
+  view.rerender(<Sparkline values={[10, 0, 10]} />);
+  tick(1000); tick(1100);
+  expect(frames.size).toBe(1);
+  act(() => useAppStore.setState(reason === "wallpaper" ? { displayMode: "wallpaper" }
+    : reason === "paused" ? { paused: true } : { reducedMotion: true }));
+  expect(frames.size).toBe(0);
+  expect(view.container.querySelector("polyline")).toHaveAttribute("points", "0.0,6.0 80.0,38.0 160.0,6.0");
+  act(() => useAppStore.setState({ paused: false, reducedMotion: false, displayMode: "windowed" }));
+  expect(frames.size).toBe(0);
+});
+
+it("finishes hidden transitions and does not replay stale motion after returning", () => {
+  const view = render(<Sparkline values={[0, 10, 0]} />);
+  view.rerender(<Sparkline values={[10, 0, 10]} />);
+  tick(1000); tick(1100);
+  vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+  act(() => document.dispatchEvent(new Event("visibilitychange")));
+  expect(frames.size).toBe(0);
+  expect(view.container.querySelector("polyline")).toHaveAttribute("points", "0.0,6.0 80.0,38.0 160.0,6.0");
+  vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  act(() => document.dispatchEvent(new Event("visibilitychange")));
+  tick(1_000_000);
+  expect(frames.size).toBe(0);
+});
+
+it("releases its frame and visibility listener on unmount", () => {
+  const added = vi.spyOn(document, "addEventListener");
+  const removed = vi.spyOn(document, "removeEventListener");
+  const view = render(<Sparkline values={[0, 10, 0]} />);
+  view.rerender(<Sparkline values={[10, 0, 10]} />);
+  tick(1000);
+  const listener = added.mock.calls.find(([type]) => type === "visibilitychange")?.[1];
+  expect(listener).toBeDefined();
+  view.unmount();
+  expect(frames.size).toBe(0);
+  expect(removed).toHaveBeenCalledWith("visibilitychange", listener);
+});
