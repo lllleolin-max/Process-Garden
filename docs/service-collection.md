@@ -63,5 +63,8 @@ ordering are available. Stable case-insensitive service-name keys retain row DOM
 on updates; stale status describes the list and filter focus remains unchanged.
 No fake demo services, start/stop buttons or unsafe PID navigation. Both languages
 disclose permission omissions, driver exclusion and PID lifetime limitations.
-502 frontend tests/typecheck/build pass. Actual browser layout, native desktop IPC
+State filtering follow-up: all seven known service states are selectable, with
+unknown future codes still visible under All states. Page clamps are committed
+after disappearing records so later growth cannot restore an obsolete page.
+503 frontend tests/typecheck/build pass. Actual browser layout, native desktop IPC
 and real service-state changes remain unverified; component tests use fixtures.

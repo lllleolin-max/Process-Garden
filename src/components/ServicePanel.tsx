@@ -13,13 +13,15 @@ function ServiceReadings() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [sort, setSort] = useState("name");
+  const [stateFilter, setStateFilter] = useState("all");
   const rows = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase(locale);
     const collator = new Intl.Collator(locale, { numeric: true, sensitivity: "base" });
-    return state.rows.filter(row => !needle || [row.name, row.displayName, String(row.processId ?? "")]
-      .some(text => text.toLocaleLowerCase(locale).includes(needle)))
+    return state.rows.filter(row => (stateFilter === "all" || String(row.state) === stateFilter)
+      && (!needle || [row.name, row.displayName, String(row.processId ?? "")]
+      .some(text => text.toLocaleLowerCase(locale).includes(needle))))
       .sort((a, b) => (sort === "state" ? a.state - b.state : 0) || collator.compare(a.name, b.name));
-  }, [state.rows, query, sort, locale]);
+  }, [state.rows, query, sort, stateFilter, locale]);
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, pages - 1);
   useEffect(() => { setPage(previous => Math.min(previous, pages - 1)); }, [pages]);
@@ -37,6 +39,10 @@ function ServiceReadings() {
     <label>{zh ? "筛选服务" : "Filter services"}<input value={query} onChange={event => { setQuery(event.target.value); setPage(0); }} placeholder={zh ? "名称或 PID" : "Name or PID"} /></label>
     <label>{zh ? "服务排序" : "Service order"}<select value={sort} onChange={event => { setSort(event.target.value); setPage(0); }}>
       <option value="name">{zh ? "名称" : "Name"}</option><option value="state">{zh ? "状态，再按名称" : "State, then name"}</option>
+    </select></label>
+    <label>{zh ? "服务状态" : "Service state"}<select value={stateFilter} onChange={event => { setStateFilter(event.target.value); setPage(0); }}>
+      <option value="all">{zh ? "全部状态" : "All states"}</option>
+      {[1, 2, 3, 4, 5, 6, 7].map(state => <option key={state} value={state}>{serviceStateLabel(state, locale)}</option>)}
     </select></label>
     <p>{zh ? `匹配 ${rows.length} / 已收到 ${state.rows.length}` : `${rows.length} matches / ${state.rows.length} received`}</p>
     <ul aria-label={zh ? "服务记录" : "Service records"} aria-describedby={statusId}>

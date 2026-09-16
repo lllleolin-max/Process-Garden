@@ -499,6 +499,15 @@ with no duplicates/type conflicts/unknown or out-of-range sums. This does not
 prove controlled-workload parity, physical GPU enumeration or visual acceptance.
 # Network continuity follow-up (2026-09-17)
 
+Service stack follow-up now ready to push after CI35124587808 succeeded:
+ServiceReader bounded worker and sample_services registration, strict frontend
+projection, five-second demand sampling with one retained table, collapsed
+ServicePanel in Sidebar. Bilingual 12-item paging, name/display-name/PID search,
+state filter and name/state order; no controls or unsafe process navigation.
+503 frontend tests/typecheck/build; 60 native tests/14 ignored, separate real
+worker probe312 rows. Actual service UI/IPC acceptance still open. lib.rs managed
+state and handler additions must merge additively with the other task's commands.
+
 Read-only service acquisition started: new services.rs module, one pub mod line
 in lib.rs and Win32_System_Services feature in existing windows-sys dependency.
 No command/UI/service controls yet. IMPORTANT overlap with integration worktree:
