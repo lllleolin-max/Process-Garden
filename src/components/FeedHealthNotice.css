@@ -41,3 +41,8 @@
   background: var(--color-warning);
   box-shadow: none;
 }
+.topbar-actions > .live-pill,
+.topbar-actions > .text-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}

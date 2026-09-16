@@ -23,3 +23,12 @@ access. A still image cannot establish absence of sampling flicker.
 
 Verdict: NOT READY for cumulative visual sign-off. This is a partial runtime
 checkpoint, not a replacement for earlier native/high-density outstanding gates.
+
+## Toolbar fix follow-up
+
+Scoped status/text toolbar controls to flex-shrink:0 and white-space:nowrap.
+Browser screenshot recheck at 1280x720 Chinese Garden confirms single-line demo
+labels and remaining toolbar buttons visible. DOM computed metrics: live/status
+button 73x34 px; source button 64x34 px; both nowrap and flex-shrink 0. The specific
+wrapping defect above is resolved at this viewport. Other language/theme/width
+combinations and the outstanding motion/native gates still need verification.
