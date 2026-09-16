@@ -17,6 +17,32 @@ afterEach(() => { cleanup(); vi.clearAllTimers(); vi.useRealTimers(); vi.restore
 const settle = () => act(async () => { await vi.dynamicImportSettled(); });
 const advance = (ms = 1000) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
 
+it("serializes multiple waiters waking from the same native request", async () => {
+  const releases: Array<() => void> = [];
+  let active = 0, peak = 0;
+  invoke.mockImplementation(() => {
+    active++; peak = Math.max(peak, active);
+    return new Promise<null>(resolve => releases.push(() => { active--; resolve(null); }));
+  });
+  const first = renderHook(() => useProcessIo(42, 1_800_000_000));
+  await settle();
+  const second = renderHook(() => useProcessIo(43, 1_800_000_000));
+  const third = renderHook(() => useProcessIo(44, 1_800_000_000));
+  await settle();
+  expect(invoke).toHaveBeenCalledTimes(1);
+  await act(async () => releases[0]());
+  await settle();
+  expect(invoke).toHaveBeenCalledTimes(2);
+  expect(peak).toBe(1);
+  await act(async () => releases[1]());
+  await settle();
+  expect(invoke).toHaveBeenCalledTimes(3);
+  expect(peak).toBe(1);
+  first.unmount(); second.unmount(); third.unmount();
+  await act(async () => releases[2]());
+  expect(active).toBe(0);
+});
+
 it.each(["unmount", "hide", "pause"])("does not start native I/O when %s happens while loading the bridge", async change => {
   invoke.mockResolvedValue(null);
   const view = renderHook(() => useProcessIo(42, 1_800_000_000));

@@ -122,6 +122,14 @@ I/O collection or disk-rate UI is claimed complete by this research.
 
 ### Bridge-loading cancellation follow-up
 
+Concurrent-waiter follow-up: the frontend now rechecks the pending request slot
+after every await. Three hook instances waiting on the same completion cannot
+all start native calls together; a regression measures peak concurrency of one
+through all three completions and drains the final request on unmount. Full local
+verification passed 359 tests, type checking and production build. This preserves
+the single-selected-process contract; it does not add multi-process baseline
+storage or claim simultaneous continuous I/O monitoring for multiple inspectors.
+
 The frontend rechecks poll generation, timeout and document visibility after
 the asynchronous Tauri bridge import, before invoking native collection. Closing
 the Inspector, hiding the window or pausing during that import must not start

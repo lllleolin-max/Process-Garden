@@ -32,7 +32,12 @@ export function useProcessIo(pid: number, startedAt: number) {
           if (generation === run) { session = crypto.randomUUID(); setState(empty("error")); }
         }, 5000);
         try {
-          if (pending) await pending.catch(() => undefined);
+          // Multiple waiters can wake from the same completed request. Recheck
+          // the slot after each await so only one can acquire it next.
+          while (pending) {
+            await pending.catch(() => undefined);
+            if (generation !== run || expired) return;
+          }
           if (generation !== run || expired) return;
           const task = import("@tauri-apps/api/core").then(({ invoke }) => {
             // Loading the bridge is asynchronous too. Selection/visibility may
