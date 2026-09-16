@@ -31,10 +31,11 @@ const initial = useAppStore.getState();
 const tags = new WeakMap<HTMLCanvasElement, string>();
 let callbacks: Map<number, FrameRequestCallback>, nextId: number, now: number;
 let paint: { tag: string; alpha: number }[], copies: HTMLCanvasElement[];
+let paintedText: string[];
 let viewportWidth: number;
 let resizeCanvas: () => void;
 function tick(ms = 20) {
-  now += ms; paint = [];
+  now += ms; paint = []; paintedText = [];
   act(() => { const pending = [...callbacks.values()]; callbacks.clear(); pending.forEach((callback) => callback(now)); });
 }
 function advance(ms: number) { for (let elapsed = 0; elapsed < ms; elapsed += 20) tick(); }
@@ -59,7 +60,7 @@ async function mount() {
 
 beforeEach(() => {
   loader.cache.clear(); loader.pending.clear();
-  callbacks = new Map(); nextId = 0; now = 1_000; paint = []; copies = [];
+  callbacks = new Map(); nextId = 0; now = 1_000; paint = []; paintedText = []; copies = [];
   viewportWidth = 740;
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { callbacks.set(++nextId, callback); return nextId; });
   vi.stubGlobal("cancelAnimationFrame", (id: number) => callbacks.delete(id));
@@ -78,6 +79,7 @@ beforeEach(() => {
         if (canvas.isConnected && tags.has(source)) paint.push({ tag: tags.get(source)!, alpha: context.globalAlpha });
       },
       measureText: (text: string) => ({ width: text.length * 6 }),
+      fillText: (text: string) => paintedText.push(text),
       createRadialGradient: () => ({ addColorStop() {} })
     };
     return new Proxy(context, { get: (target, key) => key in target ? target[key as keyof typeof target] : () => {}, set: (target, key, value) => Reflect.set(target, key, value) }) as unknown as CanvasRenderingContext2D;
@@ -87,6 +89,21 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial); });
 
 describe("ready-to-ready Canvas theme transitions", () => {
+  it.each(["garden", "eldritch"])("retires the old lifetime instead of replacing it when a PID is reused in %s", async (themeId) => {
+    const original = { ...initial.snapshot.processes[0], name: "old-app", startedAt: 1_800_000_000_000 };
+    useAppStore.setState({ labelsAlwaysVisible: true, snapshot: { ...initial.snapshot, processes: [original] } });
+    await mount();
+    if (themeId !== "garden") { await request(themeId); await ready(themeId); tick(); advance(2000); }
+    expect(paintedText).toContain("old-app");
+    act(() => useAppStore.setState({ snapshot: { ...initial.snapshot, timestamp: initial.snapshot.timestamp + 1000, processes: [{ ...original, name: "new-app", startedAt: original.startedAt + 1000 }] } }));
+    tick();
+    expect(paintedText).toContain("old-app");
+    expect(paintedText).toContain("new-app");
+    advance(2600);
+    expect(paintedText).not.toContain("old-app");
+    expect(paintedText).toContain("new-app");
+  });
+
   it("keeps the old generated scene and backdrop until all new assets are ready, then crossfades", async () => {
     const view = await mount();
     await request("eldritch");

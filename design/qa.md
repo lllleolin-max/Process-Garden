@@ -1,5 +1,7 @@
 # Current QA index
 
+- PID reuse continuity: [2026-09-16 process lifetime QA](qa-process-lifetime-2026-09-16.md). Main nodes now retire/birth independently for reused PIDs; both-theme Canvas regressions and 197 tests pass. Browser/native follow-up remains open; coordinate overlapping theme hunks.
+
 - Parent/child consumption: [2026-09-16 browser lifecycle QA](qa-parent-child-browser-2026-09-16.md). Actual canvas captures confirm open maw, suction, occlusion and recoil for simultaneous parent/child departure; not native or high-density acceptance.
 
 - Lifecycle timing: [2026-09-16 clock regression](qa-lifecycle-clock-2026-09-16.md). All three target rates preserve a partially completed swallow through a simulated hour hidden; full verification reached 194 tests.
