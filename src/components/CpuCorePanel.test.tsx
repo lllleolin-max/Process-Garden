@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { CpuCorePanel } from "./CpuCorePanel";
 import { useAppStore } from "../stores/appStore";
 import { useFeedHealth } from "../stores/feedHealth";
@@ -7,7 +7,7 @@ import { toObservation } from "../data/observation";
 
 const initial = useAppStore.getState();
 const health = useFeedHealth.getState();
-afterEach(() => { cleanup(); useAppStore.setState(initial, true); useFeedHealth.setState(health, true); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial, true); useFeedHealth.setState(health, true); });
 function setup(values?: (number | null)[]) {
   const snapshot = { ...initial.snapshot, logicalCpuCount: values?.length ?? 8, cpuCorePercents: values };
   useAppStore.setState({ locale: "en-US", collector: "native", reducedMotion: true, snapshot, history: [toObservation(snapshot)] });
@@ -33,13 +33,39 @@ it("mounts charts only while expanded and reaches every logical processor throug
 it("distinguishes zero from unavailable values and exposes stale status", () => {
   const view = setup([0, null, NaN, 101]);
   view.toggle(true);
-  expect(screen.getByText("0%")).toBeInTheDocument();
-  expect(screen.getAllByText("—")).toHaveLength(3);
+  expect(screen.getByRole("region", { name: "CPU 0" }).querySelector(".animated-metric-observation")).toHaveTextContent("0%");
+  expect(view.container.querySelectorAll(".animated-metric-observation")).toHaveLength(4);
+  for (const index of [1, 2, 3]) expect(screen.getByRole("region", { name: `CPU ${index}` }).querySelector(".animated-metric-observation")).toHaveTextContent("—");
   act(() => useFeedHealth.setState({ failed: true }));
   expect(screen.getByText(/Stale data/)).toBeInTheDocument();
   act(() => useAppStore.setState({ locale: "zh-CN" }));
   expect(screen.getByText("逻辑处理器")).toBeInTheDocument();
   expect(screen.getByText(/数据已过期/)).toBeInTheDocument();
+});
+
+it("animates core readings and cancels all frame work when collapsed", () => {
+  vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  vi.stubGlobal("matchMedia", () => ({ matches: false }));
+  let id = 0;
+  const frames = new Map<number, FrameRequestCallback>();
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; });
+  vi.stubGlobal("cancelAnimationFrame", (key: number) => frames.delete(key));
+  const tick = (now: number) => act(() => { const callbacks = [...frames.values()]; frames.clear(); callbacks.forEach(callback => callback(now)); });
+  const view = setup([0]);
+  act(() => useAppStore.setState({ reducedMotion: false, paused: false, displayMode: "windowed" }));
+  view.toggle(true);
+  const region = screen.getByRole("region", { name: "CPU 0" });
+  const visible = region.querySelector('strong [aria-hidden="true"]')!;
+  act(() => useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, cpuCorePercents: [100] } }));
+  expect(visible).toHaveTextContent("0%");
+  expect(region.querySelector(".animated-metric-observation")).toHaveTextContent("100%");
+  tick(1000); tick(1160);
+  expect(parseFloat(visible.textContent!)).toBeGreaterThan(0);
+  expect(parseFloat(visible.textContent!)).toBeLessThan(100);
+  view.toggle(false);
+  expect(frames.size).toBe(0);
+  view.toggle(true);
+  expect(screen.getByRole("region", { name: "CPU 0" }).querySelector('strong [aria-hidden="true"]')).toHaveTextContent("100%");
 });
 it("shows unsupported data honestly instead of manufacturing idle processors", () => {
   const view = setup();

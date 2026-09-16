@@ -112,6 +112,15 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+CPU core readouts also use the shared AnimatedMetric transition now. Keep the
+stable locale formatter and existing source/topology/core keys: ordinary samples
+interpolate, new identities start fresh. Expanded pages remain bounded to eight
+cores; collapse unmounts and cancels frame work, reopening starts at current data.
+The new component regression checks intermediate visible values, immediate actual
+observations for assistive technology, cancellation and reopening. Local full
+verification passed 332 tests, type checking and production build. Actual visual
+conformance and hardware refresh-rate pacing are still not verified.
+
 ParentProcess navigation now also checks the rendered collector against the live
 store before following a relationship. The regression changes demo to native
 before React commits, retaining identical PID/start-time values, and confirms
