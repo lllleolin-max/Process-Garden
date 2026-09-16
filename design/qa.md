@@ -1,5 +1,11 @@
 # Current QA index
 
+- Parent/child consumption: [2026-09-16 browser lifecycle QA](qa-parent-child-browser-2026-09-16.md). Actual canvas captures confirm open maw, suction, occlusion and recoil for simultaneous parent/child departure; not native or high-density acceptance.
+
+- Lifecycle timing: [2026-09-16 clock regression](qa-lifecycle-clock-2026-09-16.md). All three target rates preserve a partially completed swallow through a simulated hour hidden; full verification reached 194 tests.
+
+- Toolbar sampling: [2026-09-16 subscription QA](qa-toolbar-sampling-2026-09-16.md). Telemetry-only updates no longer commit toolbar renders; not an FPS benchmark.
+
 - Interrupted overlays: [2026-09-16 overlay interruption QA](qa-overlay-interruption-2026-09-16.md). Settings/theme surfaces reverse from the current pose; browser focus/reduced-motion checks and 186 frontend tests pass. Shared overlay-style integration needs deliberate merging.
 
 - Label continuity: [2026-09-16 label motion QA](qa-label-motion-2026-09-16.md). Persistent placement preference, scene-clock interpolation and clean-reload pause/reduced-motion checks; does not claim high-density 120 FPS acceptance.
