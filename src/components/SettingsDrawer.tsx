@@ -1,5 +1,5 @@
 import { Check, ChevronRight, Info, Languages, Leaf, MonitorCog, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
-import { useId, useState, type KeyboardEvent } from "react";
+import { useId, useMemo, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { classifyProcess, isAgentProcess, normalizeProcessName, organismStyleOptions, resolveOrganismStyle, type OrganismStyleId } from "../ecology/organisms";
 import i18n from "../i18n/config";
@@ -20,9 +20,13 @@ export function SettingsDrawer() {
   const [changingDisplay, setChangingDisplay] = useState(false);
   const panelId = useId();
   const overlay = useOverlay(state.settingsOpen, () => state.setSettingsOpen(false), { restoreFocusSelector: "[data-settings-trigger]" });
-  const agentPids = new Set(state.snapshot.processes.filter(isAgentProcess).map((process) => process.pid));
-  const processNames = [...new Set(state.snapshot.processes.filter((process) => !agentPids.has(process.parentPid ?? -1)).map((process) => process.name))].sort((left, right) => left.localeCompare(right));
-  const [mappedProcess, setMappedProcess] = useState(processNames[0] ?? "");
+  const mappingVisible = overlay.present && tab === "visual";
+  const processNames = useMemo(() => {
+    if (!mappingVisible) return [];
+    const agentPids = new Set(state.snapshot.processes.filter(isAgentProcess).map((process) => process.pid));
+    return [...new Set(state.snapshot.processes.filter((process) => !agentPids.has(process.parentPid ?? -1)).map((process) => process.name))].sort((left, right) => left.localeCompare(right));
+  }, [mappingVisible, state.snapshot.processes]);
+  const [mappedProcess, setMappedProcess] = useState("");
   if (!overlay.present) return null;
 
   const setLocale = async (locale: "en-US" | "zh-CN") => {
