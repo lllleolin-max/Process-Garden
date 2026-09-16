@@ -11,7 +11,7 @@ import { processHistory } from "../data/processHistory";
 import { processIdentity } from "../animation/processIdentity";
 import { ParentProcess } from "./ParentProcess";
 import { ProcessIo } from "./ProcessIo";
-import { isObservedMetric } from "../data/processTable";
+import { isObservedCount, isObservedMetric, isObservedPercent } from "../data/processTable";
 import { AnimatedMetric } from "./AnimatedMetric";
 
 export function Inspector() {
@@ -33,11 +33,11 @@ export function Inspector() {
   }, [state.selectedPid, selectedLifetime]);
   if (!process) return <aside className="inspector panel-surface empty-inspector"><CircleDot size={28} /><p>{t("inspector.selectHint")}</p></aside>;
   const statusKey = process.status === "stressed" ? "stressed" : process.status === "idle" ? "idle" : "running";
-  const cpuLabel = Number.isFinite(process.cpuPercent) && process.cpuPercent >= 0 && process.cpuPercent <= 100
+  const cpuLabel = isObservedPercent(process.cpuPercent)
     ? formatPercent(process.cpuPercent, state.locale, 1) : "—";
   const memoryLabel = isObservedMetric(process.memoryBytes) ? formatBytes(process.memoryBytes, state.locale) : "—";
-  const threadCount = isObservedMetric(process.threadCount) && Number.isSafeInteger(process.threadCount) ? process.threadCount : undefined;
-  const connections = isObservedMetric(process.connections) && Number.isSafeInteger(process.connections) ? process.connections : undefined;
+  const threadCount = isObservedCount(process.threadCount) ? process.threadCount : undefined;
+  const connections = isObservedCount(process.connections) ? process.connections : undefined;
   const agentTasks = isAgentProcess(process) ? state.snapshot.processes.filter((item) => item.parentPid === process.pid && item.status !== "dead") : [];
   const copyDetails = async () => {
     const request = ++copyRequest.current;

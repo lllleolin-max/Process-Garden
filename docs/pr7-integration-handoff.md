@@ -112,6 +112,14 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+ProcessExplorer and Inspector now share count/percentage domain validators.
+Whole-machine CPU must be 0–100%; counts must be nonnegative safe integers.
+Invalid metrics sort after observations in either direction and display as
+unavailable. The table fixture previously used 0–119% as ordinary CPU data;
+it now uses valid percentages while retaining its intended ordering. Dedicated
+tests separately cover invalid domains, zero, table cells and both sort directions.
+Full local verification: 342 tests, type checking and production build passed.
+
 Inspector thread/connection counts now require nonnegative safe integers in all
 three presentations (tab summary, detail grid and activity highlights). Invalid
 counts are unavailable, never zero; genuine zero remains visible. Five regression

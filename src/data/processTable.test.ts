@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { queryProcesses } from "./processTable";
+import { isObservedCount, isObservedPercent, queryProcesses } from "./processTable";
 import type { ProcessSnapshot } from "../types/system";
 
 const processes: ProcessSnapshot[] = [
@@ -7,6 +7,18 @@ const processes: ProcessSnapshot[] = [
   { pid: 10, name: "Alpha", cpuPercent: 5, memoryBytes: 10, startedAt: 20, status: "active", threadCount: 2 },
   { pid: 30, name: "Gamma", cpuPercent: 8, memoryBytes: 30, startedAt: 30, status: "active", threadCount: 8 }
 ];
+it("uses bounded percentages and discrete safe counts consistently", () => {
+  expect([0, 1, Number.MAX_SAFE_INTEGER].every(isObservedCount)).toBe(true);
+  expect([null, undefined, NaN, Infinity, -1, 1.5, Number.MAX_SAFE_INTEGER + 1].some(isObservedCount)).toBe(false);
+  expect([0, 0.5, 100].every(isObservedPercent)).toBe(true);
+  expect([null, undefined, NaN, Infinity, -1, 100.1].some(isObservedPercent)).toBe(false);
+});
+it.each(["threadCount", "cpuPercent"] as const)("sorts out-of-domain %s after observed values in either direction", metric => {
+  const invalid = metric === "threadCount" ? [0.5, Number.MAX_SAFE_INTEGER + 1] : [100.1, 800];
+  const rows = [...invalid, 0, 10].map((value, index) => ({ ...processes[0], pid: index + 1, [metric]: value }));
+  expect(queryProcesses(rows, "", metric, true, "en-US").map(p => p.pid)).toEqual([3, 4, 1, 2]);
+  expect(queryProcesses(rows, "", metric, false, "en-US").map(p => p.pid)).toEqual([4, 3, 1, 2]);
+});
 it("filters names, PIDs and paths without mutating the snapshot", () => {
   expect(queryProcesses(processes, " WORKER ", "pid", true, "en-US").map(p => p.pid)).toEqual([20]);
   expect(queryProcesses(processes, "10", "pid", true, "en-US").map(p => p.pid)).toEqual([10]);

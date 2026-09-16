@@ -7,10 +7,21 @@ import { TopBar } from "./TopBar";
 const initial = useAppStore.getState();
 beforeEach(async () => {
   await i18n.changeLanguage("en-US");
-  const processes = Array.from({ length: 120 }, (_, i) => ({ ...initial.snapshot.processes[0], pid: i + 1, name: `app-${i + 1}`, cpuPercent: i, memoryBytes: i * 1000, executablePath: `C:\\Apps\\app-${i + 1}.exe` }));
+  const processes = Array.from({ length: 120 }, (_, i) => ({ ...initial.snapshot.processes[0], pid: i + 1, name: `app-${i + 1}`, cpuPercent: i / 120 * 100, memoryBytes: i * 1000, executablePath: `C:\\Apps\\app-${i + 1}.exe` }));
   useAppStore.setState({ ...initial, locale: "en-US", selectedPid: null, themeMenuOpen: false, snapshot: { ...initial.snapshot, processes, processCount: 140 } });
 });
 afterEach(() => { cleanup(); useAppStore.setState(initial); localStorage.clear(); });
+
+it("marks out-of-domain percentages and fractional counts unavailable in the table", () => {
+  const snapshot = useAppStore.getState().snapshot;
+  const process = { ...snapshot.processes[0], cpuPercent: 101, threadCount: 0.5 };
+  useAppStore.setState({ snapshot: { ...snapshot, processes: [process], processCount: 1 } });
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  const cells = within(within(screen.getByRole("table")).getAllByRole("row")[1]).getAllByRole("cell");
+  expect(cells[2]).toHaveTextContent(/^—$/);
+  expect(cells[4]).toHaveTextContent(/^—$/);
+});
 
 it("opens a bounded process table, sorts and filters, then locates a process in the inspector", () => {
   render(<TopBar />);
