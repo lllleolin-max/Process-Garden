@@ -21,6 +21,24 @@ afterEach(() => {
 });
 
 describe("monitoring motion and feedback", () => {
+  it("keeps process CPU on the same absolute percentage scale and marks invalid readings unavailable", () => {
+    const process = { ...initial.snapshot.processes[0], cpuPercent: 0 };
+    const history = [0, 1, 0].map(cpuPercent => ({ ...initial.snapshot, processes: [{ ...process, cpuPercent }] }));
+    useAppStore.setState({ reducedMotion: true, selectedPid: process.pid, snapshot: { ...initial.snapshot, processes: [process] }, history });
+    render(<Inspector />);
+    const chart = screen.getByTitle("Whole-machine CPU capacity · fixed 0–100% scale");
+    const line = chart.querySelector("polyline")!;
+    expect(line).toHaveAttribute("points", "0.0,46.0 80.0,45.6 160.0,46.0");
+    const invalid = { ...initial.snapshot, processes: [{ ...process, cpuPercent: NaN }] };
+    act(() => useAppStore.setState({ snapshot: invalid, history: [...history, invalid] }));
+    expect(chart.querySelector("strong")).toHaveTextContent("—");
+    expect(chart.querySelector("polyline")).toBe(line);
+    expect(line).toHaveAttribute("points", "");
+    const recovery = { ...initial.snapshot, processes: [{ ...process, cpuPercent: 100 }] };
+    act(() => useAppStore.setState({ snapshot: recovery, history: [...history, invalid, recovery] }));
+    expect(line).toHaveAttribute("points", "160.0,6.0");
+  });
+
   it("keeps embryo stage tied to the accepted snapshot and exposes child inspection", () => {
     vi.useFakeTimers();
     const now = Date.now();

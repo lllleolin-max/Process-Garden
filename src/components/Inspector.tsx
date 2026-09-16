@@ -29,13 +29,15 @@ export function Inspector() {
   }, [state.selectedPid, selectedLifetime]);
   if (!process) return <aside className="inspector panel-surface empty-inspector"><CircleDot size={28} /><p>{t("inspector.selectHint")}</p></aside>;
   const statusKey = process.status === "stressed" ? "stressed" : process.status === "idle" ? "idle" : "running";
+  const cpuLabel = Number.isFinite(process.cpuPercent) && process.cpuPercent >= 0 && process.cpuPercent <= 100
+    ? formatPercent(process.cpuPercent, state.locale, 1) : "—";
   const agentTasks = isAgentProcess(process) ? state.snapshot.processes.filter((item) => item.parentPid === process.pid && item.status !== "dead") : [];
   const copyDetails = async () => {
     const request = ++copyRequest.current;
     clearTimeout(copyTimer.current);
     try {
       if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(`${process.name} · PID ${process.pid} · CPU ${process.cpuPercent.toFixed(1)}% · ${formatBytes(process.memoryBytes, state.locale)}`);
+      await navigator.clipboard.writeText(`${process.name} · PID ${process.pid} · CPU ${cpuLabel} · ${formatBytes(process.memoryBytes, state.locale)}`);
       if (request !== copyRequest.current) return;
       setCopyStatus("copied");
     } catch {
@@ -60,7 +62,7 @@ export function Inspector() {
       </div>
       <div id="inspector-tabpanel" className="inspector-tabpanel" role="tabpanel" aria-labelledby={`inspector-tab-${tab}`} tabIndex={0} key={`${process.pid}-${tab}`}>
       {tab === "overview" && <>
-        <section className="resource-chart"><div className="resource-chart-title"><span><Cpu size={14} />{t("inspector.cpuUsage")}</span><strong>{formatPercent(process.cpuPercent, state.locale, 1)}</strong></div><Sparkline key={`${selectedLifetime}-cpu`} values={history.map((item) => item.cpuPercent).slice(-42)} height={50} /></section>
+        <section className="resource-chart" title={state.locale === "zh-CN" ? "全机 CPU 容量 · 固定 0–100% 刻度" : "Whole-machine CPU capacity · fixed 0–100% scale"}><div className="resource-chart-title"><span><Cpu size={14} />{t("inspector.cpuUsage")}</span><strong>{cpuLabel}</strong></div><Sparkline key={`${selectedLifetime}-cpu`} values={history.map((item) => item.cpuPercent).slice(-42)} height={50} scale="percent" /></section>
         <section className="resource-chart"><div className="resource-chart-title"><span><Activity size={14} />{t("inspector.memoryUsage")}</span><strong>{formatBytes(process.memoryBytes, state.locale)}</strong></div><Sparkline key={`${selectedLifetime}-memory`} values={history.map((item) => item.memoryBytes).slice(-42)} color="var(--color-tertiary)" height={44} /></section>
         <ProcessIo key={`${selectedLifetime}-io`} pid={process.pid} startedAt={process.startedAt} />
       </>}
