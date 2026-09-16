@@ -305,6 +305,24 @@ mod tests {
     }
 
     #[test]
+    fn network_state_failure_does_not_discard_system_metrics() {
+        let collector = SystemCollector::default();
+        let worker = collector.clone();
+        // Deliberately poison only this test's private network mutex. No OS
+        // adapter is disabled or modified and no application process is touched.
+        assert!(std::thread::spawn(move || {
+            let _guard = worker.network.lock().unwrap();
+            panic!("injected network state failure");
+        }).join().is_err());
+        let snapshot = sample(&collector).expect("other system domains stay available");
+        assert!(snapshot.network.is_none());
+        assert!(snapshot.memory_total_bytes > 0);
+        assert!(snapshot.logical_cpu_count > 0);
+        assert!(!snapshot.processes.is_empty());
+        assert_eq!(snapshot.process_count, snapshot.processes.len());
+    }
+
+    #[test]
     #[ignore = "manual host-dependent sampling profile; not a CI performance threshold"]
     fn profile_native_sampling_cost() {
         use std::time::{Duration, Instant};

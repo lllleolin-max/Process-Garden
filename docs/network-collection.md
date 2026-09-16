@@ -49,6 +49,16 @@ shared collector state and history copy/precision/availability. Rust: 31 passed,
 5 manual ignored; frontend: 390 passed plus type checking/production build.
 
 - Validate packaged IPC and measure the added interface-query overhead.
+
+Fault/overhead follow-up (2026-09-16): poisoning only a test-private network mutex
+still allows CPU/memory/process sampling to return, with network:null. No adapter
+or OS configuration was changed. Default Rust suite: 32 passed, 6 manual ignored.
+The new manual read-only overhead test was explicitly run separately: 64 queries
+with rate calculation, 53 interfaces, median 1.162 ms and P95 1.825 ms in this
+host's debug build. It also checks all produced rates are finite/nonnegative.
+This is not release/long-run CPU measurement or traffic-accuracy validation.
+Logs: `%TEMP%/process-garden-network-isolation.log` and
+`%TEMP%/process-garden-network-overhead.log`.
 - Frontend NetworkPanel is now integrated in Sidebar, initially collapsed. It
   selects a single adapter, renders two bounded history curves and uses shared
   numeric motion. Empty/error/baseline/down states remain distinct. Closed or

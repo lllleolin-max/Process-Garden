@@ -284,4 +284,24 @@ mod tests {
             .all(|item| item.name.chars().count() <= 257));
         eprintln!("interfaces enumerated: {}", snapshot.interfaces.len());
     }
+
+    #[test]
+    #[ignore = "manual read-only host overhead measurement"]
+    fn measure_interface_query_overhead() {
+        let mut timings = Vec::new();
+        let mut tracker = NetworkRateTracker::default();
+        let mut count = 0;
+        for _ in 0..64 {
+            let start = Instant::now();
+            let sample = read_network_counters().expect("interface query succeeds");
+            count = sample.interfaces.len();
+            let rows = tracker.observe(Some(sample)).expect("unique interface identities");
+            assert_eq!(rows.len(), count);
+            assert!(rows.iter().all(|row| [row.received_bytes_per_second, row.sent_bytes_per_second]
+                .into_iter().flatten().all(|rate| rate.is_finite() && rate >= 0.0)));
+            timings.push(start.elapsed().as_secs_f64() * 1000.0);
+        }
+        timings.sort_by(f64::total_cmp);
+        eprintln!("network interfaces={count}; query+rates ms: median={:.3}, p95={:.3}; 64 local debug samples", timings[32], timings[60]);
+    }
 }
