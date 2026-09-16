@@ -25,6 +25,21 @@ keep them local and do not use a PID alone as process-lifetime attribution.
 
 ## Aggregation and integration gates
 
+Identity parsing now separates session-local LUID high/low components, physical
+index, engine ID, PID and optional engine type. Numeric components are bounded
+unsigned integers; malformed names, `_Total` and duplicate suffixes are rejected.
+Hexadecimal case/padding normalizes through integer parsing. Type labels can have
+underscores. An empty type label is **unknown**, not an invalid engine identity:
+the host probe initially rejected 210 of 700 records for this reason. After making
+type optional, all 700 engine and both sets of 3 memory instances parsed. This
+observed grammar is not a guarantee for every driver. Raw maps remain intact;
+the parser does not perform aggregation or process-lifetime attribution.
+
+Identity validation evidence: 44 Rust library tests passed, 10 manual probes
+ignored by default; explicit GPU probe passed with zero unmapped records and
+locked/offline non-test cargo check passed. Single debug probe open 386.591ms,
+second collect/format 1.867ms. No instance identities or PIDs were logged.
+
 Microsoft describes Task Manager's overall GPU percentage as the busiest engine,
 not the sum of independent engines. That rule does not itself prove how to group
 the raw per-process/context PDH instances. Required before a total-usage display:

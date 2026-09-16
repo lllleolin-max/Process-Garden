@@ -406,3 +406,11 @@ tests, typecheck/build passed. Actual visual/native frame acceptance remains ope
   push needs its own CI result. PR #7 stays draft; no merge or release is authorized.
 - These are branch-level checks. Combined-tree compatibility, actual native UI,
   hardware frame pacing and controlled network-traffic validation remain pending.
+# GPU identity parsing handoff — 2026-09-16
+
+`gpu.rs` now parses bounded session-local adapter/physical/engine/process identities.
+Engine type is optional: this host has 210 empty labels among 700 engine records.
+Do not discard those engines or infer their type. All 700 engine and 3+3 memory
+instances parsed in the explicit native probe; 44 Rust tests passed / 10 ignored,
+and non-test cargo check passed. Raw maps remain unchanged. Aggregation, hardware
+name mapping, worker/IPC and GPU UI are still pending. No other worktree edited.
