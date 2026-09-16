@@ -35,6 +35,9 @@ pub struct ProcessSnapshot {
 pub struct SystemSnapshot {
     pub timestamp: u64,
     pub cpu_percent: f32,
+    /// Logical processors in the sampler's current order; not physical cores.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub cpu_core_percents: Vec<Option<f32>>,
     pub memory_used_bytes: u64,
     pub memory_total_bytes: u64,
     pub process_count: usize,
@@ -72,6 +75,7 @@ mod tests {
         let mut snapshot = SystemSnapshot {
             timestamp: 1,
             cpu_percent: 2.0,
+            cpu_core_percents: vec![Some(0.0), Some(100.0), None],
             memory_used_bytes: 3,
             memory_total_bytes: 4,
             process_count: 5,
@@ -83,13 +87,16 @@ mod tests {
         };
         let value = serde_json::to_value(&snapshot).expect("snapshot serializes");
         assert_eq!(value["logicalCpuCount"], 8);
+        assert_eq!(value["cpuCorePercents"], serde_json::json!([0.0, 100.0, null]));
         assert_eq!(value["memoryUsedBytes"], 3);
         assert_eq!(value["threadCount"], 6);
         assert!(value["power"]["watts"].is_null());
         assert_eq!(value["power"]["source"], "unavailable");
         snapshot.thread_count = None;
+        snapshot.cpu_core_percents.clear();
         let missing = serde_json::to_value(&snapshot).expect("snapshot serializes");
         assert!(missing.get("threadCount").is_none());
+        assert!(missing.get("cpuCorePercents").is_none());
         assert_eq!(missing["processCount"], 5, "missing threads do not erase other metrics");
     }
 

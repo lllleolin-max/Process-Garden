@@ -182,6 +182,12 @@ fn sample_observed(collector: &SystemCollector, mut observe: impl FnMut(&'static
             .map_err(|error| error.to_string())?
             .as_millis() as u64,
         cpu_percent: system.global_cpu_usage(),
+        // Reuse the existing CPU refresh and baseline: no second OS query and
+        // no division by CPU count (each logical processor has its own 100%).
+        cpu_core_percents: system.cpus().iter().map(|cpu| {
+            let usage = cpu.cpu_usage();
+            (usage.is_finite() && (0.0..=100.0).contains(&usage)).then_some(usage)
+        }).collect(),
         memory_used_bytes: system.used_memory(),
         memory_total_bytes: system.total_memory(),
         process_count: system.processes().len(),
@@ -265,6 +271,12 @@ mod tests {
         assert!(!snapshot.processes.is_empty());
         assert_eq!(snapshot.processes.len(), snapshot.process_count);
         let system = collector.system.lock().expect("collector lock is available");
+        assert_eq!(snapshot.cpu_core_percents.len(), snapshot.logical_cpu_count);
+        for (observed, cpu) in snapshot.cpu_core_percents.iter().zip(system.cpus()) {
+            let usage = cpu.cpu_usage();
+            let expected = (usage.is_finite() && (0.0..=100.0).contains(&usage)).then_some(usage);
+            assert_eq!(*observed, expected);
+        }
         for process in &snapshot.processes {
             let raw = &system.processes()[&sysinfo::Pid::from_u32(process.pid)];
             assert!(raw.cmd().is_empty(), "unused command lines must not be collected");

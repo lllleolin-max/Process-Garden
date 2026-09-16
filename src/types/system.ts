@@ -24,6 +24,9 @@ export interface PowerSnapshot {
 export interface SystemSnapshot {
   timestamp: number;
   cpuPercent: number;
+  /** Logical processor order from the current sampler, not physical-core IDs.
+   * Missing array means unsupported; null means an unavailable observation. */
+  cpuCorePercents?: (number | null)[];
   memoryUsedBytes: number;
   memoryTotalBytes: number;
   processCount: number;

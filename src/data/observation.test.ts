@@ -21,6 +21,15 @@ it("retains measurements and identity without executable metadata or mutable ali
   expect(history.power.watts).toBe(watts);
 });
 
+it("copies logical CPU observations without filling unavailable values or retaining aliases", () => {
+  const source = { ...makeDemoSnapshot(0), cpuCorePercents: [0, 100, null] };
+  const observation = toObservation(source);
+  expect(observation.cpuCorePercents).toEqual([0, 100, null]);
+  source.cpuCorePercents[0] = 90;
+  expect(observation.cpuCorePercents).toEqual([0, 100, null]);
+  expect(toObservation(makeDemoSnapshot(0))).not.toHaveProperty("cpuCorePercents");
+});
+
 it("does not retain unrecognized payload fields and preserves missing system thread counts", () => {
   const source = { ...makeDemoSnapshot(0), threadCount: undefined, diagnosticPayload: { metadata: "not chart data" } };
   const observation = toObservation(source);

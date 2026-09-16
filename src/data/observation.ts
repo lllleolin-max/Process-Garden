@@ -4,6 +4,7 @@ export function toObservation(snapshot: SystemSnapshot): SystemObservation {
   return {
     timestamp: snapshot.timestamp,
     cpuPercent: snapshot.cpuPercent,
+    ...(snapshot.cpuCorePercents === undefined ? {} : { cpuCorePercents: [...snapshot.cpuCorePercents] }),
     memoryUsedBytes: snapshot.memoryUsedBytes,
     memoryTotalBytes: snapshot.memoryTotalBytes,
     processCount: snapshot.processCount,

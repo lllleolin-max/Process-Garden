@@ -61,6 +61,16 @@ files also belong to that task and must not be deleted or silently replaced.
 
 ## Acceptance after integration
 
+Logical-processor telemetry addition: Rust SystemSnapshot now includes
+`cpu_core_percents: Vec<Option<f32>>`, serialized as optional `cpuCorePercents`.
+Keep collector.rs, models.rs, types/system.ts and observation.ts together.
+Values reuse the existing sysinfo CPU refresh, with no extra scan; each logical
+processor has its own 0–100% scale (do not apply process CPU normalization).
+An absent array means unsupported and a null element means unavailable; neither
+is an observed zero. Array order is sampler order, not stable physical-core IDs.
+History copies the array to avoid mutable aliases. The dedicated per-processor
+UI, topology-change handling and packaged-runtime visual validation remain open.
+
 Run npm verify and locked Rust library tests/compile check on the integrated
 tree, not only this branch. Then verify both reference themes, PID reuse,
 birth/swallow motion, fallback→native icon replacement, repeated dialog reversal,
