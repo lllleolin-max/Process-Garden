@@ -1,5 +1,7 @@
 # Current QA index
 
+- Cumulative browser follow-up: [2026-09-16 runtime checkpoint](qa-cumulative-browser-2026-09-16.md). Chinese Garden process filtering/focus passes; header demo label wraps into two lines at 1280×720. Eldritch and motion checks remain open; NOT READY for visual sign-off.
+
 - Feed health browser check: [2026-09-16 notice visual QA](qa-feed-health-browser-2026-09-16.md). CPU occlusion fixed and rechecked in Chinese Garden / English Eldritch at 1280×720: notice now replaces branding within the existing header, without resizing the workspace. Wallpaper and narrow-width acceptance remain open.
 
 - Native coverage: [2026-09-16 collector coverage QA](qa-native-process-coverage-2026-09-16.md). Removed the 500-record truncation; a real Windows test returned all 566 enumerated PIDs. This supersedes the cap caveat in the earlier process-explorer record, not the remaining native integration/performance gates.
