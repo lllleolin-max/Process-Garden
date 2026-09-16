@@ -8,6 +8,7 @@ import { CpuCorePanel } from "./CpuCorePanel";
 import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
 import { threadHistory } from "../data/threadHistory";
 import { useCallback } from "react";
+import { isObservedMetric, isObservedPercent } from "../data/processTable";
 
 export function Sidebar() {
   const snapshotStatus = useSnapshotStatus();
@@ -17,14 +18,18 @@ export function Sidebar() {
   const locale = useAppStore((state) => state.locale);
   const cpuLabel = useCallback((value: number) => formatPercent(value, locale), [locale]);
   const memoryLabel = useCallback((value: number) => formatBytes(value, locale), [locale]);
-  const memoryPercent = snapshot.memoryTotalBytes ? (snapshot.memoryUsedBytes / snapshot.memoryTotalBytes) * 100 : 0;
+  const cpuValue = isObservedPercent(snapshot.cpuPercent) ? snapshot.cpuPercent : NaN;
+  const memoryValue = isObservedMetric(snapshot.memoryUsedBytes) ? snapshot.memoryUsedBytes : NaN;
+  const memoryPercent = isObservedMetric(snapshot.memoryTotalBytes) && snapshot.memoryTotalBytes > 0
+    && Number.isFinite(memoryValue) && memoryValue <= snapshot.memoryTotalBytes
+    ? (memoryValue / snapshot.memoryTotalBytes) * 100 : NaN;
 
   return (
     <aside className="sidebar panel-surface">
       <MetricCard
         label={t("metrics.cpu")}
-        value={formatPercent(snapshot.cpuPercent, locale)}
-        animatedValue={snapshot.cpuPercent}
+        value={formatPercent(cpuValue, locale)}
+        animatedValue={cpuValue}
         formatValue={cpuLabel}
         percentScale
         detail={`${snapshot.logicalCpuCount} ${t("metrics.cores")}`}
@@ -34,8 +39,8 @@ export function Sidebar() {
       />
       <MetricCard
         label={t("metrics.memory")}
-        value={formatBytes(snapshot.memoryUsedBytes, locale)}
-        animatedValue={snapshot.memoryUsedBytes}
+        value={formatBytes(memoryValue, locale)}
+        animatedValue={memoryValue}
         formatValue={memoryLabel}
         detail={`${formatPercent(memoryPercent, locale)} ${t("metrics.used")}`}
         icon={MemoryStick}

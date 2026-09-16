@@ -31,3 +31,23 @@ it("displays an observed zero distinctly from an unavailable thread total", asyn
   expect(card.querySelector(".metric-value")).toHaveTextContent(/^0$/);
   expect(card.querySelector("polyline")?.getAttribute("points")).not.toBe("");
 });
+
+it.each([0, -1, NaN, Infinity, 5])("does not invent memory utilization for invalid total %s", async memoryTotalBytes => {
+  await i18n.changeLanguage("en-US");
+  useAppStore.setState({ locale: "en-US", paused: true, snapshot: { ...initial.snapshot, memoryUsedBytes: 10, memoryTotalBytes } });
+  render(<Sidebar />);
+  const card = screen.getByRole("region", { name: "Memory" });
+  expect(card.querySelector(".metric-detail")).toHaveTextContent("—");
+  expect(card.querySelector(".metric-value")).toHaveTextContent("10 B");
+});
+
+it("immediately clears invalid animated CPU and memory readings", async () => {
+  await i18n.changeLanguage("en-US");
+  useAppStore.setState({ locale: "en-US", paused: false, reducedMotion: false, snapshot: { ...initial.snapshot, cpuPercent: 50, memoryUsedBytes: 100 } });
+  render(<Sidebar />);
+  act(() => useAppStore.setState({ snapshot: { ...initial.snapshot, cpuPercent: 101, memoryUsedBytes: -1 } }));
+  for (const name of ["CPU", "Memory"]) {
+    const card = screen.getByRole("region", { name });
+    expect(card.querySelector('.metric-value [aria-hidden="true"]')).toHaveTextContent(/^—$/);
+  }
+});

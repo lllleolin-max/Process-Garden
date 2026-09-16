@@ -112,6 +112,13 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+Sidebar validates CPU/memory before AnimatedMetric: invalid inputs become NaN
+sentinels and settle immediately to unavailable, never interpolate through bogus
+values. Memory utilization requires positive finite capacity and used <= total;
+unknown/inconsistent capacity no longer implies 0% used. Known byte usage remains
+visible even when the ratio is unavailable. Six new regressions cover these
+states. Full local verification: 376 tests, type checking and production build.
+
 Shared formatters now return unavailable for negative/nonfinite byte, percentage
 and duration observations instead of manufacturing zero or exposing NaN/Infinity.
 Real zero retains existing localized output; sub-byte positive values use B
