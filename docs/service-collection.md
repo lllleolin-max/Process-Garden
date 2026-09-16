@@ -1,7 +1,8 @@
 # Windows service observation
 
-Initial native acquisition module: `src-tauri/src/services.rs`. Not yet exposed
-as a desktop command or UI. No start/stop/delete/configure calls, remote host,
+Native acquisition module: `src-tauri/src/services.rs`, with independent bounded
+worker and registered `sample_services(session)` desktop command. No UI yet.
+No start/stop/delete/configure calls, remote host,
 administrator request, or executable-path/account enumeration.
 
 Contract: local SCM, SC_MANAGER_ENUMERATE_SERVICE, SERVICE_WIN32 and
@@ -12,8 +13,10 @@ observation, not proof of a process lifetime or authority for destructive action
 
 Enumeration uses an aligned 256 KiB buffer and resume handles; at most 64 pages
 and 65,536 rows, with a caller-supplied deadline between calls. OS calls themselves
-cannot be cancelled by this deadline. A bounded worker is required before IPC/UI
-exposure. Any native error, invalid string/count, nonprogressing page, duplicate
+cannot be cancelled by this deadline. The shared worker has a four-second response
+timeout and keeps admission held until the provider actually returns; late results
+cannot queue extra provider calls. No system collector lock is held. Any native
+error, invalid string/count, nonprogressing page, duplicate
 identity or exceeded limit returns an error, not a truncated success. UTF-16
 strings must terminate within the returned allocation and the string length cap.
 SCM handle closes through RAII on every return path.
@@ -34,8 +37,13 @@ library suite: 58 passed, 13 ignored; the probe was separately run with --ignore
 The tests do not yet cover all pagination/failure permutations or independent
 coverage comparison. The previously built 71cfeb0 EXE predates this module.
 
+Worker verification: invalid-session and blocked-provider timeout tests passed;
+explicit native worker returned 312 rows in 2.3372 ms, then a renewed session also
+returned rows. Full library suite 60 passed / 14 ignored; compile check passed.
+Actual desktop IPC remains unverified: Rust worker tests are not a window test.
+
 Remaining: adversarial pagination fixtures, independent host coverage comparison,
-bounded worker/IPC, bilingual service list/filter/sort and stale-state continuity,
+actual IPC validation, bilingual service list/filter/sort and stale-state continuity,
 safe PID navigation, explicit permission/coverage disclosure and native UI QA.
 Service controls remain a later separately confirmed workflow, not enabled by
 this reader. Full task-manager replacement remains incomplete.

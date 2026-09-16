@@ -59,6 +59,14 @@ fn platform_name() -> &'static str {
 
 #[cfg(not(test))]
 #[tauri::command]
+async fn sample_services(reader: tauri::State<'_, services::worker::ServiceReader>, session: String) -> Result<Vec<services::ServiceReading>, String> {
+    let reader = reader.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || reader.sample(session))
+        .await.map_err(|error| format!("service request failed: {error}"))?
+}
+
+#[cfg(not(test))]
+#[tauri::command]
 async fn process_icons(
     cache: tauri::State<'_, ProcessIconCache>,
     requests: Vec<IconRequest>,
@@ -79,6 +87,7 @@ pub fn run() {
         .manage(process_io::ProcessIoReader::default())
         .manage(disk_worker::DiskReader::default())
         .manage(gpu::worker::GpuReader::default())
+        .manage(services::worker::ServiceReader::default())
         .setup(|app| {
             use tauri::{
                 menu::{Menu, MenuItem},
@@ -112,7 +121,7 @@ pub fn run() {
             tray.build(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![sample_system, platform_name, process_icons, sample_process_io, sample_disks, sample_gpu])
+        .invoke_handler(tauri::generate_handler![sample_system, platform_name, process_icons, sample_process_io, sample_disks, sample_gpu, sample_services])
         .run(tauri::generate_context!())
         .expect("error while running Process Garden");
 }

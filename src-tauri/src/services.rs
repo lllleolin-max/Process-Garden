@@ -1,5 +1,6 @@
 //! Read-only SCM enumeration. No service controls or privilege changes.
 use serde::Serialize;
+pub mod worker;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
