@@ -21,3 +21,15 @@ it("keeps chronological observations across equivalent timestamp units", () => {
   const first = { ...current, startedAt: current.startedAt * 1000, cpuPercent: 2 };
   expect(processHistory([snapshot([first]), snapshot([current])], current)).toEqual([first, current]);
 });
+
+it("does not inspect discarded history outside the visible chart window", () => {
+  const inaccessible = { ...base, get processes(): ProcessSnapshot[] { throw new Error("older snapshot should not be scanned"); } };
+  const visible = Array.from({ length: 42 }, (_, index) => ({ ...current, cpuPercent: index }));
+  const history = [inaccessible, ...visible.map(item => snapshot([item]))];
+  expect(processHistory(history, current, 42)).toEqual(visible);
+  expect(processHistory(history, current, 0)).toEqual([]);
+});
+
+it("still stops at an observed gap within a bounded chart window", () => {
+  expect(processHistory([snapshot([current]), snapshot([]), snapshot([current])], current, 42)).toEqual([current]);
+});

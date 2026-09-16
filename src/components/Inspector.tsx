@@ -1,5 +1,5 @@
 import { Activity, Binary, BrainCircuit, Check, CircleDot, Clock3, Copy, Cpu, FolderCog, Network, Workflow } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatBytes, formatDateTime, formatPercent } from "../i18n/formatters";
 import { agentEmbryoStage, isAgentProcess } from "../ecology/organisms";
@@ -17,7 +17,7 @@ export function Inspector() {
   const copyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const copyRequest = useRef(0);
   const process = state.snapshot.processes.find((item) => item.pid === state.selectedPid);
-  const history = process ? processHistory(state.history, process) : [];
+  const history = useMemo(() => process && tab === "overview" ? processHistory(state.history, process, 42) : [], [state.history, process, tab]);
   const selectedLifetime = process ? processIdentity(process) : null;
   useEffect(() => {
     setCopyStatus("idle");
