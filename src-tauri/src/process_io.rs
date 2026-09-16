@@ -2,6 +2,60 @@
 //! These are process I/O bytes, not a claim of physical-disk throughput.
 
 use std::time::{Duration, Instant};
+use std::sync::{Arc, Mutex};
+
+#[derive(Clone, Default)]
+pub struct ProcessIoReader(Arc<Mutex<Option<IoSession>>>);
+
+struct IoSession {
+    target: (u32, u64, String),
+    creation_ticks: Option<u64>,
+    tracker: IoRateTracker,
+}
+
+impl ProcessIoReader {
+    pub fn sample(&self, pid: u32, started_at: u64, session: String) -> Result<Option<IoRates>, String> {
+        self.sample_with(pid, started_at, session, |expected| {
+            #[cfg(windows)]
+            { read_process_io(pid, expected) }
+            #[cfg(not(windows))]
+            { let _ = expected; Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "process I/O is unavailable on this platform")) }
+        })
+    }
+
+    fn sample_with(&self, pid: u32, started_at: u64, session: String,
+        query: impl FnOnce(Option<u64>) -> std::io::Result<IoCounterSample>) -> Result<Option<IoRates>, String> {
+        if pid == 0 || started_at == 0 || session.is_empty() || session.len() > 64 {
+            return Err("invalid process I/O request".into());
+        }
+        let target = (pid, started_at, session);
+        let mut guard = self.0.lock().map_err(|_| "process I/O state unavailable")?;
+        if guard.as_ref().is_none_or(|active| active.target != target) {
+            *guard = Some(IoSession { target, creation_ticks: None, tracker: IoRateTracker::new(Duration::from_secs(15)) });
+        }
+        let active = guard.as_mut().expect("session initialized");
+        match query(active.creation_ticks) {
+            Ok(sample) => {
+                // System snapshots currently expose Unix seconds. Pin exact native
+                // ticks after the first successful match; never serialize them as f64.
+                let unix_seconds = sample.creation_ticks.checked_sub(116_444_736_000_000_000).map(|ticks| ticks / 10_000_000);
+                if sample.pid != pid || unix_seconds != Some(started_at)
+                    || active.creation_ticks.is_some_and(|ticks| ticks != sample.creation_ticks) {
+                    active.tracker.observe(None);
+                    return Err("process lifetime changed".into());
+                }
+                active.creation_ticks = Some(sample.creation_ticks);
+                Ok(active.tracker.observe(Some(sample)))
+            }
+            Err(error) => {
+                active.tracker.observe(None);
+                // Keep the exact lifetime pinned across failures; a reused PID
+                // must not become a new target merely because a query failed.
+                Err(error.to_string())
+            }
+        }
+    }
+}
 
 /// Read-only, on-demand observation. The optional exact creation token comes
 /// from a previous observation, never from rounding FILETIME through JavaScript.
@@ -51,7 +105,8 @@ pub struct IoCounterSample {
     pub written_bytes: u64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct IoRates {
     pub read_bytes_per_second: f64,
     pub written_bytes_per_second: f64,
@@ -95,6 +150,44 @@ impl IoRateTracker {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sessions_pin_identity_clear_failed_rates_and_reset_on_reopen() {
+        let reader = ProcessIoReader::default();
+        let clone = reader.clone();
+        let at = Instant::now();
+        let start = 1_800_000_000;
+        let ticks = 116_444_736_000_000_000 + start * 10_000_000 + 123;
+        let observation = |second, bytes| IoCounterSample { pid: 42, creation_ticks: ticks,
+            observed_at: at + Duration::from_secs(second), read_bytes: bytes, written_bytes: bytes };
+        assert_eq!(reader.sample_with(42, start, "a".into(), |expected| {
+            assert_eq!(expected, None); Ok(observation(0, 100))
+        }).unwrap(), None);
+        assert_eq!(clone.sample_with(42, start, "a".into(), |expected| {
+            assert_eq!(expected, Some(ticks)); Ok(observation(1, 200))
+        }).unwrap().unwrap().read_bytes_per_second, 100.0);
+        assert!(reader.sample_with(42, start, "a".into(), |_| Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied))).is_err());
+        assert_eq!(reader.sample_with(42, start, "a".into(), |expected| {
+            assert_eq!(expected, Some(ticks)); Ok(observation(2, 1000))
+        }).unwrap(), None);
+        assert!(reader.sample_with(42, start, "a".into(), |_| {
+            let mut reused = observation(3, 2000); reused.creation_ticks += 1; Ok(reused)
+        }).is_err(), "even same-second reuse must be rejected once pinned");
+        assert_eq!(reader.sample_with(42, start, "b".into(), |expected| {
+            assert_eq!(expected, None); Ok(observation(4, 3000))
+        }).unwrap(), None);
+    }
+
+    #[test]
+    fn invalid_targets_never_query_and_initial_start_mismatch_is_rejected() {
+        let reader = ProcessIoReader::default();
+        for (pid, start, session) in [(0, 1, "a".into()), (1, 0, "a".into()), (1, 1, String::new()), (1, 1, "x".repeat(65))] {
+            assert!(reader.sample_with(pid, start, session, |_| panic!("invalid request queried OS")).is_err());
+        }
+        assert!(reader.sample_with(42, 1, "a".into(), |_| Ok(sample(Instant::now(), 0, 0))).is_err());
+        let serialized = serde_json::to_value(IoRates { read_bytes_per_second: 0.0, written_bytes_per_second: 12.5 }).unwrap();
+        assert_eq!(serialized, serde_json::json!({"readBytesPerSecond": 0.0, "writtenBytesPerSecond": 12.5}));
+    }
 
     #[cfg(windows)]
     #[test]

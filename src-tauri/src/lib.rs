@@ -22,6 +22,14 @@ async fn sample_system(collector: tauri::State<'_, SystemCollector>) -> Result<S
 
 #[cfg(not(test))]
 #[tauri::command]
+async fn sample_process_io(reader: tauri::State<'_, process_io::ProcessIoReader>, pid: u32, started_at: u64, session: String) -> Result<Option<process_io::IoRates>, String> {
+    let reader = reader.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || reader.sample(pid, started_at, session))
+        .await.map_err(|error| format!("process I/O worker failed: {error}"))?
+}
+
+#[cfg(not(test))]
+#[tauri::command]
 fn platform_name() -> &'static str {
     std::env::consts::OS
 }
@@ -45,6 +53,7 @@ pub fn run() {
         .plugin(tauri_plugin_wallpaper::init())
         .manage(SystemCollector::default())
         .manage(ProcessIconCache::default())
+        .manage(process_io::ProcessIoReader::default())
         .setup(|app| {
             use tauri::{
                 menu::{Menu, MenuItem},
@@ -78,7 +87,7 @@ pub fn run() {
             tray.build(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![sample_system, platform_name, process_icons])
+        .invoke_handler(tauri::generate_handler![sample_system, platform_name, process_icons, sample_process_io])
         .run(tauri::generate_context!())
         .expect("error while running Process Garden");
 }

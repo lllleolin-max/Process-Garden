@@ -66,8 +66,11 @@ rate tracker; preserve the integration task's command registrations and process
 operations. Windows querying now uses limited query rights, one RAII handle,
 exact FILETIME identity and explicit Result failures. Cargo.toml additionally
 enables Win32_System_Threading: merge this feature into, not over, the other task's
-feature list. No I/O command has been registered yet; command/UI integration and
-query cost measurement remain open. See process-io-collection.md. Rate tests
+feature list. lib.rs now adds ProcessIoReader managed state and sample_process_io
+to the existing command list: merge these entries without replacing the other
+task's process-operation commands. Frontend integration remains open; the
+single-target reader requires a fresh session after pause/hide/reopen. See
+process-io-collection.md for query cost evidence and identity limits. Rate tests
 alone do not validate actual Windows I/O or physical disk throughput.
 
 Logical-processor telemetry addition: Rust SystemSnapshot now includes

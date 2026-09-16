@@ -1,14 +1,27 @@
 # Process I/O collection decision — 2026-09-16
 
-Status: rate-conversion core and on-demand Windows query implemented; application
-command/UI integration is not connected or accepted as disk telemetry.
+Status: rate-conversion core, on-demand Windows query and desktop command bridge
+implemented; frontend consumption is not connected or accepted as disk telemetry.
+
+`sample_process_io` accepts `pid`, Unix-seconds `startedAt` and a nonempty session
+string of at most 64 bytes. It returns null while establishing a baseline, rates
+in camelCase once two valid samples exist, or an error. The reader keeps only one
+active target/session and shares state across worker clones. Reopening/changing
+session resets its baseline; intervals over 15 seconds reset rather than average
+across a pause. Failure clears rate history but preserves the exact creation token.
+The frontend must use a new session after pause/hide/reopen and discard late results.
+
+Initial identity matching is limited to the snapshot's seconds-resolution start
+time; after that exact FILETIME ticks are pinned. Same-second PID reuse before
+the first successful query cannot be ruled out by the current snapshot schema.
+This is read-only telemetry, not authorization for process operations.
 
 The Windows query opens one handle with PROCESS_QUERY_LIMITED_INFORMATION and
 reads creation FILETIME plus I/O counters from that handle. Optional exact
 creation tokens reject a changed lifetime. Handles close through Drop, including
 all failure paths. API failures return errors rather than cached/zero samples.
-The command integration must pass failures to `IoRateTracker::observe(None)` and
-reset selection/session baselines; do not keep rates after a failed query.
+The command integration passes failures to `IoRateTracker::observe(None)` and
+resets target/session baselines; the frontend must also clear failed displayed rates.
 No process memory is read and no privileges are changed.
 
 Primary API contracts:
