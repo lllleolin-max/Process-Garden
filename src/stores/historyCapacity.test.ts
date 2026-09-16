@@ -1,6 +1,7 @@
 import { afterEach, expect, it } from "vitest";
 import { useAppStore } from "./appStore";
 import { processHistory } from "../data/processHistory";
+import { toObservation } from "../data/observation";
 
 const initial = useAppStore.getState();
 afterEach(() => useAppStore.setState(initial, true));
@@ -26,8 +27,10 @@ it("bounds full-table history without truncating processes or changing old obser
   const ingestionMs = performance.now() - started;
   const state = useAppStore.getState();
   expect(state.history).toHaveLength(120);
-  expect(state.history[0]).toBe(firstRetained);
-  expect(state.history.at(-1)).toBe(state.snapshot);
+  expect(state.history[0]).toEqual(toObservation(firstRetained!));
+  expect(state.history.at(-1)).toEqual(toObservation(state.snapshot));
+  expect(state.snapshot.processes[1499].executablePath).toBe(processes[1499].executablePath);
+  expect(state.history[0].processes[1499]).not.toHaveProperty("executablePath");
   expect(state.history.every(snapshot => snapshot.processes.length === 1500)).toBe(true);
   expect(state.history[0].processes[1499].memoryBytes).toBe(31 * 1024);
   const selectedHistory = processHistory(state.history, state.snapshot.processes[1499], 42);

@@ -25,6 +25,12 @@ files also belong to that task and must not be deleted or silently replaced.
 
 ## Schema and correctness dependencies
 
+- History now stores SystemObservation, not complete SystemSnapshot metadata.
+  Preserve the toObservation projection in appStore alongside the new observation
+  types and chart helper signatures. The current snapshot remains complete.
+  appStore.ts is an additional overlap with the integration task: merge its history
+  changes by hunk without replacing theme/operation state changes.
+
 - Both Rust thread_count fields are Option<usize>; SystemSnapshot construction
   must wrap observed totals with Some. JSON omits missing counts. TS system
   threadCount is optional; never restore formatting or arithmetic without guards.

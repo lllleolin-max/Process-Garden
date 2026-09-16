@@ -4,7 +4,8 @@ import { demoEvents, makeDemoSnapshot } from "../data/demo";
 import { deriveDemoEvent, deriveProcessEvents } from "../data/events";
 import { normalizeProcessName, sanitizeOrganismStyleOverrides, type OrganismStyleId } from "../ecology/organisms";
 import type { AppLocale } from "../i18n/config";
-import type { ProcessEvent, SystemSnapshot } from "../types/system";
+import type { ProcessEvent, SystemSnapshot, SystemObservation } from "../types/system";
+import { toObservation } from "../data/observation";
 import type { ThemeId, ThemeManifest } from "../types/theme";
 
 export type DisplayMode = "windowed" | "fullscreen" | "wallpaper";
@@ -36,7 +37,7 @@ interface AppState extends Preferences {
   themeStudioOpen: boolean;
   customThemes: ThemeManifest[];
   snapshot: SystemSnapshot;
-  history: SystemSnapshot[];
+  history: SystemObservation[];
   events: ProcessEvent[];
   collector: "native" | "demo";
   setTheme: (id: ThemeId) => void;
@@ -153,7 +154,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   themeStudioOpen: false,
   customThemes: loadCustomThemes(),
   snapshot: initialSnapshot,
-  history: initialHistory,
+  history: initialHistory.map(toObservation),
   events: demoEvents,
   collector: "demo",
   setTheme: (themeId) => set((state) => { const next = { ...state, themeId, themeMenuOpen: false }; queueMicrotask(() => persist(get())); return next; }),
@@ -211,7 +212,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       snapshot,
       collector,
       selectedPid: state.selectedPid === null || snapshot.processes.some((process) => process.pid === state.selectedPid) ? state.selectedPid : (snapshot.processes[0]?.pid ?? null),
-      history: sameCollector ? [...state.history.slice(-119), snapshot] : [snapshot],
+      history: sameCollector ? [...state.history.slice(-119), toObservation(snapshot)] : [toObservation(snapshot)],
       events: newEvents.length ? [...newEvents, ...previousEvents].slice(0, 80) : previousEvents
     };
   }),

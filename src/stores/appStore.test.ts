@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppStore } from "./appStore";
+import { toObservation } from "../data/observation";
 
 beforeEach(() => useAppStore.setState(useAppStore.getInitialState(), true));
 afterEach(() => {
@@ -10,7 +11,7 @@ afterEach(() => {
 describe("snapshot continuity", () => {
   it("starts with a chronological demo history ending at the displayed snapshot", () => {
     const { history, snapshot, samplingMs } = useAppStore.getState();
-    expect(history.at(-1)).toBe(snapshot);
+    expect(history.at(-1)).toEqual(toObservation(snapshot));
     expect(history.slice(1).every((item, index) => item.timestamp - history[index].timestamp === samplingMs)).toBe(true);
   });
 
@@ -18,11 +19,11 @@ describe("snapshot continuity", () => {
     const demo = useAppStore.getState().snapshot;
     const native = { ...demo, timestamp: demo.timestamp + 1_000, cpuPercent: 80 };
     useAppStore.getState().ingestSnapshot(native, "native");
-    expect(useAppStore.getState().history).toEqual([native]);
+    expect(useAppStore.getState().history).toEqual([toObservation(native)]);
     expect(useAppStore.getState().events).toEqual([]);
     const nextDemo = { ...demo, timestamp: native.timestamp + 4_000 };
     useAppStore.getState().ingestSnapshot(nextDemo, "demo");
-    expect(useAppStore.getState().history).toEqual([nextDemo]);
+    expect(useAppStore.getState().history).toEqual([toObservation(nextDemo)]);
     expect(useAppStore.getState().events).toEqual([]);
   });
 
@@ -57,7 +58,7 @@ describe("snapshot continuity", () => {
       useAppStore.getState().ingestSnapshot({ ...snapshot, timestamp: snapshot.timestamp + index * 1_000 }, "demo");
     }
     expect(useAppStore.getState().history).toHaveLength(120);
-    expect(useAppStore.getState().history.at(-1)).toBe(useAppStore.getState().snapshot);
+    expect(useAppStore.getState().history.at(-1)).toEqual(toObservation(useAppStore.getState().snapshot));
   });
 });
 

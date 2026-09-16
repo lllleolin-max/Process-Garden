@@ -36,6 +36,10 @@ export interface SystemSnapshot {
 
 export type EventKind = "birth" | "exit" | "spawn" | "network" | "spike" | "io";
 
+/** Historical charts retain measurements, not repeated executable metadata. */
+export type ProcessObservation = Pick<ProcessSnapshot, "pid" | "startedAt" | "cpuPercent" | "memoryBytes" | "threadCount">;
+export type SystemObservation = Omit<SystemSnapshot, "processes"> & { processes: ProcessObservation[] };
+
 export interface ProcessEvent {
   /** PID + normalized start time; absent on legacy events with unknown lifetime. */
   processKey?: string;
