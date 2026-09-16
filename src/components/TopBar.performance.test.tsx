@@ -9,9 +9,30 @@ import { useFeedHealth } from "../stores/feedHealth";
 const initial = useAppStore.getState();
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
+  vi.restoreAllMocks();
   useAppStore.setState(initial);
   useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: null });
   localStorage.clear();
+});
+
+it("stops the live animation state when silent acquisition expires and restores it on fresh data", async () => {
+  await i18n.changeLanguage("en-US");
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-09-16T12:00:00Z"));
+  vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  useAppStore.setState({ ...initial, locale: "en-US", paused: false, collector: "native", demoMode: false, samplingMs: 1000 });
+  useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: Date.now() });
+  render(<TopBar />);
+  const button = screen.getByRole("button", { name: "Pause" });
+  expect(button).toHaveAttribute("data-observation-state", "live");
+  act(() => vi.advanceTimersByTime(5001));
+  expect(useFeedHealth.getState().failed).toBe(false);
+  expect(button).toHaveTextContent("Stale data");
+  expect(button).toHaveAttribute("data-observation-state", "stale");
+  act(() => useFeedHealth.setState({ lastSuccess: Date.now() }));
+  expect(button).toHaveTextContent("Live");
+  expect(button).toHaveAttribute("data-observation-state", "live");
 });
 
 it("only marks healthy unpaused native acquisition as a live animation state", async () => {

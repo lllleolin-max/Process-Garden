@@ -10,15 +10,12 @@ import { useAppStore } from "../stores/appStore";
 import "../styles/overlays.css";
 import { ProcessExplorer } from "./ProcessExplorer";
 import { FeedHealthNotice } from "./FeedHealthNotice";
-import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
-import { useFeedHealth } from "../stores/feedHealth";
+import { useSnapshotStatusDetails } from "../hooks/useSnapshotStatus";
 
 export function TopBar() {
-  const snapshotStatus = useSnapshotStatus();
+  const { label: snapshotStatus, animationState: observationState } = useSnapshotStatusDetails();
   const { t } = useTranslation();
   const state = useAppStore(useShallow(({ snapshot: _snapshot, history: _history, events: _events, ...controls }) => controls));
-  const samplingFailed = useFeedHealth(state => state.failed);
-  const observationState = state.paused ? "paused" : state.collector === "demo" ? "demo" : samplingFailed ? "stale" : "live";
   const setMode = useDisplayMode();
   const [displayError, setDisplayError] = useState(false);
   const [processListOpen, setProcessListOpen] = useState(false);

@@ -11,7 +11,7 @@ export function snapshotStatusLabel(collector: "demo" | "native", paused: boolea
 }
 
 /** Label the displayed observation, not merely the user's requested source. */
-export function useSnapshotStatus() {
+export function useSnapshotStatusDetails() {
   const collector = useAppStore(state => state.collector);
   const paused = useAppStore(state => state.paused);
   const locale = useAppStore(state => state.locale);
@@ -37,5 +37,12 @@ export function useSnapshotStatus() {
     document.addEventListener("visibilitychange", check);
     return () => { clearTimeout(timer); document.removeEventListener("visibilitychange", check); };
   }, [collector, paused, lastSuccess, samplingMs]);
-  return snapshotStatusLabel(collector, paused, failed || expired, locale);
+  return {
+    label: snapshotStatusLabel(collector, paused, failed || expired, locale),
+    animationState: paused ? "paused" : collector === "demo" ? "demo" : failed || expired ? "stale" : "live",
+  } as const;
+}
+
+export function useSnapshotStatus() {
+  return useSnapshotStatusDetails().label;
 }

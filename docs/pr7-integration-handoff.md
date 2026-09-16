@@ -371,6 +371,15 @@ Sparkline assertions also passed. This is scheduler behavior, not measured nativ
 frame pacing, reduced CPU/power, or visual acceptance. Latest EXE at 49c1d81
 predates this curve scheduling change; no artwork/shared-worktree files changed.
 
+Freshness-motion correction: TopBar now gets both its label and animation state
+from useSnapshotStatusDetails. Previously a silent sampling timeout could change
+the label to Stale data while leaving data-observation-state=live, so the live dot
+kept pulsing. The shared freshness timer now drives both, and a new successful
+sample restores both. Existing paused/demo semantics and toolbar snapshot-render
+isolation are preserved. Merge TopBar + hook together; old useSnapshotStatus string
+callers remain supported. New silent-expiry/recovery regression; full verify 448
+tests, typecheck/build passed. Actual visual/native frame acceptance remains open.
+
 - Shared worktree remains read-only, including its new AGENTS.md, generated
   artwork, lifecycle modules and process-termination UI. Nothing was staged there.
 - Merge network.rs, collector.rs, models.rs, lib.rs, Cargo feature additions,
