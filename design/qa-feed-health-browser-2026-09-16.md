@@ -1,5 +1,25 @@
 # Feed-health visual QA — NOT READY
 
+## Follow-up: CPU occlusion fixed
+
+The notice now occupies the existing branding slot instead of an absolute
+overlay. Original brand children are hidden only while the notice is present.
+Full status text remains available to assistive technology and in the title;
+overflow is bounded to its own slot. The notice is keyboard-focusable.
+
+Rechecked dedicated browser at 1280×720: Chinese Garden and fully translated
+English Eldritch screenshots show the CPU summary unobscured. Measured notice
+bounds y=11.11–51.89, header y=0–64, workspace y=64–720. Thus no workspace resize
+or overlap is introduced. Fixed Eldritch's inherited brand heading font-size
+override; the verified notice heading is 12px. English stalled copy was shortened
+without claiming an extra retry. On recovery, notice count is zero, brand mark
+display is grid, and workspace top remains 64. Warning/error logs were empty.
+
+`npm run verify`: 231 tests / 45 files, typecheck and production build pass.
+Fixture stores and i18next locale were restored and the test tab closed.
+This resolves the HIGH CPU-occlusion finding below. Overall health UX still has
+open wallpaper, Live-label and narrow-width gates; this is not full app sign-off.
+
 Prototype: isolated Vite preview at `http://127.0.0.1:1426/`, commit b1fa717.
 Source: failure-state requirements in qa-feed-health-notice-2026-09-16.md and
 the task-manager goal: stale telemetry must be distinguishable without hiding

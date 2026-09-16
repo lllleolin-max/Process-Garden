@@ -13,7 +13,7 @@ afterEach(cleanup);
 it("does not claim a retry is running while the original native call is pending", () => {
   useFeedHealth.setState({ failed: true, stalled: true });
   render(<FeedHealthNotice />);
-  expect(screen.getByRole("status")).toHaveTextContent("waiting for the pending request");
+  expect(screen.getByRole("status")).toHaveTextContent("waiting on request");
   expect(screen.getByRole("status")).not.toHaveTextContent("retrying automatically");
 });
 

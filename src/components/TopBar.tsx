@@ -41,6 +41,7 @@ export function TopBar() {
   return (
     <><header className="topbar">
       <div className="brand-lockup">
+        <FeedHealthNotice />
         <span className="brand-mark"><Leaf size={20} /></span>
         <div>
           <strong>{t("app.name")}</strong>
@@ -121,7 +122,6 @@ export function TopBar() {
         </button>
       </nav>
       {displayError && <p className="display-mode-error" role="alert">{t("modes.changeFailed")}</p>}
-      <FeedHealthNotice />
     </header><ProcessExplorer open={processListOpen} onClose={() => setProcessListOpen(false)} /></>
   );
 }
