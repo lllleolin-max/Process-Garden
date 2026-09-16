@@ -1,15 +1,17 @@
 import type { ProcessEvent, SystemSnapshot } from "../types/system";
+import { processIdentity } from "../animation/processIdentity";
 
 export function deriveProcessEvents(previous: SystemSnapshot, next: SystemSnapshot): ProcessEvent[] {
-  const before = new Map(previous.processes.map((process) => [process.pid, process]));
-  const after = new Map(next.processes.map((process) => [process.pid, process]));
+  const before = new Map(previous.processes.map((process) => [processIdentity(process), process]));
+  const after = new Set(next.processes.map(processIdentity));
+  const observedPids = new Set([...previous.processes, ...next.processes].map((process) => process.pid));
   const events: ProcessEvent[] = [];
   const makeId = (kind: string, pid: number) => `${kind}-${pid}-${next.timestamp}`;
 
   for (const process of next.processes) {
-    const old = before.get(process.pid);
+    const old = before.get(processIdentity(process));
     if (!old) {
-      const spawned = process.parentPid !== undefined && (before.has(process.parentPid) || after.has(process.parentPid));
+      const spawned = process.parentPid !== undefined && observedPids.has(process.parentPid);
       events.push({
         id: makeId(spawned ? "spawn" : "birth", process.pid),
         timestamp: next.timestamp,
@@ -24,7 +26,7 @@ export function deriveProcessEvents(previous: SystemSnapshot, next: SystemSnapsh
   }
 
   for (const process of previous.processes) {
-    if (!after.has(process.pid)) {
+    if (!after.has(processIdentity(process))) {
       events.push({ id: makeId("exit", process.pid), timestamp: next.timestamp, kind: "exit", processName: process.name, pid: process.pid, messageKey: "events.exited" });
     }
   }
