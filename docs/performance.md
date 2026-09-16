@@ -4,6 +4,7 @@
 - The sampling command uses Tauri's blocking worker pool. Cloned collectors share the same mutex, process history and CPU baseline; process enumeration cannot block the native UI event loop.
 - CPU/memory/process collection defaults to 1 Hz and is configurable from 0.5–5 seconds.
 - History is bounded to 120 snapshots and displayed process nodes are ranked and capped.
+- Native snapshots retain every enumerated process (no 500-record truncation). The separate process explorer renders 50 rows per page without limiting search coverage. Full-table history memory and IPC costs need large-population native profiling; the visual node budget is not a telemetry limit.
 - Canvas is capped at device pixel ratio 2 and redraws independently from React sampling. Its global 30/60/120 Hz target is paced on `requestAnimationFrame`, so it stays aligned with display vertical refresh and naturally falls back to the monitor's physical maximum.
 - `ResizeObserver` resizes only when the canvas container changes.
 - Hidden Windowed panels are removed from interaction in fullscreen/wallpaper modes.

@@ -100,7 +100,8 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
             .unwrap_or(std::cmp::Ordering::Equal)
             .then_with(|| right.memory_bytes.cmp(&left.memory_bytes))
     });
-    processes.truncate(500);
+    // Keep the complete enumerated table. Presentation limits belong to the
+    // ecological view / paginated process explorer, never to native telemetry.
 
     let power = collector.power.lock().map(|mut sampler| sampler.sample()).unwrap_or_default();
 
@@ -150,10 +151,19 @@ mod tests {
 
     #[test]
     fn samples_real_system_data() {
-        let snapshot = sample(&SystemCollector::default()).expect("system sampling succeeds");
+        let collector = SystemCollector::default();
+        let snapshot = sample(&collector).expect("system sampling succeeds");
         assert!(snapshot.memory_total_bytes > 0);
         assert!(snapshot.logical_cpu_count > 0);
         assert!(snapshot.process_count > 0);
         assert!(!snapshot.processes.is_empty());
+        assert_eq!(snapshot.processes.len(), snapshot.process_count);
+        let system = collector.system.lock().expect("collector lock is available");
+        let mut expected = system.processes().keys().map(|pid| pid.as_u32()).collect::<Vec<_>>();
+        let mut returned = snapshot.processes.iter().map(|process| process.pid).collect::<Vec<_>>();
+        expected.sort_unstable();
+        returned.sort_unstable();
+        assert_eq!(returned, expected, "every enumerated PID must reach the frontend");
+        println!("Native coverage: {} enumerated, {} returned", expected.len(), returned.len());
     }
 }

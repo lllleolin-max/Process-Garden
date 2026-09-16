@@ -44,3 +44,17 @@ it("clamps a shrinking result set and shows an honest empty state", () => {
   fireEvent.change(screen.getByRole("textbox", { name: "Filter processes" }), { target: { value: "missing" } });
   expect(screen.getByText("No processes match this filter.")).toBeInTheDocument();
 });
+
+it("accepts more than 500 received records without losing the last process", () => {
+  const seed = useAppStore.getState().snapshot.processes[0];
+  const processes = Array.from({ length: 1500 }, (_, index) => ({ ...seed, pid: index + 1, name: `large-${index + 1}`, executablePath: `C:\\Large\\large-${index + 1}.exe` }));
+  useAppStore.setState({ snapshot: { ...useAppStore.getState().snapshot, processes, processCount: processes.length } });
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  expect(screen.queryByRole("status")).toBeNull();
+  expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(51);
+  expect(screen.getByText("Page 1 of 30")).toBeInTheDocument();
+  fireEvent.change(screen.getByRole("textbox", { name: "Filter processes" }), { target: { value: "large-1500.exe" } });
+  fireEvent.click(screen.getByRole("button", { name: "Inspect large-1500, PID 1500" }));
+  expect(useAppStore.getState().selectedPid).toBe(1500);
+});
