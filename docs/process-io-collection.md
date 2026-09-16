@@ -1,6 +1,14 @@
 # Process I/O collection decision — 2026-09-16
 
-Status: researched, not implemented or accepted as disk telemetry.
+Status: rate-conversion core implemented and tested; native I/O queries and UI
+are not connected or accepted as disk telemetry.
+
+`src-tauri/src/process_io.rs` now provides a bounded, single-target rate tracker.
+Six tests cover measured intervals, failed-observation recovery, idle zero,
+PID/lifetime changes, long gaps, counter rollback, non-increasing timestamps and
+small deltas near u64::MAX. Rust library validation passed 23 tests; four existing
+manual profiling tests remain intentionally ignored in the default run. This
+does not establish native handle/query correctness or real I/O measurement yet.
 
 ## Verified local dependency behavior
 
