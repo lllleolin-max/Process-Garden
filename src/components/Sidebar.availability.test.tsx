@@ -51,3 +51,15 @@ it("immediately clears invalid animated CPU and memory readings", async () => {
     expect(card.querySelector('.metric-value [aria-hidden="true"]')).toHaveTextContent(/^—$/);
   }
 });
+
+it.each([-1, 0.5, NaN, Infinity])("breaks total-count charts at invalid observation %s", value => {
+  const before = { ...initial.snapshot, threadCount: 10, processCount: 10 };
+  const invalid = { ...before, threadCount: value, processCount: value };
+  useAppStore.setState({ locale: "en-US", paused: true, snapshot: invalid, history: [before, invalid] });
+  render(<Sidebar />);
+  for (const name of ["Processes", "Threads"]) {
+    const card = screen.getByRole("region", { name });
+    expect(card.querySelector(".metric-value")).toHaveTextContent(/^—$/);
+    expect(card.querySelector("polyline")).toHaveAttribute("points", "");
+  }
+});

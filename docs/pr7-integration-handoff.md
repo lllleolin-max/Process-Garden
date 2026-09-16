@@ -112,6 +112,13 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+System process/thread totals now share discrete count validation with process
+details. Invalid count observations break history rather than drawing negative
+or fractional peaks; core-count detail also rejects unknown/invalid topology.
+Nine regression cases cover negative/fractional/nonfinite/unsafe counts in the
+history helper and visible cards. Full local verify: 385 tests, type checking
+and build passed. This does not expand native process enumeration permissions.
+
 Sidebar validates CPU/memory before AnimatedMetric: invalid inputs become NaN
 sentinels and settle immediately to unavailable, never interpolate through bogus
 values. Memory utilization requires positive finite capacity and used <= total;

@@ -8,7 +8,7 @@ import { CpuCorePanel } from "./CpuCorePanel";
 import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
 import { threadHistory } from "../data/threadHistory";
 import { useCallback } from "react";
-import { isObservedMetric, isObservedPercent } from "../data/processTable";
+import { isObservedCount, isObservedMetric, isObservedPercent } from "../data/processTable";
 
 export function Sidebar() {
   const snapshotStatus = useSnapshotStatus();
@@ -32,7 +32,7 @@ export function Sidebar() {
         animatedValue={cpuValue}
         formatValue={cpuLabel}
         percentScale
-        detail={`${snapshot.logicalCpuCount} ${t("metrics.cores")}`}
+        detail={`${isObservedCount(snapshot.logicalCpuCount) && snapshot.logicalCpuCount > 0 ? snapshot.logicalCpuCount : "—"} ${t("metrics.cores")}`}
         icon={Cpu}
         values={history.slice(-36).map((item) => item.cpuPercent)}
         color="var(--color-primary)"
@@ -52,15 +52,15 @@ export function Sidebar() {
       <PowerMetric />
       <MetricCard
         label={t("metrics.processes")}
-        value={new Intl.NumberFormat(locale).format(snapshot.processCount)}
+        value={isObservedCount(snapshot.processCount) ? new Intl.NumberFormat(locale).format(snapshot.processCount) : "—"}
         detail={snapshotStatus}
         icon={Activity}
-        values={history.slice(-36).map((item) => item.processCount)}
+        values={history.slice(-36).map((item) => isObservedCount(item.processCount) ? item.processCount : NaN)}
         color="var(--color-secondary)"
       />
       <MetricCard
         label={t("metrics.threads")}
-        value={snapshot.threadCount === undefined ? "—" : new Intl.NumberFormat(locale).format(snapshot.threadCount)}
+        value={isObservedCount(snapshot.threadCount) ? new Intl.NumberFormat(locale).format(snapshot.threadCount) : "—"}
         detail={snapshotStatus}
         icon={Workflow}
         values={threadHistory(history)}
