@@ -1,0 +1,54 @@
+import { act, cleanup, render, screen } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import { ProcessIo } from "./ProcessIo";
+import { useAppStore } from "../stores/appStore";
+
+const read = vi.hoisted(() => vi.fn());
+vi.mock("../hooks/useProcessIo", () => ({ useProcessIo: read }));
+const initial = useAppStore.getState();
+afterEach(() => { cleanup(); useAppStore.setState(initial, true); read.mockReset(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+it("shows binary rate units and truthful bilingual states without stale curves", () => {
+  useAppStore.setState({ locale: "en-US", reducedMotion: true });
+  const rates = { readBytesPerSecond: 1024, writtenBytesPerSecond: 1048576 };
+  read.mockReturnValue({ status: "live", rates, history: [rates] });
+  const view = render(<ProcessIo pid={42} startedAt={1800000000} />);
+  const labels = () => [...view.container.querySelectorAll(".animated-metric-observation")].map(node => node.textContent);
+  expect(labels()).toEqual(["1 KiB/s", "1 MiB/s"]);
+  expect(view.container.querySelectorAll("svg")).toHaveLength(2);
+  expect(screen.getByText(/not physical disk throughput/)).toBeInTheDocument();
+  read.mockReturnValue({ status: "error", rates: null, history: [] });
+  view.rerender(<ProcessIo pid={42} startedAt={1800000000} />);
+  expect(labels()).toEqual(["—", "—"]);
+  expect(view.container.querySelectorAll("svg")).toHaveLength(0);
+  act(() => useAppStore.setState({ locale: "zh-CN" }));
+  expect(screen.getByText("读数不可用，正在重试")).toBeInTheDocument();
+  read.mockReturnValue({ status: "live", rates: { readBytesPerSecond: 0, writtenBytesPerSecond: 0 }, history: [] });
+  view.rerender(<ProcessIo pid={42} startedAt={1800000000} />);
+  expect(labels()).toEqual(["0 B/s", "0 B/s"]);
+});
+
+it("morphs displayed rates while exposing the actual value and clears errors immediately", () => {
+  let id = 0;
+  const frames = new Map<number, FrameRequestCallback>();
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; });
+  vi.stubGlobal("cancelAnimationFrame", (key: number) => frames.delete(key));
+  vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  vi.stubGlobal("matchMedia", () => ({ matches: false }));
+  useAppStore.setState({ locale: "en-US", reducedMotion: false, paused: false, displayMode: "windowed" });
+  read.mockReturnValue({ status: "live", rates: { readBytesPerSecond: 0, writtenBytesPerSecond: 0 }, history: [] });
+  const view = render(<ProcessIo pid={42} startedAt={1800000000} />);
+  read.mockReturnValue({ status: "live", rates: { readBytesPerSecond: 1024, writtenBytesPerSecond: 0 }, history: [] });
+  view.rerender(<ProcessIo pid={42} startedAt={1800000000} />);
+  const visible = view.container.querySelector('strong [aria-hidden="true"]')!;
+  expect(visible).toHaveTextContent("0 B/s");
+  expect(view.container.querySelector(".animated-metric-observation")).toHaveTextContent("1 KiB/s");
+  const tick = (now: number) => act(() => { const callbacks = [...frames.values()]; frames.clear(); callbacks.forEach(callback => callback(now)); });
+  tick(1000); tick(1160);
+  expect(visible.textContent).not.toBe("0 B/s");
+  expect(visible.textContent).not.toBe("1 KiB/s");
+  read.mockReturnValue({ status: "error", rates: null, history: [] });
+  view.rerender(<ProcessIo pid={42} startedAt={1800000000} />);
+  expect(visible).toHaveTextContent("—");
+  expect(frames.size).toBe(0);
+});

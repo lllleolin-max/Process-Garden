@@ -1,6 +1,8 @@
 import { useProcessIo } from "../hooks/useProcessIo";
 import { useAppStore } from "../stores/appStore";
 import { Sparkline } from "./Sparkline";
+import { AnimatedMetric } from "./AnimatedMetric";
+import { useCallback, useMemo } from "react";
 
 export function ProcessIo({ pid, startedAt }: { pid: number; startedAt: number }) {
   const io = useProcessIo(pid, startedAt);
@@ -13,15 +15,16 @@ export function ProcessIo({ pid, startedAt }: { pid: number; startedAt: number }
     live: zh ? "实时进程 I/O · 非物理磁盘吞吐量" : "Live process I/O · not physical disk throughput",
     error: zh ? "读数不可用，正在重试" : "Reading unavailable; retrying",
   }[io.status];
-  const format = (value: number) => {
+  const formatter = useMemo(() => new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }), [locale]);
+  const format = useCallback((value: number) => {
     const unit = value >= 1048576 ? 1048576 : value >= 1024 ? 1024 : 1;
-    return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value / unit)} ${unit === 1048576 ? "MiB" : unit === 1024 ? "KiB" : "B"}/s`;
-  };
+    return `${formatter.format(value / unit)} ${unit === 1048576 ? "MiB" : unit === 1024 ? "KiB" : "B"}/s`;
+  }, [formatter]);
   return <section className="resource-chart" aria-label={zh ? "进程 I/O" : "Process I/O"}>
     <div className="resource-chart-title"><span>{zh ? "进程 I/O" : "Process I/O"}</span></div>
     <p className="metric-detail">{status}</p>
     {(["readBytesPerSecond", "writtenBytesPerSecond"] as const).map((field, index) => <div key={field}>
-      <div className="resource-chart-title"><span>{index === 0 ? zh ? "读取" : "Read" : zh ? "写入" : "Write"}</span><strong>{io.rates ? format(io.rates[field]) : "—"}</strong></div>
+      <div className="resource-chart-title"><span>{index === 0 ? zh ? "读取" : "Read" : zh ? "写入" : "Write"}</span><strong><AnimatedMetric value={io.rates?.[field] ?? NaN} format={format} /></strong></div>
       {io.history.length > 0 && <Sparkline values={io.history.map(sample => sample[field])} height={32} color={index === 0 ? "var(--color-primary)" : "var(--color-tertiary)"} />}
     </div>)}
   </section>;
