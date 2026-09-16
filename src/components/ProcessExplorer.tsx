@@ -41,6 +41,9 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
   const turnPage = (next: number) => { setPage(next); if (scroll.current) scroll.current.scrollTop = 0; };
   const inspectProcess = (rendered: ProcessSnapshot) => {
     const current = useAppStore.getState();
+    // PID/start-time identities are only meaningful within one data source.
+    // A demo row must never target a native process after a source handover.
+    if (current.collector !== state.collector) return;
     const live = current.snapshot.processes.find(process => process.pid === rendered.pid);
     if (!live || processIdentity(live) !== processIdentity(rendered)) return;
     current.setSelectedPid(live.pid);
