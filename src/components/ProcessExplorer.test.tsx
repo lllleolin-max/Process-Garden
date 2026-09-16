@@ -12,6 +12,34 @@ beforeEach(async () => {
 });
 afterEach(() => { cleanup(); useAppStore.setState(initial); localStorage.clear(); });
 
+it("does not transfer a pointer press to a replacement process after sampling", () => {
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  const original = screen.getByRole("button", { name: "Inspect app-120, PID 120" });
+  fireEvent.pointerDown(original);
+  const snapshot = useAppStore.getState().snapshot;
+  act(() => useAppStore.setState({ snapshot: { ...snapshot, processes: snapshot.processes.filter(p => p.pid !== 120) } }));
+  const replacement = screen.getByRole("button", { name: "Inspect app-119, PID 119" });
+  fireEvent.click(replacement, { detail: 1 });
+  expect(useAppStore.getState().selectedPid).toBeNull();
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
+  fireEvent.pointerDown(replacement);
+  fireEvent.click(replacement, { detail: 1 });
+  expect(useAppStore.getState().selectedPid).toBe(119);
+});
+
+it("cancels pointer activation while preserving keyboard access", () => {
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  const button = screen.getByRole("button", { name: "Inspect app-120, PID 120" });
+  fireEvent.pointerDown(button);
+  fireEvent.pointerCancel(button);
+  fireEvent.click(button, { detail: 1 });
+  expect(useAppStore.getState().selectedPid).toBeNull();
+  fireEvent.click(button, { detail: 0 });
+  expect(useAppStore.getState().selectedPid).toBe(120);
+});
+
 it.each(["exit", "rank", "reuse"])("returns focus to the list, never another process, after focused row %s", reason => {
   render(<TopBar />);
   fireEvent.click(screen.getByRole("button", { name: "Processes" }));

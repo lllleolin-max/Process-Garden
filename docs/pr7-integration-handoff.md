@@ -2,6 +2,16 @@
 
 ## Process list freshness follow-up — 2026-09-17
 
+Pointer activation follow-up: remember the pressed process button and reject a
+pointer click delivered to a different button after sampling/removal/replacement.
+Pointer cancellation clears the target; detail-zero keyboard/assistive activation
+remains available and still passes the existing current-lifetime check. This is
+navigation protection, not authorization for destructive process operations.
+Regression tests cover replacement, cancellation, deliberate retry and keyboard
+activation. Full verification passes 510 tests, typecheck and production build;
+real mouse/touch/WebView acceptance is still open. Only ProcessExplorer and its
+test changed; original worktree has no pending edits to these files at check.
+
 Pagination follow-up: previous/next controls remain focusable when sample counts
 shrink, expose aria-disabled and guard activation instead of natively disabling
 the focused button. Both directions have collapse/recovery regression coverage;

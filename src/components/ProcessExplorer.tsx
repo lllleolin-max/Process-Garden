@@ -28,6 +28,7 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
   const [heldOrder, setHeldOrder] = useState<{ collector: string; ids: string[] } | null>(null);
   const scroll = useRef<HTMLDivElement>(null);
   const focusedRow = useRef<HTMLElement | null>(null);
+  const pressedRow = useRef<Element | null>(null);
   const formatCpu = useCallback((value: number) => formatPercent(value, state.locale, 1), [state.locale]);
   const formatMemory = useCallback((value: number) => formatBytes(value, state.locale), [state.locale]);
   const sortedRows = useMemo(() => state.snapshot ? queryProcesses(state.snapshot.processes, query, sort, ascending, state.locale) : [], [state.snapshot, query, sort, ascending, state.locale]);
@@ -60,7 +61,7 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
   }, [pageCount, state.snapshot]);
   useLayoutEffect(() => {
     const previous = focusedRow.current;
-    if (!open) { focusedRow.current = null; return; }
+    if (!open) { focusedRow.current = null; pressedRow.current = null; return; }
     if (previous && !previous.isConnected) {
       focusedRow.current = null;
       // Never transfer an activation key to a different process after a live
@@ -105,6 +106,20 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
       <p className="process-list-summary">{coverage}</p>
       {missing > 0 && <p className="process-list-warning" role="status">{partial}</p>}
       <div className="process-list-scroll" ref={scroll} tabIndex={0} aria-label={t("processList.title")}
+        onPointerDownCapture={event => {
+          pressedRow.current = (event.target as Element).closest(".process-list-select");
+        }}
+        onPointerCancelCapture={() => { pressedRow.current = null; }}
+        onClickCapture={event => {
+          const target = (event.target as Element).closest(".process-list-select");
+          // A sampling reorder must not transfer a pointer activation to a
+          // different lifetime. Keyboard/assistive activation has detail zero.
+          if (target && event.detail > 0 && target !== pressedRow.current) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          pressedRow.current = null;
+        }}
         onFocusCapture={event => {
           const target = event.target as HTMLElement;
           focusedRow.current = target.closest("tbody") ? target : null;
