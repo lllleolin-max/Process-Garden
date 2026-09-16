@@ -1,5 +1,6 @@
 import { Activity, Binary, BrainCircuit, Check, CircleDot, Clock3, Copy, Cpu, FolderCog, Network, Workflow } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
 import { formatBytes, formatDateTime, formatPercent } from "../i18n/formatters";
 import { agentEmbryoStage, isAgentProcess } from "../ecology/organisms";
@@ -11,7 +12,8 @@ import { processIdentity } from "../animation/processIdentity";
 
 export function Inspector() {
   const { t } = useTranslation();
-  const state = useAppStore();
+  const state = useAppStore(useShallow(({ snapshot, history, selectedPid, locale, setSelectedPid }) =>
+    ({ snapshot, history, selectedPid, locale, setSelectedPid })));
   const [tab, setTab] = useState<"overview" | "threads" | "connections">("overview");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "copyFailed">("idle");
   const copyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
