@@ -3,22 +3,22 @@
 Verdict: BUILD VERIFIED, NOT RELEASE READY. This is the isolated PR #7 branch,
 not the other task's uncommitted theme/termination integration worktree.
 
-- Code source: `b82a95a` on `perf/scene-asset-preparation`.
-- Frontend: 504 tests, typecheck and production build passed.
-- Most recent full native suite: 62 passed / 14 ignored; subsequent service wire
-  contract test separately passed. Explicit DXGI, service and GPU worker
+- Code source: `6f81a53` on `perf/scene-asset-preparation`.
+- Frontend: 513 tests, typecheck and production build passed.
+- Most recent full native suite: 63 passed / 14 ignored, including service wire
+  contract test; manifest integration tests 2 passed. Explicit DXGI, service and GPU worker
   probes passed separately. Ignored tests are not automatically counted as passes.
 - Command: `npm exec -- tauri build --no-bundle --ci -- --locked --offline`.
 - Isolated target: `C:/Users/34178/AppData/Local/ProcessGarden/cargo-target-coverage`.
-- Release build completed successfully in 1m 22s; build log:
-  `%TEMP%/process-garden-services-native-build.log`.
+- Release build completed successfully in 1m 04s; build log:
+  `%TEMP%/process-garden-motion-boundary-build.log`.
 
 ## Actual executable
 
 Path: `C:/Users/34178/AppData/Local/ProcessGarden/cargo-target-coverage/release/process-garden.exe`
 
-- Bytes: 79,788,093.
-- SHA256: `CB9B0A25792E440C10A51277E54435CDBA3FB6EE831AE612D390B1D6F945C81A`.
+- Bytes: 79,788,224.
+- SHA256: `DB7288A8EFAD017B176380FC2CB2024571256FCCEACAB635B71CC8BA2B52AF96`.
 - Authenticode: NotSigned.
 - Actual PE resource inspection via `scripts/check-windows-manifest.ps1` passed:
   exactly one manifest, asInvoker, longPathAware, Common Controls v6.
@@ -28,7 +28,10 @@ DXGI device labels, demand-driven panel and explicitly stale retained layouts.
 It also includes network/process-I/O retention, immediate OS reduced-motion
 response, safe process-list focus recovery, demo count disclosures and stale CPU
 animation cancellation, read-only service enumeration/worker/IPC and bilingual
-service panel with filtering/pagination. It supersedes the prior 71cfeb0 EXE.
+service panel with filtering/pagination. Latest additions include stale summary
+and process-list animation cancellation, retained pagination focus, pointer
+target guards and curve source-boundary protection. It supersedes the prior
+b82a95a EXE at the same isolated output path.
 It does not update or validate the old NSIS installer. No installation, signing,
 release publication or executable launch was performed in this check.
 
