@@ -4,6 +4,7 @@ import { useAppStore } from "../stores/appStore";
 import { AnimatedMetric } from "./AnimatedMetric";
 
 const initial = useAppStore.getState();
+const visibleText = (container: HTMLElement) => container.querySelector('[aria-hidden="true"]')?.textContent;
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial, true); });
 it.each([30, 60, 120] as const)("continues from displayed values and settles at %i Hz", fps => {
   let id = 0;
@@ -18,18 +19,22 @@ it.each([30, 60, 120] as const)("continues from displayed values and settles at 
   const view = render(<AnimatedMetric value={0} format={format} />);
   view.rerender(<AnimatedMetric value={100} format={format} />);
   tick(1000); tick(1160);
-  const displayed = view.container.textContent;
+  const displayed = visibleText(view.container);
   expect(Number(displayed)).toBeGreaterThan(0);
   expect(Number(displayed)).toBeLessThan(100);
-  expect(view.container.firstChild).toHaveAttribute("aria-label", "100.0");
+  const observation = view.container.querySelector(".animated-metric-observation")!;
+  expect(observation).toHaveTextContent("100.0");
+  expect(observation.closest('[aria-hidden="true"]')).toBeNull();
+  expect(view.container.querySelector('[aria-live]')).toBeNull();
   view.rerender(<AnimatedMetric value={20} format={format} />);
-  expect(view.container.textContent).toBe(displayed);
+  expect(visibleText(view.container)).toBe(displayed);
+  expect(observation).toHaveTextContent("20.0");
   tick(1170); tick(1500);
-  expect(view.container.textContent).toBe("20.0");
+  expect(visibleText(view.container)).toBe("20.0");
   expect(frames.size).toBe(0);
   view.rerender(<AnimatedMetric value={40} format={format} />);
   act(() => useAppStore.setState({ paused: true }));
-  expect(view.container.textContent).toBe("40.0");
+  expect(visibleText(view.container)).toBe("40.0");
   expect(frames.size).toBe(0);
 });
 
@@ -54,14 +59,14 @@ it.each([30, 60, 120] as const)("bounds DOM writes at %i Hz and releases hidden 
   view.rerender(<AnimatedMetric value={50} format={format} />);
   hidden.mockReturnValue(true);
   act(() => document.dispatchEvent(new Event("visibilitychange")));
-  expect(view.container.textContent).toBe("50.0");
+  expect(visibleText(view.container)).toBe("50.0");
   expect(frames.size).toBe(0);
   hidden.mockReturnValue(false);
   view.rerender(<AnimatedMetric value={NaN} format={format} />);
-  expect(view.container.textContent).toBe("—");
+  expect(visibleText(view.container)).toBe("—");
   expect(frames.size).toBe(0);
   view.rerender(<AnimatedMetric value={0} format={format} />);
-  expect(view.container.textContent).toBe("0.0");
+  expect(visibleText(view.container)).toBe("0.0");
   expect(frames.size).toBe(0);
   view.rerender(<AnimatedMetric value={10} format={format} />);
   expect(frames.size).toBe(1);
@@ -82,7 +87,7 @@ it("does not interpolate demo observations into native measurements", () => {
   view.rerender(<AnimatedMetric value={30} format={format} />);
   expect(frames.size).toBe(1);
   act(() => useAppStore.setState({ collector: "native" }));
-  expect(view.container.textContent).toBe("30.0");
+  expect(visibleText(view.container)).toBe("30.0");
   expect(frames.size).toBe(0);
   view.rerender(<AnimatedMetric value={40} format={format} />);
   expect(frames.size).toBe(1);
@@ -104,6 +109,6 @@ it("does not write repeated rounded labels while retaining the final observation
     act(() => { const pending = [...frames.values()]; frames.clear(); pending.forEach(callback => callback(1000 + index * 1000 / 120)); });
   }
   expect(writes).not.toHaveBeenCalled();
-  expect(view.container.textContent).toBe("20%");
+  expect(visibleText(view.container)).toBe("20%");
   expect(frames.size).toBe(0);
 });

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import { decideAnimationFrame } from "../animation/frameRate";
 import { useAppStore } from "../stores/appStore";
+import "./AnimatedMetric.css";
 
 export function AnimatedMetric({ value, format }: { value: number; format: (value: number) => string }) {
   const node = useRef<HTMLSpanElement>(null);
@@ -41,5 +42,5 @@ export function AnimatedMetric({ value, format }: { value: number; format: (valu
   }, [value, format, disabled, collector]);
   const label = Number.isFinite(value) ? format(value) : "—";
   // Assistive technology receives the real observation, not intermediate frames.
-  return <span aria-label={label}><span aria-hidden="true" ref={node}>{label}</span></span>;
+  return <span><span className="animated-metric-observation">{label}</span><span aria-hidden="true" ref={node}>{label}</span></span>;
 }
