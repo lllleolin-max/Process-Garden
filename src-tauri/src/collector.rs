@@ -240,4 +240,36 @@ mod tests {
         assert_eq!(returned, expected, "every enumerated PID must reach the frontend");
         println!("Native coverage: {} enumerated, {} returned", expected.len(), returned.len());
     }
+
+    #[test]
+    #[ignore = "manual host-dependent sampling profile; not a CI performance threshold"]
+    fn profile_native_sampling_cost() {
+        use std::time::{Duration, Instant};
+        let started = Instant::now();
+        let collector = SystemCollector::default();
+        let initialization_ms = started.elapsed().as_secs_f64() * 1000.0;
+        sample(&collector).expect("warm-up succeeds");
+        let mut collect_ms = Vec::new();
+        let mut serialize_ms = Vec::new();
+        let mut sizes = Vec::new();
+        let mut process_counts = Vec::new();
+        for _ in 0..24 {
+            std::thread::sleep(Duration::from_millis(250));
+            let started = Instant::now();
+            let snapshot = sample(&collector).expect("profile sample succeeds");
+            collect_ms.push(started.elapsed().as_secs_f64() * 1000.0);
+            assert_eq!(snapshot.processes.len(), snapshot.process_count);
+            process_counts.push(snapshot.process_count);
+            let started = Instant::now();
+            let payload = serde_json::to_vec(&snapshot).expect("snapshot serializes");
+            serialize_ms.push(started.elapsed().as_secs_f64() * 1000.0);
+            sizes.push(payload.len());
+        }
+        collect_ms.sort_by(f64::total_cmp);
+        serialize_ms.sort_by(f64::total_cmp);
+        println!("profile=debug unless --release; samples=24; idle_between_ms=250; initialization_ms={initialization_ms:.3}");
+        println!("collect_ms median={:.3} p95={:.3} max={:.3}", (collect_ms[11] + collect_ms[12]) / 2.0, collect_ms[22], collect_ms[23]);
+        println!("serialize_ms median={:.3} p95={:.3} max={:.3}", (serialize_ms[11] + serialize_ms[12]) / 2.0, serialize_ms[22], serialize_ms[23]);
+        println!("processes min={} max={}; json_bytes min={} max={}", process_counts.iter().min().unwrap(), process_counts.iter().max().unwrap(), sizes.iter().min().unwrap(), sizes.iter().max().unwrap());
+    }
 }
