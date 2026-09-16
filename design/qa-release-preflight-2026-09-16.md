@@ -1,0 +1,33 @@
+# Windows release preflight — 2026-09-16
+
+Source: isolated asset-motion worktree, code commit 66fd519.
+Verdict: NOT READY for release or Task Manager replacement acceptance.
+
+## Verified
+
+- `npm run verify`: 326 tests passed; TypeScript and Vite production build passed.
+- Tauri CLI release build with `--no-bundle --ci`, locked/offline Cargo and the
+  isolated `cargo-target-coverage` directory completed successfully in 2m 15s.
+- Tauri's before-build step targets Chrome 105 through TAURI_ENV_PLATFORM, unlike
+  the ordinary Vite preflight's Safari 13 target. Different hashes/sizes are
+  therefore expected. Verified the resulting worktree JS contains the I/O command,
+  logical CPU panel and absolute CPU scale; compiler logs identify this worktree.
+- Local executable: `C:/Users/34178/AppData/Local/ProcessGarden/cargo-target-coverage/release/process-garden.exe`
+- Size: 79,337,804 bytes.
+- SHA256: `A2EE5C824BFEBBC5CB998D254E1827B27EE471EB4C8CD02F07DBCA49A11D543D`
+- Authenticode inspection reports NotSigned. No signing, installation, execution,
+  GitHub release publication or shared-worktree modifications were performed.
+
+## Required follow-up
+
+1. Investigate the GNU linker warning: `.rsrc merge failure: multiple non-default
+   manifests`. A successful exit code is not proof of a correct embedded manifest.
+2. Validate actual packaged command invocation, selected-process I/O, permissions,
+   lifetime rejection and failure recovery. Unit tests do not validate IPC/desktop UI.
+3. Both-theme screenshots, native 30/60/120 pacing, wallpaper behavior and sustained
+   overhead checks remain open. Previous browser-service failures are not visual passes.
+4. Produce and validate installers separately; `--no-bundle` only built an executable.
+5. Signing and the full Task Manager capability matrix remain outstanding.
+
+Transient build logs: `%TEMP%/process-garden-release-preflight.log` and
+`%TEMP%/process-garden-release-build.log`. The executable is not committed to Git.

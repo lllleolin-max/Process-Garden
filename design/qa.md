@@ -1,5 +1,10 @@
 # Current QA index
 
+- Windows executable preflight: [2026-09-16 release build](qa-release-preflight-2026-09-16.md).
+  326 frontend tests and isolated Tauri release executable build passed. NOT READY:
+  linker manifest warning, signing, installers, native runtime/visual validation
+  and complete capability acceptance remain open.
+
 - Logical CPU panel (2026-09-16): compared code/tests with the current logical-CPU
   brief in context.md. Five component tests pass: bounded pages, collapsed chart
   unmount, missing/zero distinction, bilingual stale status, source/topology
