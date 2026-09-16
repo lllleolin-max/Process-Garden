@@ -12,6 +12,71 @@ beforeEach(async () => {
 });
 afterEach(() => { cleanup(); useAppStore.setState(initial); localStorage.clear(); });
 
+it("holds row position and keyboard focus while readings change, then releases to live sorting", () => {
+  const snapshot = useAppStore.getState().snapshot;
+  const processes = snapshot.processes.slice(0, 3);
+  useAppStore.setState({ snapshot: { ...snapshot, processes, processCount: 3 } });
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  const order = () => within(screen.getByRole("table")).getAllByRole("button", { name: /^Inspect/ });
+  const before = order();
+  fireEvent.click(screen.getByRole("button", { name: "Keep row order" }));
+  act(() => before[0].focus());
+  act(() => useAppStore.setState({ snapshot: { ...snapshot, processes: processes.map(p => ({ ...p, cpuPercent: p.pid === 1 ? 99 : 0 })), processCount: 3 } }));
+  expect(order()).toEqual(before);
+  expect(before[0]).toHaveFocus();
+  expect(within(before[2].closest("tr")!).getAllByRole("cell")[2]).toHaveTextContent("99%");
+  expect(screen.getByRole("columnheader", { name: "CPU" })).toHaveAttribute("aria-sort", "none");
+  expect(useAppStore.getState().paused).toBe(false);
+  fireEvent.click(screen.getByRole("button", { name: "Keep row order" }));
+  expect(order()[0]).toBe(before[2]);
+  expect(screen.getByRole("columnheader", { name: /CPU/ })).toHaveAttribute("aria-sort", "descending");
+});
+
+it("appends new lifetimes and forgets removed ones without resetting retained rows", () => {
+  const snapshot = useAppStore.getState().snapshot;
+  const [a, b, c] = snapshot.processes.slice(0, 3);
+  const update = (processes: typeof snapshot.processes) => act(() => useAppStore.setState({ snapshot: { ...snapshot, processes, processCount: processes.length } }));
+  update([a, b]);
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  fireEvent.click(screen.getByRole("button", { name: "Keep row order" }));
+  const names = () => within(screen.getByRole("table")).getAllByRole("button", { name: /^Inspect/ }).map(node => node.getAttribute("aria-label"));
+  update([a, b, { ...c, cpuPercent: 99 }]);
+  expect(names()).toEqual(["Inspect app-2, PID 2", "Inspect app-1, PID 1", "Inspect app-3, PID 3"]);
+  update([a, { ...b, startedAt: b.startedAt + 1 }, c]);
+  expect(names()).toEqual(["Inspect app-1, PID 1", "Inspect app-3, PID 3", "Inspect app-2, PID 2"]);
+  update([]);
+  update([a, b, c]);
+  expect(names()).toEqual(["Inspect app-3, PID 3", "Inspect app-2, PID 2", "Inspect app-1, PID 1"]);
+});
+
+it.each(["filter", "sort", "source"])("releases held row order after %s changes", change => {
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  fireEvent.click(screen.getByRole("button", { name: "Keep row order" }));
+  expect(screen.getByRole("button", { name: "Keep row order" })).toHaveAttribute("aria-pressed", "true");
+  if (change === "filter") fireEvent.change(screen.getByRole("textbox", { name: "Filter processes" }), { target: { value: "app-1" } });
+  else if (change === "sort") fireEvent.click(screen.getByRole("button", { name: "PID" }));
+  else act(() => useAppStore.setState({ collector: useAppStore.getState().collector === "demo" ? "native" : "demo" }));
+  expect(screen.getByRole("button", { name: "Keep row order" })).toHaveAttribute("aria-pressed", "false");
+});
+
+it("keeps the current page stable across metric rank changes and still bounds mounted rows", () => {
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  fireEvent.click(screen.getByRole("button", { name: "Keep row order" }));
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  const before = within(screen.getByRole("table")).getAllByRole("row");
+  const snapshot = useAppStore.getState().snapshot;
+  act(() => useAppStore.setState({ snapshot: { ...snapshot, processes: snapshot.processes.map(p => ({ ...p, cpuPercent: 100 - p.cpuPercent })) } }));
+  expect(screen.getByText("Page 2 of 3")).toBeInTheDocument();
+  expect(within(screen.getByRole("table")).getAllByRole("row")).toEqual(before);
+  expect(before).toHaveLength(51);
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.getByRole("button", { name: "Inspect app-1, PID 1" })).toBeInTheDocument();
+});
+
 it("marks out-of-domain percentages and fractional counts unavailable in the table", () => {
   const snapshot = useAppStore.getState().snapshot;
   const process = { ...snapshot.processes[0], cpuPercent: 101, threadCount: 0.5 };

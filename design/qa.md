@@ -1,5 +1,19 @@
 # Current QA index
 
+- ProcessExplorer row-order hold (2026-09-16): source is the user's requirement
+  to avoid sampling-driven jumps while developing a usable Task Manager replacement.
+  Added an explicit bilingual, keyboard-accessible pressed-state control. Holding
+  order keeps readings live and existing row nodes/focus stable, appends new process
+  lifetimes, forgets departed lifetimes and releases on filter/sort/source changes.
+  Header aria-sort no longer claims a live metric sort while order is held. Toolbar
+  wrapping and theme-token pressed/focus styles are present; no new artwork.
+  PASS (automated): six new behavior cases, including PID reuse and bounded
+  50-row pagination; full verify 406 tests plus type checking and production build.
+  NOT READY (visual): browser inventory failed with an HTML/JSON service response;
+  actual narrow-window wrapping, both-theme contrast and manual assistive-technology
+  navigation remain unverified. Departures still remove table rows immediately;
+  this feature is not evidence of lifecycle animation or hardware-FPS acceptance.
+
 - NetworkPanel first integration: collapsed sidebar section, all adapters reachable
   via native select, only two active charts, bilingual B/s/KiB/s/MiB/s/GiB/s rates,
   explicit unavailable/empty/baseline/down states and per-interface scope warning.

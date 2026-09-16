@@ -2,12 +2,14 @@
 .process-explorer header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .process-explorer h2 { margin: 4px 0 18px; font: 600 23px var(--font-display), var(--font-body); }
 .process-explorer small, .process-list-summary { color: var(--color-text-muted); font-size: 12px; }
-.process-list-tools { display: flex; align-items: end; gap: 16px; }
+.process-list-tools { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; }
 .process-list-tools label { display: grid; flex: 1; gap: 6px; font-size: 12px; }
 .process-list-tools input { width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-background); color: var(--color-text); }
 .process-list-control { min-height: 36px; padding: 7px 14px; background: transparent; border: 1px solid var(--color-border); border-radius: 7px; cursor: pointer; transition: background 160ms ease; }
 .process-list-control:hover:not(:disabled) { background: color-mix(in srgb, var(--color-primary) 12%, transparent); }
 .process-list-control:disabled { opacity: .4; cursor: default; }
+.process-list-control[aria-pressed="true"] { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, transparent); }
+.process-list-control:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .process-list-warning { color: var(--color-warning); font-size: 12px; margin: 0 0 12px; }
 .process-list-scroll { min-height: 140px; overflow: auto; border-block: 1px solid var(--color-border); }
 .process-list-scroll:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }

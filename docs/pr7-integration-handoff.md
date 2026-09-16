@@ -284,6 +284,14 @@ handoff. No such action was performed during this audit.
 
 ### Latest network and motion-formatting handoff — 2026-09-16
 
+ProcessExplorer follow-up: explicit Keep row order control separates continuous
+measurement updates from automatic rank changes while a user inspects rows.
+Preserve lifetime keys, collector-bound order reset, pruning/append behavior,
+accurate aria-sort and 50-row pagination. Changing filter/sort releases the hold;
+this is not the global Pause action. Files: ProcessExplorer.tsx/.css/.test.tsx.
+Six new tests; full local verify now 406 tests plus typecheck and build. Actual
+visual QA remains unavailable; see design/qa.md. No shared-worktree edits.
+
 - Shared worktree remains read-only, including its new AGENTS.md, generated
   artwork, lifecycle modules and process-termination UI. Nothing was staged there.
 - Merge network.rs, collector.rs, models.rs, lib.rs, Cargo feature additions,
