@@ -281,3 +281,22 @@ terminal state before pushing queued test-only commits when practical. Do not
 call an in-progress or cancelled run successful. Do not auto-merge this draft,
 publish a release, or edit another task's uncommitted changes as part of this
 handoff. No such action was performed during this audit.
+
+### Latest network and motion-formatting handoff — 2026-09-16
+
+- Shared worktree remains read-only, including its new AGENTS.md, generated
+  artwork, lifecycle modules and process-termination UI. Nothing was staged there.
+- Merge network.rs, collector.rs, models.rs, lib.rs, Cargo feature additions,
+  system observation types, NetworkPanel/CSS and networkHistory together. Preserve
+  the integration task's command registrations and Cargo features additively.
+- Adapter aliases are not retained in history. LUID strings preserve identity;
+  renaming preserves rates, interface-type replacement requires a fresh baseline.
+  Query failure is unavailable, not zero; recovery does not bridge chart gaps.
+- Number formatter reuse is bounded to 16 entries; animated metric formatting
+  no longer creates new Intl.NumberFormat instances on every frame.
+- Local verification: 400 frontend tests, type checking and production build;
+  Rust library: 33 passed, 6 ignored. Ignored tests are not claimed as passed.
+- GitHub run 35106293698 passed for the prior pushed revision. The following
+  push needs its own CI result. PR #7 stays draft; no merge or release is authorized.
+- These are branch-level checks. Combined-tree compatibility, actual native UI,
+  hardware frame pacing and controlled network-traffic validation remain pending.

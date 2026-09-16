@@ -135,6 +135,28 @@ mod rate_tests {
             .unwrap();
         assert_eq!(idle[0].sent_bytes_per_second, Some(0.0));
     }
+
+    #[test]
+    fn rename_preserves_rates_but_interface_type_replacement_resets_them() {
+        let now = Instant::now();
+        let mut tracker = NetworkRateTracker::default();
+        tracker.observe(Some(sample(now, 10)));
+        let mut renamed = sample(now + Duration::from_secs(1), 20);
+        renamed.interfaces[0].name = "renamed adapter".into();
+        let rows = tracker.observe(Some(renamed)).unwrap();
+        assert_eq!(rows[0].name, "renamed adapter");
+        assert_eq!(rows[0].received_bytes_per_second, Some(10.0));
+        let mut replaced = sample(now + Duration::from_secs(2), 30);
+        replaced.interfaces[0].interface_type = 24;
+        let rows = tracker.observe(Some(replaced)).unwrap();
+        assert_eq!(rows[0].interface_type, 24);
+        assert!(rows[0].received_bytes_per_second.is_none());
+        assert!(rows[0].sent_bytes_per_second.is_none());
+        let serialized = serde_json::to_value(&rows[0]).unwrap();
+        assert_eq!(serialized["id"], u64::MAX.to_string());
+        assert!(serialized["receivedBytesPerSecond"].is_null());
+        assert!(serialized["sentBytesPerSecond"].is_null());
+    }
     #[test]
     fn failure_and_counter_reset_require_new_baselines() {
         let now = Instant::now();
