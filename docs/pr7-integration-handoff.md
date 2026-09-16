@@ -112,6 +112,13 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+Relationship filtering now shares isObservedChild with observedParent. The child
+list no longer allocates a singleton array and calls find for every process;
+the full-table scan remains linear, followed by sorting matched children. Tests
+check bidirectional rule consistency and 5000-record filtering without truncation
+or source mutation. Local full verify: 361 tests, type checking and build passed.
+This eliminates intermediate allocations; real runtime overhead is not measured.
+
 Child-list continuity follow-up: source/parent identity changes reset pagination;
 row keys include collector identity. Ordinary telemetry keeps the selected page,
 the same button DOM node and keyboard focus, as verified by a component regression.

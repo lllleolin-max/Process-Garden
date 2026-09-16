@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { processIdentity } from "../animation/processIdentity";
-import { observedParent } from "../data/processRelations";
+import { isObservedChild } from "../data/processRelations";
 import { useAppStore } from "../stores/appStore";
 import type { ProcessSnapshot } from "../types/system";
 import { ProcessIcon } from "./ProcessIcon";
@@ -15,7 +15,7 @@ export function ChildProcesses({ process, processes, locale }: {
   const collector = useAppStore(state => state.collector);
   const zh = locale === "zh-CN";
   const children = useMemo(() => processes.filter(child => child.status !== "dead"
-    && observedParent(child, [process]) !== null).sort((a, b) => a.pid - b.pid), [process, processes]);
+    && isObservedChild(process, child)).sort((a, b) => a.pid - b.pid), [process, processes]);
   const [page, setPage] = useState(0);
   const parentIdentity = processIdentity(process);
   useEffect(() => { setPage(0); }, [collector, parentIdentity]);
@@ -30,7 +30,7 @@ export function ChildProcesses({ process, processes, locale }: {
     if (!parent || !target || target.status === "dead"
       || processIdentity(parent) !== processIdentity(process)
       || processIdentity(target) !== processIdentity(child)
-      || !observedParent(target, [parent])) return;
+      || !isObservedChild(parent, target)) return;
     event.currentTarget.closest<HTMLElement>(".inspector")?.focus({ preventScroll: true });
     live.setSelectedPid(target.pid);
   };
