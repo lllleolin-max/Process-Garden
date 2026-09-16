@@ -93,15 +93,25 @@ impl Default for SystemCollector {
 }
 
 pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
+    sample_observed(collector, |_| {})
+}
+
+// A monomorphized no-op observer keeps production free of clocks/logging;
+// manual profiling exercises this same pipeline instead of a duplicate collector.
+fn sample_observed(collector: &SystemCollector, mut observe: impl FnMut(&'static str)) -> Result<SystemSnapshot, String> {
     let mut system = collector
         .system
         .lock()
         .map_err(|_| "system collector lock poisoned".to_string())?;
+    observe("lock");
 
     system.refresh_cpu_usage();
     system.refresh_memory();
+    observe("system_cpu_memory");
     system.refresh_processes_specifics(ProcessesToUpdate::All, true, process_refresh_kind());
+    observe("process_refresh");
     let threads = thread_counts();
+    observe("thread_enumeration");
     let logical_cpu_count = system.cpus().len();
 
     let mut processes = system
@@ -132,8 +142,10 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
     });
     // Keep the complete enumerated table. Presentation limits belong to the
     // ecological view / paginated process explorer, never to native telemetry.
+    observe("records_and_sort");
 
     let power = collector.power.lock().map(|mut sampler| sampler.sample()).unwrap_or_default();
+    observe("power");
 
     Ok(SystemSnapshot {
         timestamp: SystemTime::now()
@@ -253,10 +265,16 @@ mod tests {
         let mut serialize_ms = Vec::new();
         let mut sizes = Vec::new();
         let mut process_counts = Vec::new();
+        let mut stages: std::collections::BTreeMap<&str, Vec<f64>> = std::collections::BTreeMap::new();
         for _ in 0..24 {
             std::thread::sleep(Duration::from_millis(250));
             let started = Instant::now();
-            let snapshot = sample(&collector).expect("profile sample succeeds");
+            let mut checkpoint = started;
+            let snapshot = sample_observed(&collector, |stage| {
+                let now = Instant::now();
+                stages.entry(stage).or_default().push(now.duration_since(checkpoint).as_secs_f64() * 1000.0);
+                checkpoint = Instant::now();
+            }).expect("profile sample succeeds");
             collect_ms.push(started.elapsed().as_secs_f64() * 1000.0);
             assert_eq!(snapshot.processes.len(), snapshot.process_count);
             process_counts.push(snapshot.process_count);
@@ -271,5 +289,9 @@ mod tests {
         println!("collect_ms median={:.3} p95={:.3} max={:.3}", (collect_ms[11] + collect_ms[12]) / 2.0, collect_ms[22], collect_ms[23]);
         println!("serialize_ms median={:.3} p95={:.3} max={:.3}", (serialize_ms[11] + serialize_ms[12]) / 2.0, serialize_ms[22], serialize_ms[23]);
         println!("processes min={} max={}; json_bytes min={} max={}", process_counts.iter().min().unwrap(), process_counts.iter().max().unwrap(), sizes.iter().min().unwrap(), sizes.iter().max().unwrap());
+        for (stage, mut values) in stages {
+            values.sort_by(f64::total_cmp);
+            println!("stage={stage} median_ms={:.3} p95_ms={:.3} max_ms={:.3}", (values[11] + values[12]) / 2.0, values[22], values[23]);
+        }
     }
 }
