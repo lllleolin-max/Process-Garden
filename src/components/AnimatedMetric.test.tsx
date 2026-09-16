@@ -47,7 +47,8 @@ it.each([30, 60, 120] as const)("bounds DOM writes at %i Hz and releases hidden 
   view.rerender(<AnimatedMetric value={100} format={format} />);
   const writes = vi.spyOn(view.container.querySelector('[aria-hidden="true"]')!, "textContent", "set");
   for (let index = 0; index <= 40; index++) tick(1000 + index * 1000 / 120);
-  expect(writes.mock.calls.length).toBeGreaterThanOrEqual(Math.floor(0.32 * fps));
+  // Rounded labels may repeat across frames; only changed text needs a write.
+  expect(writes.mock.calls.length).toBeGreaterThan(0);
   expect(writes.mock.calls.length).toBeLessThanOrEqual(Math.ceil(0.32 * fps) + 2);
   expect(frames.size).toBe(0);
   view.rerender(<AnimatedMetric value={50} format={format} />);
@@ -85,4 +86,24 @@ it("does not interpolate demo observations into native measurements", () => {
   expect(frames.size).toBe(0);
   view.rerender(<AnimatedMetric value={40} format={format} />);
   expect(frames.size).toBe(1);
+});
+
+it("does not write repeated rounded labels while retaining the final observation", () => {
+  let id = 0;
+  const frames = new Map<number, FrameRequestCallback>();
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; });
+  vi.stubGlobal("cancelAnimationFrame", (key: number) => frames.delete(key));
+  vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  vi.stubGlobal("matchMedia", () => ({ matches: false }));
+  useAppStore.setState({ paused: false, reducedMotion: false, displayMode: "windowed", animationFps: 120 });
+  const format = (value: number) => `${Math.round(value)}%`;
+  const view = render(<AnimatedMetric value={20.1} format={format} />);
+  const writes = vi.spyOn(view.container.querySelector('[aria-hidden="true"]')!, "textContent", "set");
+  view.rerender(<AnimatedMetric value={20.4} format={format} />);
+  for (let index = 0; index <= 40; index++) {
+    act(() => { const pending = [...frames.values()]; frames.clear(); pending.forEach(callback => callback(1000 + index * 1000 / 120)); });
+  }
+  expect(writes).not.toHaveBeenCalled();
+  expect(view.container.textContent).toBe("20%");
+  expect(frames.size).toBe(0);
 });

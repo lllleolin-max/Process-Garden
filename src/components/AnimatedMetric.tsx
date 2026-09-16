@@ -11,7 +11,8 @@ export function AnimatedMetric({ value, format }: { value: number; format: (valu
   useLayoutEffect(() => {
     const draw = (next: number) => {
       displayed.current = next;
-      if (node.current) node.current.textContent = Number.isFinite(next) ? format(next) : "—";
+      const text = Number.isFinite(next) ? format(next) : "—";
+      if (node.current && node.current.textContent !== text) node.current.textContent = text;
     };
     const from = displayed.current;
     const changedSource = previousCollector.current !== collector;
