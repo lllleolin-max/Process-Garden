@@ -1,5 +1,18 @@
 # Current QA index
 
+- NetworkPanel first integration: collapsed sidebar section, all adapters reachable
+  via native select, only two active charts, bilingual B/s/KiB/s/MiB/s/GiB/s rates,
+  explicit unavailable/empty/baseline/down states and per-interface scope warning.
+  Uses existing theme tokens, AnimatedMetric and Sparkline; no new artwork.
+  Source: docs/network-collection.md measurement contract and design/context.md
+  full Task Manager objective/factual clarity. Four component/history tests cover
+  60 adapters, selection preservation, zero vs null, hidden/unmounted charts and
+  failed/disconnected/type-changed history gaps. Full verify: 394 tests and
+  typecheck/build passed; select background token corrected afterward and rebuilt.
+  NOT READY for visual/native acceptance: browser inventory again failed with
+  service response parsing error. Both themes, long aliases, keyboard/contrast,
+  hardware pacing, packaged IPC and controlled-traffic comparison remain open.
+
 - Child-process navigation (2026-09-16): Inspector now exposes confirmed direct
   children in eight-row pages with existing native application icons, bilingual
   labels and a current-snapshot inference disclaimer. Code-level behavior tests

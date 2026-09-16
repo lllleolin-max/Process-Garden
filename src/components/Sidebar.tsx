@@ -5,6 +5,7 @@ import { useAppStore } from "../stores/appStore";
 import { MetricCard } from "./MetricCard";
 import { PowerMetric } from "./PowerMetric";
 import { CpuCorePanel } from "./CpuCorePanel";
+import { NetworkPanel } from "./NetworkPanel";
 import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
 import { threadHistory } from "../data/threadHistory";
 import { useCallback } from "react";
@@ -49,6 +50,7 @@ export function Sidebar() {
         color="linear-gradient(90deg, var(--color-tertiary), var(--color-secondary))"
       />
       <CpuCorePanel />
+      <NetworkPanel />
       <PowerMetric />
       <MetricCard
         label={t("metrics.processes")}

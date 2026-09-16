@@ -49,8 +49,11 @@ shared collector state and history copy/precision/availability. Rust: 31 passed,
 5 manual ignored; frontend: 390 passed plus type checking/production build.
 
 - Validate packaged IPC and measure the added interface-query overhead.
-- Integrate bounded history and bilingual per-adapter UI with stale/unsupported
-  states, pause/visibility handling and the shared motion policy.
+- Frontend NetworkPanel is now integrated in Sidebar, initially collapsed. It
+  selects a single adapter, renders two bounded history curves and uses shared
+  numeric motion. Empty/error/baseline/down states remain distinct. Closed or
+  non-windowed panels unmount chart work. Four new frontend cases pass (394 total
+  tests plus type checking/build); browser service failure leaves visual QA open.
 - Compare controlled traffic and idle behavior to OS counters, measure overhead,
   and test disconnect/reconnect, VPN, sleep/resume and packaged IPC.
 - This adapter counter reader is not process-network attribution, an active
