@@ -1,0 +1,36 @@
+.process-explorer { width: min(1100px, calc(100vw - 48px)); max-height: calc(100dvh - 64px); display: flex; flex-direction: column; padding: 22px; border: 1px solid var(--color-border-strong); border-radius: 18px; background: var(--color-panel-strong); box-shadow: 0 24px 80px #02080699; }
+.process-explorer header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.process-explorer h2 { margin: 4px 0 18px; font: 600 23px var(--font-display), var(--font-body); }
+.process-explorer small, .process-list-summary { color: var(--color-text-muted); font-size: 12px; }
+.process-list-tools { display: flex; align-items: end; gap: 16px; }
+.process-list-tools label { display: grid; flex: 1; gap: 6px; font-size: 12px; }
+.process-list-tools input { width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-background); color: var(--color-text); }
+.process-list-control { min-height: 36px; padding: 7px 14px; background: transparent; border: 1px solid var(--color-border); border-radius: 7px; cursor: pointer; transition: background 160ms ease; }
+.process-list-control:hover:not(:disabled) { background: color-mix(in srgb, var(--color-primary) 12%, transparent); }
+.process-list-control:disabled { opacity: .4; cursor: default; }
+.process-list-warning { color: var(--color-warning); font-size: 12px; margin: 0 0 12px; }
+.process-list-scroll { min-height: 140px; overflow: auto; border-block: 1px solid var(--color-border); }
+.process-list-scroll:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.process-explorer table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+.process-explorer th { text-align: left; position: sticky; top: 0; background: var(--color-background-elevated); z-index: 1; padding: 10px 8px; font-weight: 500; }
+.process-explorer th:first-child { width: 24%; }
+.process-explorer th:nth-child(2) { width: 9%; }
+.process-explorer th:nth-child(3), .process-explorer th:nth-child(4) { width: 12%; }
+.process-explorer th:nth-child(5) { width: 9%; }
+.process-explorer th button { border: 0; background: transparent; padding: 2px 0; cursor: pointer; text-align: inherit; }
+.process-explorer td { height: 42px; padding: 5px 8px; border-bottom: 1px solid var(--color-border); font-variant-numeric: tabular-nums; }
+.process-explorer tr { transition: background 160ms ease; }
+.process-explorer tr.selected, .process-explorer tbody tr:hover { background: color-mix(in srgb, var(--color-primary) 8%, transparent); }
+.process-list-select { display: flex; align-items: center; width: 100%; gap: 9px; padding: 3px 0; border: 0; background: transparent; cursor: pointer; text-align: left; }
+.process-list-select > span:last-child, .process-list-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.process-list-select .process-icon { width: 25px; height: 25px; border-radius: 7px; }
+.process-list-path { color: var(--color-text-muted); font-size: 11px; }
+.process-list-empty { padding: 36px 16px; text-align: center; color: var(--color-text-muted); }
+.process-explorer footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; font-size: 12px; color: var(--color-text-muted); }
+[data-overlay-root][data-state] .process-explorer { opacity: 0; transform: translateY(8px); transition: opacity 180ms ease, transform 180ms ease; }
+[data-overlay-root][data-state="open"][data-motion-ready] .process-explorer { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) { .process-explorer, .process-explorer tr, .process-list-control { transition: none !important; } }
+[data-reduced-motion="true"] .process-explorer, [data-reduced-motion="true"] .process-explorer tr { transition: none !important; }
+@media (max-width: 720px) { .process-explorer { width: calc(100vw - 20px); padding: 14px; } .process-explorer table { min-width: 680px; } }
+.modal-backdrop.process-list-backdrop { align-items: center; justify-content: center; padding: 0; }
+.process-explorer .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

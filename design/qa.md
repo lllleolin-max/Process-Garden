@@ -1,5 +1,7 @@
 # Current QA index
 
+- Process explorer: [2026-09-16 process table QA](qa-process-explorer-2026-09-16.md). Search/sort/paginate all received records and locate them in Inspector; Chinese Garden / English Eldritch browser checks and 218 tests pass. Native completeness remains blocked by the existing collector cap, not hidden by the UI.
+
 - Trend-chart continuity: [2026-09-16 Sparkline QA](qa-sparkline-frame-rate-2026-09-16.md). Global rate gates SVG updates; growing/shrinking histories morph from the displayed curve without dropping existing bends. 210 tests pass; browser/native follow-up remains open.
 
 - Native icon replacement: [2026-09-16 icon cache QA](qa-icon-replacement-2026-09-16.md). Canvas now accepts later native icons while retaining decoded fallback images during loading; stale callback and unmount regressions included. Native visual follow-up remains open.

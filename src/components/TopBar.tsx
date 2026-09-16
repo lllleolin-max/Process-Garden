@@ -1,4 +1,4 @@
-import { Expand, Languages, Leaf, Maximize2, MonitorUp, Pause, Play, Plus, Search, Settings, Sparkles, X } from "lucide-react";
+import { Expand, Languages, Leaf, List, Maximize2, MonitorUp, Pause, Play, Plus, Search, Settings, Sparkles, X } from "lucide-react";
 import { useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
@@ -8,12 +8,14 @@ import { useOverlay } from "../hooks/useOverlay";
 import i18n from "../i18n/config";
 import { useAppStore } from "../stores/appStore";
 import "../styles/overlays.css";
+import { ProcessExplorer } from "./ProcessExplorer";
 
 export function TopBar() {
   const { t } = useTranslation();
   const state = useAppStore(useShallow(({ snapshot: _snapshot, history: _history, events: _events, ...controls }) => controls));
   const setMode = useDisplayMode();
   const [displayError, setDisplayError] = useState(false);
+  const [processListOpen, setProcessListOpen] = useState(false);
   const [changingDisplay, setChangingDisplay] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const menuId = useId();
@@ -36,7 +38,7 @@ export function TopBar() {
   };
 
   return (
-    <header className="topbar">
+    <><header className="topbar">
       <div className="brand-lockup">
         <span className="brand-mark"><Leaf size={20} /></span>
         <div>
@@ -68,6 +70,7 @@ export function TopBar() {
       </div>
 
       <nav className="topbar-actions" aria-label={t("a11y.appControls")}>
+        <button className="icon-button" data-process-list-trigger aria-label={t("processList.title")} title={t("processList.title")} aria-haspopup="dialog" aria-expanded={processListOpen} onClick={() => { state.setThemeMenuOpen(false); setProcessListOpen(true); }}><List size={18} /></button>
         <button className={`live-pill ${state.paused ? "paused" : ""}`} onClick={() => state.setPaused(!state.paused)} aria-pressed={state.paused} aria-label={state.paused ? t("nav.resume") : t("nav.pause")} title={state.paused ? t("nav.resume") : t("nav.pause")}>
           <span className="live-dot" />
           {state.paused ? <Play size={13} /> : <Pause size={13} />}
@@ -117,6 +120,6 @@ export function TopBar() {
         </button>
       </nav>
       {displayError && <p className="display-mode-error" role="alert">{t("modes.changeFailed")}</p>}
-    </header>
+    </header><ProcessExplorer open={processListOpen} onClose={() => setProcessListOpen(false)} /></>
   );
 }
