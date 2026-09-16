@@ -5,6 +5,7 @@ mod power;
 pub mod process_io;
 pub mod network;
 pub mod disk;
+pub mod disk_worker;
 
 #[cfg(not(test))]
 use collector::SystemCollector;
@@ -28,6 +29,14 @@ async fn sample_process_io(reader: tauri::State<'_, process_io::ProcessIoReader>
     let reader = reader.inner().clone();
     tauri::async_runtime::spawn_blocking(move || reader.sample(pid, started_at, session))
         .await.map_err(|error| format!("process I/O worker failed: {error}"))?
+}
+
+#[cfg(not(test))]
+#[tauri::command]
+async fn sample_disks(reader: tauri::State<'_, disk_worker::DiskReader>, session: String) -> Result<Vec<disk::DiskReading>, String> {
+    let reader = reader.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || reader.sample(session))
+        .await.map_err(|error| format!("disk request failed: {error}"))?
 }
 
 #[cfg(not(test))]
@@ -56,6 +65,7 @@ pub fn run() {
         .manage(SystemCollector::default())
         .manage(ProcessIconCache::default())
         .manage(process_io::ProcessIoReader::default())
+        .manage(disk_worker::DiskReader::default())
         .setup(|app| {
             use tauri::{
                 menu::{Menu, MenuItem},
@@ -89,7 +99,7 @@ pub fn run() {
             tray.build(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![sample_system, platform_name, process_icons, sample_process_io])
+        .invoke_handler(tauri::generate_handler![sample_system, platform_name, process_icons, sample_process_io, sample_disks])
         .run(tauri::generate_context!())
         .expect("error while running Process Garden");
 }

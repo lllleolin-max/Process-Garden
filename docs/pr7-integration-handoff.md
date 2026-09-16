@@ -294,6 +294,16 @@ required before integration so CPU/process sampling is not delayed. Rust suite:
 35 passed / 7 ignored, plus the explicitly executed disk probe passed separately.
 See docs/disk-collection.md for counter semantics, sources and remaining gates.
 
+Disk worker follow-up: disk_worker.rs and lib.rs add managed DiskReader plus the
+sample_disks command, independent of SystemCollector. Preserve the other task's
+termination command/state additions while merging this registration. There is one
+worker, one in-flight permit, a 4s caller deadline, 5s provider-open failure backoff
+and 15s idle query release. Timeout does not free the permit while native work is
+still active. All query handles stay on their owning thread. Native worker probe
+passed (1 disk, first response 433.069ms, second 0.563ms); library 40 passed / 8
+ignored and non-test cargo check passed. Frontend wiring and actual desktop IPC
+acceptance remain open; no query opens just from constructing the worker.
+
 ProcessExplorer follow-up: explicit Keep row order control separates continuous
 measurement updates from automatic rank changes while a user inspects rows.
 Preserve lifetime keys, collector-bound order reset, pruning/append behavior,

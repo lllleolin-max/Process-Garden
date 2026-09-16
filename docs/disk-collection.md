@@ -1,7 +1,9 @@
 # Physical disk monitoring: acquisition foundation
 
-Status: native reader verified on this host, not yet connected to the live collector
-or UI. This does not complete disk monitoring or Task Manager replacement.
+Status: native reader and independent worker verified on this host. The
+sample_disks Tauri command is registered and compile-checked, but the frontend/UI
+is not connected and packaged IPC has not been exercised. This does not complete
+disk monitoring or Task Manager replacement.
 
 ## Why a dedicated reader
 
@@ -37,12 +39,32 @@ wildcard handle; this is not individual counter registration via expanded paths.
 
 ## Integration gates
 
-Measure initialization and recurring collection before choosing a background
-scheduling policy. Do not place unmeasured provider initialization on the UI thread
-or under the existing CPU/process sampling lock. Keep failures independent of
-other metrics; bound retries/backoff; close the query when monitoring stops.
+`disk_worker::DiskReader` owns one worker thread; the source and all PDH handles
+are created, used and dropped on that thread. No unsafe Send impl is required.
+The application manages one shared reader and exposes `sample_disks({ session })`.
+Sessions must be 1–128 ASCII alphanumeric/hyphen/underscore characters; a changed
+session creates a fresh counter baseline. Opening failures back off for 5 seconds,
+even if session tokens change. No query is opened merely by starting the worker.
 
-Still required: background ownership, IPC/schema/UI/history integration, optional
+One atomic admission permit covers both queued and active work. A caller waits at
+most 4 seconds; if the provider is still running, subsequent calls fail busy rather
+than starting new workers or accumulating requests. A timeout cannot cancel a
+blocked OS provider call safely, so a truly hung call leaves this one worker busy.
+Expired requests are skipped before collection, and expiry is checked again after
+provider initialization. Late responses are discarded by the closed reply channel.
+After 15 seconds without requests, the worker drops its query and blocks without
+polling; dropping all reader handles lets it exit once any active provider returns.
+
+The worker and Tauri bridge do not use SystemCollector or its CPU/process lock.
+The frontend must still stop demand when hidden/paused/collapsed, ignore obsolete
+responses, use fresh sessions after interruption and represent unavailable/empty/
+baseline/live states honestly. That frontend integration is still outstanding.
+
+Continue measuring initialization and recurring collection across machines. Keep
+provider initialization off the UI thread and outside the existing CPU/process
+sampling lock. Maintain failure isolation, bounded admission and idle cleanup.
+
+Still required: desktop IPC validation, frontend schema/UI/history integration, optional
 capacity/volume mapping, device-change continuity, disabled-counter and permission
 tests, controlled workload comparison, sustained overhead, native wallpaper and
 both-theme visual verification. Provider-instance reuse cannot currently be
@@ -61,8 +83,8 @@ it is set explicitly so formatting does not cap counter values at 100.
 
 ## Evidence — 2026-09-16
 
-- Rust library suite: 35 passed, 7 ignored. The ignored tests were not counted as
-  passing; the disk probe was then explicitly run separately and passed.
+- Initial reader library suite: 35 passed, 7 ignored. The ignored tests were not
+  counted as passing; the disk probe was explicitly run separately and passed.
 - Read-only native probe: one physical-disk instance, valid second-sample read and
   write rates, no _Total row, first-sample rates suppressed, activity validated
   when present. No synthetic user-file workload or counter configuration changes.
@@ -72,3 +94,14 @@ it is set explicitly so formatting does not cap counter values at 100.
   The initialization cost confirms it must not run under the CPU/process lock.
 - Logs: `%TEMP%/process-garden-disk-reader-tests.log` and
   `%TEMP%/process-garden-disk-native-probe.log`. Logged counts/timing, not instance names.
+
+Independent worker follow-up: Rust library now 40 passed / 8 ignored; non-test
+`cargo check --locked --offline` passed, including Tauri state/command registration.
+The explicit native worker probe passed separately: one disk; first response
+433.069ms, second response 0.563ms (debug, single observation after 1.1 seconds).
+Tests verify single-flight ownership past caller timeout, invalid session rejection,
+idle release, drop shutdown, expired queued work and 100 immediate sequential calls.
+Logs: `%TEMP%/process-garden-disk-worker-tests.log`,
+`%TEMP%/process-garden-disk-worker-check.log`, and
+`%TEMP%/process-garden-disk-worker-probe.log`. This does not prove UI invocation,
+native frame pacing, a latency distribution or behavior on other devices.
