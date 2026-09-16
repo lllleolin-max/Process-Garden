@@ -204,7 +204,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   }),
   ingestSnapshot: (snapshot, collector) => set((state) => {
     const sameCollector = collector === state.collector;
-    if (state.paused || (sameCollector && snapshot.timestamp <= state.snapshot.timestamp)) return state;
+    if (state.paused || !Number.isFinite(snapshot.timestamp) || snapshot.timestamp < 0
+      || (sameCollector && snapshot.timestamp <= state.snapshot.timestamp)) return state;
     const lifecycleEvents = collector === "native" && sameCollector ? deriveProcessEvents(state.snapshot, snapshot) : [];
     const demoEvent = collector === "demo" && sameCollector ? deriveDemoEvent(state.snapshot, snapshot) : null;
     const newEvents = [...lifecycleEvents, ...(demoEvent ? [demoEvent] : [])];

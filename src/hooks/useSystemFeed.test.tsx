@@ -35,7 +35,7 @@ afterEach(() => {
 });
 
 describe("system sampling lifecycle", () => {
-  it.each([0, -1000])("does not declare recovery for a rejected snapshot with timestamp offset %i", async offset => {
+  it.each([0, -1000, NaN, Infinity])("does not declare recovery for a rejected snapshot with timestamp offset %s", async offset => {
     const before = useAppStore.getState();
     useFeedHealth.setState({ failed: true, lastSuccess: before.snapshot.timestamp });
     invoke.mockResolvedValueOnce({ ...before.snapshot, timestamp: before.snapshot.timestamp + offset });

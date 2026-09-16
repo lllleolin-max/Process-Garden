@@ -9,6 +9,18 @@ afterEach(() => {
 });
 
 describe("snapshot continuity", () => {
+  it.each([NaN, Infinity, -Infinity, -1])("rejects invalid sample time %s without changing data or notifying subscribers", timestamp => {
+    const before = useAppStore.getState();
+    const listener = vi.fn();
+    const unsubscribe = useAppStore.subscribe(listener);
+    try {
+      // Invalid time must also be rejected when changing collectors.
+      before.ingestSnapshot({ ...before.snapshot, timestamp }, "native");
+      expect(useAppStore.getState()).toBe(before);
+      expect(listener).not.toHaveBeenCalled();
+    } finally { unsubscribe(); }
+  });
+
   it("starts with a chronological demo history ending at the displayed snapshot", () => {
     const { history, snapshot, samplingMs } = useAppStore.getState();
     expect(history.at(-1)).toEqual(toObservation(snapshot));
