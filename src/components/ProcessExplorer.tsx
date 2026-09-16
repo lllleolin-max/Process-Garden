@@ -70,6 +70,15 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
   const currentPage = Math.min(page, pageCount - 1);
   const shown = rows.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
   const missing = Math.max(0, state.snapshot.processCount - state.snapshot.processes.length);
+  const demo = state.collector === "demo";
+  const zh = state.locale === "zh-CN";
+  const coverage = demo
+    ? zh ? `匹配 ${rows.length} 项 · 演示记录 ${state.snapshot.processes.length} 条 · 模拟总数 ${state.snapshot.processCount}，非本机实测`
+      : `${rows.length} matches · ${state.snapshot.processes.length} demo records · ${state.snapshot.processCount} simulated total, not measured on this computer`
+    : t("processList.count", { count: rows.length, received: state.snapshot.processes.length, total: state.snapshot.processCount });
+  const partial = demo
+    ? zh ? `模拟总数中有 ${missing} 项未提供演示记录。` : `${missing} entries in the simulated total have no demo record.`
+    : t("processList.partial", { count: missing });
   const columns: { key: ProcessSort; label: string }[] = [
     { key: "name", label: t("processList.name") }, { key: "pid", label: "PID" },
     { key: "cpuPercent", label: "CPU" }, { key: "memoryBytes", label: t("metrics.memory") },
@@ -91,8 +100,8 @@ export function ProcessExplorer({ open, onClose }: { open: boolean; onClose: () 
       <header><div><small>{snapshotStatus}</small><h2 id="process-list-title">{t("processList.title")}</h2></div><button className="icon-button" aria-label={t("a11y.closePanel")} onClick={onClose}><X size={18} /></button></header>
       <div className="process-list-tools"><label>{t("processList.filter")}<input data-process-filter value={query} onChange={event => { setQuery(event.target.value); setHeldOrder(null); turnPage(0); }} placeholder={t("processList.filterHint")} /></label><button className="process-list-control" aria-pressed={orderHeld} aria-describedby={orderHeld ? "process-order-hint" : undefined} onClick={() => setHeldOrder(orderHeld ? null : { collector: state.collector, ids: rows.map(processIdentity) })}>{state.locale === "zh-CN" ? "固定行顺序" : "Keep row order"}</button><button className="process-list-control" aria-pressed={state.paused} onClick={() => state.setPaused(!state.paused)}>{t(state.paused ? "nav.resume" : "nav.pause")}</button></div>
       {orderHeld && <p id="process-order-hint" className="process-list-summary">{state.locale === "zh-CN" ? "数值继续更新，新进程追加到末尾。更改筛选或排序将解除固定。" : "Readings still update; new processes append. Changing the filter or sort releases the order."}</p>}
-      <p className="process-list-summary">{t("processList.count", { count: rows.length, received: state.snapshot.processes.length, total: state.snapshot.processCount })}</p>
-      {missing > 0 && <p className="process-list-warning" role="status">{t("processList.partial", { count: missing })}</p>}
+      <p className="process-list-summary">{coverage}</p>
+      {missing > 0 && <p className="process-list-warning" role="status">{partial}</p>}
       <div className="process-list-scroll" ref={scroll} tabIndex={0} aria-label={t("processList.title")}
         onFocusCapture={event => {
           const target = event.target as HTMLElement;

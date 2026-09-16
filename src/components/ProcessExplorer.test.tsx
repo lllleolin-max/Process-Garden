@@ -116,6 +116,7 @@ it("marks out-of-domain percentages and fractional counts unavailable in the tab
 });
 
 it("opens a bounded process table, sorts and filters, then locates a process in the inspector", () => {
+  useAppStore.setState({ collector: "native" });
   render(<TopBar />);
   fireEvent.click(screen.getByRole("button", { name: "Processes" }));
   expect(screen.getByRole("textbox", { name: "Filter processes" })).toHaveFocus();
@@ -133,6 +134,21 @@ it("opens a bounded process table, sorts and filters, then locates a process in 
   fireEvent.click(screen.getByRole("button", { name: "Inspect app-113, PID 113" }));
   expect(useAppStore.getState().selectedPid).toBe(113);
   expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("labels displayed demo totals honestly even when native mode is requested", () => {
+  useAppStore.setState({ collector: "demo", demoMode: false });
+  render(<TopBar />);
+  fireEvent.click(screen.getByRole("button", { name: "Processes" }));
+  expect(screen.getByText(/140 simulated total, not measured on this computer/)).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent("20 entries in the simulated total have no demo record.");
+  expect(screen.queryByText(/reported by system/)).toBeNull();
+  act(() => useAppStore.setState({ locale: "zh-CN" }));
+  expect(screen.getByText(/模拟总数 140，非本机实测/)).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent("模拟总数中有 20 项未提供演示记录。");
+  act(() => useAppStore.setState({ collector: "native", locale: "en-US" }));
+  expect(screen.getByText(/140 reported by system/)).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent("20 reported processes");
 });
 
 it("clamps a shrinking result set and shows an honest empty state", () => {

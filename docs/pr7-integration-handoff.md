@@ -499,6 +499,15 @@ with no duplicates/type conflicts/unknown or out-of-range sums. This does not
 prove controlled-workload parity, physical GPU enumeration or visual acceptance.
 # Network continuity follow-up (2026-09-17)
 
+Browser-QA finding fixed: ProcessExplorer no longer calls demo totals "reported
+by system". Both languages identify simulated totals as not measured on this
+computer; missing demo records remain disclosed. Native totals and partial-data
+warnings are unchanged. Uses the displayed collector, not requested demoMode,
+so pending native requests cannot relabel existing demo rows as measurements.
+490 frontend tests/typecheck/build pass. Kept this scoped to ProcessExplorer and
+its test to avoid the other task's pending locale-file edits; existing component
+inline bilingual copy pattern used. Updated wording still needs browser layout QA.
+
 Process list keyboard continuity: if a focused process button is removed by exit,
 PID lifetime replacement or moving off the current ranked page, focus returns to
 the existing scroll container, not another process activation button. Recovery

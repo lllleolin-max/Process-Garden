@@ -1,5 +1,11 @@
 # Process list browser check — 2026-09-17
 
+Follow-up: the observed demo "reported by system" wording below has since been
+replaced with explicit simulated/not-measured totals and demo-record coverage in
+both languages. 490 tests/typecheck/build pass, including requested-native versus
+displayed-demo distinction. The following screenshots predate that wording fix;
+do not treat them as visual verification of the revised copy.
+
 Source: independent branch 78a83e1, local Vite preview 127.0.0.1:1437.
 In-app browser, 1280 × 720 screenshots, demo data. Another task's 1420 tab
 was left untouched. No native process actions or synthetic state injection.
