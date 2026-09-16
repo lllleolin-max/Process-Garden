@@ -4,10 +4,17 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use sysinfo::{ProcessesToUpdate, System};
+use sysinfo::{CpuRefreshKind, ProcessRefreshKind, ProcessesToUpdate, RefreshKind, System, UpdateKind};
 
 use crate::models::{ProcessSnapshot, SystemSnapshot};
 use crate::power::PowerSampler;
+
+fn process_refresh_kind() -> ProcessRefreshKind {
+    ProcessRefreshKind::nothing()
+        .with_cpu()
+        .with_memory()
+        .with_exe(UpdateKind::OnlyIfNotSet)
+}
 
 // sysinfo 0.36 reports process CPU in logical-core units (one busy core =
 // 100%). Expose the same whole-machine scale as global_cpu_usage instead.
@@ -66,7 +73,13 @@ pub struct SystemCollector {
 impl Default for SystemCollector {
     fn default() -> Self {
         Self {
-            system: Arc::new(Mutex::new(System::new_all())),
+            // Do not ask sysinfo to collect unused environment/command-line
+            // metadata at startup. Use the same narrow process profile on refresh.
+            system: Arc::new(Mutex::new(System::new_with_specifics(
+                RefreshKind::nothing()
+                    .with_cpu(CpuRefreshKind::nothing().with_cpu_usage())
+                    .with_processes(process_refresh_kind()),
+            ))),
             power: Arc::new(Mutex::new(PowerSampler::default())),
         }
     }
@@ -80,7 +93,7 @@ pub fn sample(collector: &SystemCollector) -> Result<SystemSnapshot, String> {
 
     system.refresh_cpu_usage();
     system.refresh_memory();
-    system.refresh_processes(ProcessesToUpdate::All, true);
+    system.refresh_processes_specifics(ProcessesToUpdate::All, true, process_refresh_kind());
     let threads = thread_counts();
     let logical_cpu_count = system.cpus().len();
 
@@ -137,6 +150,19 @@ mod tests {
     use super::*;
 
     #[test]
+    fn process_profile_excludes_unused_sensitive_metadata() {
+        let profile = process_refresh_kind();
+        assert!(profile.cpu());
+        assert!(profile.memory());
+        assert_eq!(profile.exe(), UpdateKind::OnlyIfNotSet);
+        assert_eq!(profile.cmd(), UpdateKind::Never);
+        assert_eq!(profile.environ(), UpdateKind::Never);
+        assert_eq!(profile.cwd(), UpdateKind::Never);
+        assert_eq!(profile.root(), UpdateKind::Never);
+        assert!(!profile.disk_usage());
+    }
+
+    #[test]
     fn process_cpu_uses_whole_machine_capacity() {
         assert_eq!(machine_cpu_percent(100.0, 8), 12.5);
         assert_eq!(machine_cpu_percent(800.0, 8), 100.0);
@@ -183,6 +209,8 @@ mod tests {
         let system = collector.system.lock().expect("collector lock is available");
         for process in &snapshot.processes {
             let raw = &system.processes()[&sysinfo::Pid::from_u32(process.pid)];
+            assert!(raw.cmd().is_empty(), "unused command lines must not be collected");
+            assert!(raw.environ().is_empty(), "unused environments must not be collected");
             let expected_cpu = machine_cpu_percent(raw.cpu_usage(), snapshot.logical_cpu_count);
             assert_eq!(process.cpu_percent, expected_cpu);
             assert_eq!(process.status, process_status(expected_cpu));
