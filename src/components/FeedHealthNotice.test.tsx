@@ -49,3 +49,14 @@ it("shows stale sample time in Chinese and clears after recovery or demo switch"
   act(() => { useFeedHealth.setState({ failed: true }); useAppStore.setState({ demoMode: true }); });
   expect(screen.queryByRole("status")).toBeNull();
 });
+
+it.each([NaN, Infinity, 1e20])("keeps the error notice usable with invalid sample time %s", lastSuccess => {
+  useFeedHealth.setState({ failed: true, lastSuccess });
+  render(<FeedHealthNotice />);
+  expect(screen.getByRole("status")).toHaveTextContent("last successful sample time unavailable");
+  expect(screen.getByRole("status")).not.toHaveTextContent("No native sample received");
+  act(() => useAppStore.setState({ locale: "zh-CN" }));
+  expect(screen.getByRole("status")).toHaveTextContent("最后成功采样时间不可用");
+  act(() => useFeedHealth.setState({ lastSuccess: 1_800_000_000_000 }));
+  expect(screen.getByRole("status")).toHaveTextContent("最后成功采样：");
+});

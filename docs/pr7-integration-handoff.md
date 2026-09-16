@@ -112,6 +112,12 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+FeedHealthNotice guards nonfinite/out-of-Date-range sample timestamps before Intl
+formatting. A corrupt time cannot crash the error notice or be mislabeled as no
+successful sample ever received; bilingual unavailable-time text is used instead.
+Three regressions cover NaN, infinity and finite overflow plus recovery. Full
+local verification passed 368 tests, type checking and production build.
+
 Icon follow-up: pause now disables the crossfade, like reduced motion, without
 hiding an already loaded native icon. Regressions check both preference toggles
 and application/source changes retaining the correct initials until the new icon

@@ -19,6 +19,8 @@ export function FeedHealthNotice({ wallpaper = false }: { wallpaper?: boolean })
     : paused ? "Sampling failed · retries paused" : "Sampling failed · retrying automatically";
   const detail = lastSuccess === null
     ? zh ? "尚未取得本机数据，当前显示内容不是实时采样。" : "No native sample received. Displayed data is not live."
+    : !Number.isFinite(lastSuccess) || !Number.isFinite(new Date(lastSuccess).getTime())
+    ? zh ? "数据已过期 · 最后成功采样时间不可用" : "Data is stale · last successful sample time unavailable"
     : `${zh ? "数据已过期 · 最后成功采样：" : "Data is stale · last successful sample: "}${new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "medium" }).format(lastSuccess)}`;
   return <aside className="feed-health-notice" role="status" aria-live="polite" aria-atomic="true" title={`${message}\n${detail}`} tabIndex={wallpaper ? -1 : 0}><strong>{message}</strong><span>{detail}</span></aside>;
 }
