@@ -52,11 +52,11 @@ function ServiceReadings() {
       </li>)}
     </ul>
     {!rows.length && state.rows.length > 0 && <p>{zh ? "没有匹配的服务" : "No matching services"}</p>}
-    {pages > 1 && <nav aria-label={zh ? "服务分页" : "Service pages"}>
-      <button disabled={current === 0} onClick={() => setPage(current - 1)}>{zh ? "上一页" : "Previous"}</button>
+    <nav aria-label={zh ? "服务分页" : "Service pages"}>
+      <button aria-disabled={current === 0} onClick={() => { if (current > 0) setPage(current - 1); }}>{zh ? "上一页" : "Previous"}</button>
       <span>{current + 1} / {pages}</span>
-      <button disabled={current + 1 === pages} onClick={() => setPage(current + 1)}>{zh ? "下一页" : "Next"}</button>
-    </nav>}
+      <button aria-disabled={current + 1 === pages} onClick={() => { if (current + 1 < pages) setPage(current + 1); }}>{zh ? "下一页" : "Next"}</button>
+    </nav>
   </div>;
 }
 

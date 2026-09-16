@@ -8,4 +8,4 @@
 .service-readings li { display: grid; gap: 4px; padding: 9px 0; border-top: 1px solid var(--color-border); overflow-wrap: anywhere; }
 .service-readings code { font: inherit; color: var(--color-text-muted); }
 .service-readings nav { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; }
-.service-readings button:disabled { opacity: .45; cursor: default; }
+.service-readings button[aria-disabled="true"] { opacity: .45; cursor: default; }

@@ -83,3 +83,10 @@ frontend parser must accept/project it unchanged. Covers Unicode, empty display
 names, maximum u32, unknown states and null PIDs for stopped/starting/zero-PID
 cases. Focused Rust contract test, 10 frontend parser tests and typecheck pass.
 This verifies the wire shape, not delivery through an actual Tauri window.
+
+Pagination focus follow-up: navigation remains mounted even on a single/empty
+page. Edge buttons use aria-disabled plus guarded activation, preserving keyboard
+focus if a sample reduces page count. A focused Previous button survives a
+three-to-one-page shrink; activating either unavailable edge leaves page 1/1.
+Full frontend verify: 504 tests/typecheck/build pass. Actual browser/AT handling
+of this focusable disabled-control pattern still needs verification.

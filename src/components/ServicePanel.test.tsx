@@ -57,8 +57,16 @@ it("filters service states and commits shrinking page bounds without jumping bac
   };
   fireEvent.click(screen.getByRole("button", { name: "Next" }));
   fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  const previous = screen.getByRole("button", { name: "Previous" });
+  previous.focus();
   publish(rows.slice(0, 2));
   expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  expect(previous).toHaveFocus();
+  expect(previous).toHaveAttribute("aria-disabled", "true");
+  expect(screen.getByRole("button", { name: "Next" })).toHaveAttribute("aria-disabled", "true");
+  fireEvent.click(previous);
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.getByText("1 / 1")).toBeInTheDocument();
   publish(rows);
   expect(screen.getByText("1 / 3")).toBeInTheDocument();
   fireEvent.change(screen.getByRole("combobox", { name: "Service state" }), { target: { value: "1" } });
