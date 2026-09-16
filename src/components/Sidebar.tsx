@@ -6,6 +6,7 @@ import { MetricCard } from "./MetricCard";
 import { PowerMetric } from "./PowerMetric";
 import { CpuCorePanel } from "./CpuCorePanel";
 import { NetworkPanel } from "./NetworkPanel";
+import { DiskPanel } from "./DiskPanel";
 import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
 import { threadHistory } from "../data/threadHistory";
 import { useCallback } from "react";
@@ -51,6 +52,7 @@ export function Sidebar() {
       />
       <CpuCorePanel />
       <NetworkPanel />
+      <DiskPanel />
       <PowerMetric />
       <MetricCard
         label={t("metrics.processes")}

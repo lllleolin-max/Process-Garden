@@ -304,6 +304,16 @@ passed (1 disk, first response 433.069ms, second 0.563ms); library 40 passed / 8
 ignored and non-test cargo check passed. Frontend wiring and actual desktop IPC
 acceptance remain open; no query opens just from constructing the worker.
 
+Disk frontend follow-up: Sidebar now includes collapsed DiskPanel. Merge
+DiskPanel.tsx/.css, useDiskReadings.ts and data/diskReadings.ts with the existing
+sample_disks worker/registration; partial integration would leave the panel in
+unavailable/error state. Requests stop on collapse/hide/pause/non-windowed mode;
+sessions reset across interruptions; ordinary PDH baseline errors retain sessions.
+Only three selected-disk charts mount; existing shared motion and theme tokens
+are reused. Payload/history/continuity tests added (24); full verify 445 tests,
+typecheck/build passed. Browser service still unavailable, so native UI/IPC and
+visual/FPS acceptance remain open. No shared-worktree files were edited.
+
 ProcessExplorer follow-up: explicit Keep row order control separates continuous
 measurement updates from automatic rank changes while a user inspects rows.
 Preserve lifetime keys, collector-bound order reset, pruning/append behavior,

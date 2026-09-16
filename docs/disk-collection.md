@@ -1,9 +1,9 @@
 # Physical disk monitoring: acquisition foundation
 
 Status: native reader and independent worker verified on this host. The
-sample_disks Tauri command is registered and compile-checked, but the frontend/UI
-is not connected and packaged IPC has not been exercised. This does not complete
-disk monitoring or Task Manager replacement.
+sample_disks Tauri command and demand-driven frontend panel are connected in code
+and component-tested, but packaged IPC/desktop UI has not been exercised. This
+does not complete disk monitoring or Task Manager replacement.
 
 ## Why a dedicated reader
 
@@ -56,15 +56,19 @@ After 15 seconds without requests, the worker drops its query and blocks without
 polling; dropping all reader handles lets it exit once any active provider returns.
 
 The worker and Tauri bridge do not use SystemCollector or its CPU/process lock.
-The frontend must still stop demand when hidden/paused/collapsed, ignore obsolete
-responses, use fresh sessions after interruption and represent unavailable/empty/
-baseline/live states honestly. That frontend integration is still outstanding.
+The frontend now stops demand when hidden/paused/collapsed, ignores obsolete
+responses, uses fresh sessions after interruption and represents unavailable/empty/
+baseline/live states explicitly. Its request interval is one second after the
+previous call completes, independent of animation FPS, with a 5s bridge watchdog.
+One outstanding bridge promise is shared across unmount/remount. A stalled IPC
+promise is not bypassed by starting overlapping native requests. Ordinary errors
+retain their session so an initial invalid PDH rate can warm up on the next sample.
 
 Continue measuring initialization and recurring collection across machines. Keep
 provider initialization off the UI thread and outside the existing CPU/process
 sampling lock. Maintain failure isolation, bounded admission and idle cleanup.
 
-Still required: desktop IPC validation, frontend schema/UI/history integration, optional
+Still required: desktop IPC and both-theme visual validation, optional
 capacity/volume mapping, device-change continuity, disabled-counter and permission
 tests, controlled workload comparison, sustained overhead, native wallpaper and
 both-theme visual verification. Provider-instance reuse cannot currently be
@@ -105,3 +109,22 @@ Logs: `%TEMP%/process-garden-disk-worker-tests.log`,
 `%TEMP%/process-garden-disk-worker-check.log`, and
 `%TEMP%/process-garden-disk-worker-probe.log`. This does not prove UI invocation,
 native frame pacing, a latency distribution or behavior on other devices.
+
+## Frontend panel
+
+DiskPanel is initially collapsed below network interfaces. It mounts the demand
+hook only when expanded and windowed. All received instances are reachable through
+a native select; only the selected disk's three charts are mounted. Activity uses
+a fixed 0–100% scale. Read/write values use binary byte units per second. Existing
+AnimatedMetric/Sparkline supply shared frame scheduling and reduced-motion rules;
+no new artwork is required. Raw PDH instance labels are explicitly identified as
+system counter instances, not capacity labels or per-process attribution.
+
+The bridge payload is copied and validated: at most 1024 unique nonempty instance
+IDs, no _Total aggregate, finite nonnegative rates, null for unknown and 0–100%
+activity. Invalid payloads become error states rather than fabricated readings.
+History keeps at most 36 frames; individual series stop at missing/invalid samples.
+Session and selection keys prevent cross-source chart interpolation. Failures
+clear history. Tests cover 60 reachable disks, stable selection/focus/chart nodes,
+zero/empty/baseline/error/partial states and cancellation across visibility changes.
+Actual Windows UI, contrast, typography, hardware pacing and manual AT remain open.

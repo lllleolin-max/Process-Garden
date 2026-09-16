@@ -1,5 +1,18 @@
 # Current QA index
 
+- DiskPanel frontend integration (2026-09-16): source is design/context.md factual
+  monitoring/reduced-motion requirements and docs/disk-collection.md counter
+  contract. Collapsed sidebar panel offers a native disk selector, binary-unit
+  read/write rates and fixed 0–100% activity; only three selected-disk charts mount.
+  Existing theme tokens and shared numeric/chart motion are reused, no new artwork.
+  PASS (automated): 24 new data/hook/component cases cover all 60 returned choices,
+  stable chart nodes/focus/selection, null vs zero, empty/error/baseline/partial
+  states, bounded history, timeout, late responses and stop/resume/remount behavior.
+  Full verify: 445 tests, typecheck and production build passed.
+  NOT READY (visual/native): browser inventory returned HTML instead of JSON;
+  actual desktop IPC, both-theme rendering, contrast, hardware-FPS and manual AT
+  remain unverified. Native worker probes are not desktop UI acceptance evidence.
+
 - ProcessExplorer numeric motion (2026-09-16), source: design/context.md legible
   living monitoring and reduced-motion requirements plus user's sampling continuity
   request. CPU and memory now reuse AnimatedMetric's 320ms interpolation and
