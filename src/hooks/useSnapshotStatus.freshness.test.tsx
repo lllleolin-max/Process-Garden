@@ -40,3 +40,16 @@ it("rechecks elapsed wall time when a hidden document returns", () => {
   act(() => document.dispatchEvent(new Event("visibilitychange")));
   expect(view.result.current).toBe("数据已过期");
 });
+
+it.each([NaN, Infinity, 1800000001000])("rejects ambiguous sample timestamps %s without a retry timer loop", lastSuccess => {
+  vi.useFakeTimers(); vi.setSystemTime(1800000000000);
+  vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  useAppStore.setState({ collector: "native", paused: false, samplingMs: 1000, locale: "en-US" });
+  useFeedHealth.setState({ failed: false, lastSuccess });
+  const view = renderHook(useSnapshotStatus);
+  expect(view.result.current).toBe("Stale data");
+  expect(vi.getTimerCount()).toBe(0);
+  act(() => useFeedHealth.setState({ lastSuccess: Date.now() }));
+  expect(view.result.current).toBe("Live");
+  expect(vi.getTimerCount()).toBe(1);
+});

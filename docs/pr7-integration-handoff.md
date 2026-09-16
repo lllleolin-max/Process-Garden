@@ -112,6 +112,15 @@ missing platform capabilities and Task Manager parity remain open work.
 
 ## CI discipline
 
+Freshness follow-up: nonfinite or future last-success timestamps now make the
+observation stale without scheduling a timer. A system clock rollback must not
+extend apparent freshness. Deadline timers are capped at the browser's signed
+32-bit maximum; nonfinite cadence falls back to five seconds. Three timestamp
+regressions verify stale status, no timer loop and recovery after a valid sample.
+Local full verification passed 347 tests, type checking and production build.
+Shared integration worktree was rechecked read-only: theme/lifecycle/termination
+changes remain uncommitted and were not altered by this branch.
+
 Snapshot status labels now expire a previously successful native observation
 after max(5 seconds, three sampling intervals), even without a reported query
 failure. A one-shot deadline is reset on success and rechecked on visibility

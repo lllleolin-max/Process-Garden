@@ -24,9 +24,14 @@ export function useSnapshotStatus() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const check = () => {
       clearTimeout(timer);
-      const remaining = lastSuccess + Math.max(5000, samplingMs * 3) - Date.now();
-      setExpired(!Number.isFinite(remaining) || remaining <= 0);
-      if (remaining > 0 && !document.hidden) timer = setTimeout(check, remaining);
+      const age = Date.now() - lastSuccess;
+      const threshold = Number.isFinite(samplingMs) ? Math.max(5000, samplingMs * 3) : 5000;
+      const remaining = threshold - age;
+      // A clock rollback makes the previous wall-clock observation ambiguous;
+      // do not extend its apparent freshness or overflow the browser timer.
+      const stale = !Number.isFinite(age) || age < 0 || remaining <= 0;
+      setExpired(stale);
+      if (!stale && !document.hidden) timer = setTimeout(check, Math.min(remaining, 2_147_483_647));
     };
     check();
     document.addEventListener("visibilitychange", check);
