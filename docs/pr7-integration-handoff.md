@@ -63,9 +63,12 @@ files also belong to that task and must not be deleted or silently replaced.
 
 I/O foundation adds only `pub mod process_io` to lib.rs and a standalone Rust
 rate tracker; preserve the integration task's command registrations and process
-operations. No I/O command has been registered yet. Native querying, explicit
-query failure states and UI remain open; see process-io-collection.md. The six
-rate tests do not validate actual Windows I/O or physical disk throughput.
+operations. Windows querying now uses limited query rights, one RAII handle,
+exact FILETIME identity and explicit Result failures. Cargo.toml additionally
+enables Win32_System_Threading: merge this feature into, not over, the other task's
+feature list. No I/O command has been registered yet; command/UI integration and
+query cost measurement remain open. See process-io-collection.md. Rate tests
+alone do not validate actual Windows I/O or physical disk throughput.
 
 Logical-processor telemetry addition: Rust SystemSnapshot now includes
 `cpu_core_percents: Vec<Option<f32>>`, serialized as optional `cpuCorePercents`.

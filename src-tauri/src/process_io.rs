@@ -3,6 +3,44 @@
 
 use std::time::{Duration, Instant};
 
+/// Read-only, on-demand observation. The optional exact creation token comes
+/// from a previous observation, never from rounding FILETIME through JavaScript.
+#[cfg(windows)]
+pub fn read_process_io(pid: u32, expected_creation_ticks: Option<u64>) -> std::io::Result<IoCounterSample> {
+    use windows_sys::Win32::{
+        Foundation::{CloseHandle, FILETIME, HANDLE},
+        System::Threading::{GetProcessIoCounters, GetProcessTimes, OpenProcess, IO_COUNTERS, PROCESS_QUERY_LIMITED_INFORMATION},
+    };
+    struct ProcessHandle(HANDLE);
+    impl Drop for ProcessHandle {
+        fn drop(&mut self) { unsafe { CloseHandle(self.0); } }
+    }
+    // No VM reads, mutation rights, privilege changes or elevation fallback.
+    let raw = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid) };
+    if raw.is_null() { return Err(std::io::Error::last_os_error()); }
+    let handle = ProcessHandle(raw);
+    let mut creation = FILETIME::default();
+    let mut exit = FILETIME::default();
+    let mut kernel = FILETIME::default();
+    let mut user = FILETIME::default();
+    if unsafe { GetProcessTimes(handle.0, &mut creation, &mut exit, &mut kernel, &mut user) } == 0 {
+        return Err(std::io::Error::last_os_error());
+    }
+    let creation_ticks = ((creation.dwHighDateTime as u64) << 32) | creation.dwLowDateTime as u64;
+    if expected_creation_ticks.is_some_and(|expected| expected != creation_ticks) {
+        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "process lifetime changed"));
+    }
+    let mut counters = IO_COUNTERS::default();
+    if unsafe { GetProcessIoCounters(handle.0, &mut counters) } == 0 {
+        return Err(std::io::Error::last_os_error());
+    }
+    Ok(IoCounterSample {
+        pid, creation_ticks, observed_at: Instant::now(),
+        read_bytes: counters.ReadTransferCount,
+        written_bytes: counters.WriteTransferCount,
+    })
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct IoCounterSample {
     pub pid: u32,
@@ -57,6 +95,22 @@ impl IoRateTracker {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(windows)]
+    #[test]
+    fn reads_own_process_with_an_exact_lifetime_and_rejects_mismatches() {
+        let pid = std::process::id();
+        let first = read_process_io(pid, None).expect("own process is queryable");
+        assert_eq!(first.pid, pid);
+        assert!(first.creation_ticks > 0);
+        let next = read_process_io(pid, Some(first.creation_ticks)).expect("same lifetime");
+        assert!(next.read_bytes >= first.read_bytes);
+        assert!(next.written_bytes >= first.written_bytes);
+        assert!(next.observed_at >= first.observed_at);
+        let wrong = read_process_io(pid, Some(first.creation_ticks + 1)).unwrap_err();
+        assert_eq!(wrong.kind(), std::io::ErrorKind::InvalidData);
+        assert!(read_process_io(0, None).is_err(), "an invalid query must not become an idle sample");
+    }
 
     fn sample(at: Instant, read: u64, written: u64) -> IoCounterSample {
         IoCounterSample { pid: 42, creation_ticks: 123, observed_at: at, read_bytes: read, written_bytes: written }

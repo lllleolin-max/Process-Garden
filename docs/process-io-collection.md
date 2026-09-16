@@ -1,7 +1,19 @@
 # Process I/O collection decision — 2026-09-16
 
-Status: rate-conversion core implemented and tested; native I/O queries and UI
-are not connected or accepted as disk telemetry.
+Status: rate-conversion core and on-demand Windows query implemented; application
+command/UI integration is not connected or accepted as disk telemetry.
+
+The Windows query opens one handle with PROCESS_QUERY_LIMITED_INFORMATION and
+reads creation FILETIME plus I/O counters from that handle. Optional exact
+creation tokens reject a changed lifetime. Handles close through Drop, including
+all failure paths. API failures return errors rather than cached/zero samples.
+The command integration must pass failures to `IoRateTracker::observe(None)` and
+reset selection/session baselines; do not keep rates after a failed query.
+No process memory is read and no privileges are changed.
+
+Primary API contracts:
+[GetProcessIoCounters](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getprocessiocounters),
+[GetProcessTimes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes).
 
 `src-tauri/src/process_io.rs` now provides a bounded, single-target rate tracker.
 Six tests cover measured intervals, failed-observation recovery, idle zero,
@@ -9,6 +21,12 @@ PID/lifetime changes, long gaps, counter rollback, non-increasing timestamps and
 small deltas near u64::MAX. Rust library validation passed 23 tests; four existing
 manual profiling tests remain intentionally ignored in the default run. This
 does not establish native handle/query correctness or real I/O measurement yet.
+
+Follow-up validation: the Windows query now passes a real own-process read,
+matching exact-lifetime read, incorrect-token rejection and PID 0 error test.
+The complete Rust library suite passed 24 tests with four manual tests ignored.
+Controlled file-I/O deltas, fault injection and query-overhead profiling are still
+required; own-process reads alone do not prove disk measurement equivalence.
 
 ## Verified local dependency behavior
 
