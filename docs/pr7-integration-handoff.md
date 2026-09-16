@@ -1,5 +1,15 @@
 # PR #7 integration handoff — 2026-09-16
 
+## Latest executable evidence — 2026-09-17
+
+Code 073820b builds successfully with locked/offline no-bundle Tauri release.
+Actual PE manifest verification passed; unsigned executable is 79,712,629 bytes.
+Exact SHA256/path in design/qa-release-preflight-2026-09-17.md. This overwrites the
+prior own-branch 49c1d81 build at the isolated target path, not another worktree's
+application. No installer/signing/launch/installation or runtime acceptance done.
+CI 35119503685 for preceding GPU-label commit completed successfully before the
+retention patch push. New patch CI must be checked separately.
+
 ## Latest: retain explicitly stale monitor layouts — 2026-09-17
 
 Shared native hook and DiskState add `stale`; include Disk/GPU components and

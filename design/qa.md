@@ -1,5 +1,11 @@
 # Current QA index
 
+- Windows rebuild (2026-09-17, code 073820b): no-bundle locked/offline release
+  build and actual PE manifest verification passed. Includes latest GPU/device
+  frontend and retained stale-state motion changes. Unsigned; not launched,
+  installed or merged with the other task's pending edits. Exact hash and gates:
+  [release preflight](qa-release-preflight-2026-09-17.md). BUILD VERIFIED only.
+
 - Retained sampling states (2026-09-17), source: user's no-flash sampling request
   and design/context.md factual continuity/accessibility requirements. Disk/GPU
   pause, timeout, request failure and resume warmup preserve the last received
