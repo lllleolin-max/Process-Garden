@@ -1,5 +1,6 @@
 # Current QA index
 
+- Isolated performance successor: [2026-09-16 off-thread artwork QA](qa-offthread-artwork-2026-09-16.md). 171 frontend tests and production-CSP browser verification; native acceptance and sustained high-refresh profiling remain open. Existing release artifacts are unchanged.
 - Current scene continuity: [2026-09-12 phase and theme QA](qa-scene-continuity-2026-09-12.md). PR #6 now passes 143 frontend tests; cold switching has zero observed empty generated frames, with first-decode frame cost explicitly still open.
 - Agent lifecycle successor: [2026-09-12 embryo motion QA](qa-agent-embryos-2026-09-12.md). Separate branch stacked on the ambient runtime; 120 frontend tests, no new native release.
 - Independent rendering fix: [2026-09-12 maw transparency QA](qa-maw-transparency-2026-09-12.md). Includes clean three-way backport checks against both native integration baselines.
