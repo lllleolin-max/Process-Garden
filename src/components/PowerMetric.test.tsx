@@ -5,6 +5,7 @@ import { formatWatts } from "../i18n/formatters";
 import { useAppStore } from "../stores/appStore";
 import type { PowerSnapshot } from "../types/system";
 import { PowerMetric } from "./PowerMetric";
+import { useFeedHealth } from "../stores/feedHealth";
 
 const initial = useAppStore.getInitialState();
 const battery: PowerSnapshot = { watts: 24.375, source: "battery" };
@@ -15,6 +16,7 @@ function sample(power: PowerSnapshot, timestamp = Date.now()) {
 }
 
 beforeEach(async () => {
+  useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: null });
   await i18n.changeLanguage("en-US");
   useAppStore.setState({ ...initial, locale: "en-US", reducedMotion: true, demoMode: false, collector: "native", snapshot: sample(battery), history: [sample(battery)] }, true);
 });
@@ -22,9 +24,25 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   useAppStore.setState(initial, true);
+  useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: null });
 });
 
 describe("power measurement presentation", () => {
+  it("immediately marks native failures stale in the card and HUD without waiting for expiry", () => {
+    const view = render(<><PowerMetric /><PowerMetric compact /></>);
+    act(() => useFeedHealth.setState({ failed: true }));
+    expect(screen.getByRole("region", { name: "Power" })).toHaveTextContent("Reading out of date");
+    expect(screen.getByRole("region", { name: "Power" })).toHaveTextContent("—");
+    expect(view.container.querySelector("polyline")).toHaveAttribute("points", "");
+    expect(view.container.querySelector(".power-hud")).toHaveTextContent("—");
+    act(() => {
+      useAppStore.setState({ snapshot: sample(gpu) });
+      useFeedHealth.setState({ failed: false });
+    });
+    expect(screen.getByRole("region", { name: "Package power" })).toHaveTextContent("18.5 W");
+    expect(view.container.querySelector(".power-hud")).toHaveTextContent("18.5 W");
+  });
+
   it("labels real battery discharge and Intel package scope in both card and wallpaper HUD", () => {
     render(<><PowerMetric /><PowerMetric compact /></>);
     expect(screen.getByRole("region", { name: "System power" })).toHaveTextContent("24.4 W");
