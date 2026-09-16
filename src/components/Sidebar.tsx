@@ -6,6 +6,7 @@ import { MetricCard } from "./MetricCard";
 import { PowerMetric } from "./PowerMetric";
 import { useSnapshotStatus } from "../hooks/useSnapshotStatus";
 import { threadHistory } from "../data/threadHistory";
+import { useCallback } from "react";
 
 export function Sidebar() {
   const snapshotStatus = useSnapshotStatus();
@@ -13,6 +14,8 @@ export function Sidebar() {
   const snapshot = useAppStore((state) => state.snapshot);
   const history = useAppStore((state) => state.history);
   const locale = useAppStore((state) => state.locale);
+  const cpuLabel = useCallback((value: number) => formatPercent(value, locale), [locale]);
+  const memoryLabel = useCallback((value: number) => formatBytes(value, locale), [locale]);
   const memoryPercent = snapshot.memoryTotalBytes ? (snapshot.memoryUsedBytes / snapshot.memoryTotalBytes) * 100 : 0;
 
   return (
@@ -20,6 +23,8 @@ export function Sidebar() {
       <MetricCard
         label={t("metrics.cpu")}
         value={formatPercent(snapshot.cpuPercent, locale)}
+        animatedValue={snapshot.cpuPercent}
+        formatValue={cpuLabel}
         detail={`${snapshot.logicalCpuCount} ${t("metrics.cores")}`}
         icon={Cpu}
         values={history.slice(-36).map((item) => item.cpuPercent)}
@@ -28,6 +33,8 @@ export function Sidebar() {
       <MetricCard
         label={t("metrics.memory")}
         value={formatBytes(snapshot.memoryUsedBytes, locale)}
+        animatedValue={snapshot.memoryUsedBytes}
+        formatValue={memoryLabel}
         detail={`${formatPercent(memoryPercent, locale)} ${t("metrics.used")}`}
         icon={MemoryStick}
         values={history.slice(-36).map((item) => item.memoryUsedBytes)}

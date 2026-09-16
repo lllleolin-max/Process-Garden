@@ -1,0 +1,34 @@
+import { act, cleanup, render } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import { useAppStore } from "../stores/appStore";
+import { AnimatedMetric } from "./AnimatedMetric";
+
+const initial = useAppStore.getState();
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); useAppStore.setState(initial, true); });
+it.each([30, 60, 120] as const)("continues from displayed values and settles at %i Hz", fps => {
+  let id = 0;
+  const frames = new Map<number, FrameRequestCallback>();
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; });
+  vi.stubGlobal("cancelAnimationFrame", (key: number) => frames.delete(key));
+  vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  vi.stubGlobal("matchMedia", () => ({ matches: false }));
+  useAppStore.setState({ paused: false, reducedMotion: false, displayMode: "windowed", animationFps: fps });
+  const tick = (now: number) => act(() => { const pending = [...frames.values()]; frames.clear(); pending.forEach(callback => callback(now)); });
+  const format = (value: number) => value.toFixed(1);
+  const view = render(<AnimatedMetric value={0} format={format} />);
+  view.rerender(<AnimatedMetric value={100} format={format} />);
+  tick(1000); tick(1160);
+  const displayed = view.container.textContent;
+  expect(Number(displayed)).toBeGreaterThan(0);
+  expect(Number(displayed)).toBeLessThan(100);
+  expect(view.container.firstChild).toHaveAttribute("aria-label", "100.0");
+  view.rerender(<AnimatedMetric value={20} format={format} />);
+  expect(view.container.textContent).toBe(displayed);
+  tick(1170); tick(1500);
+  expect(view.container.textContent).toBe("20.0");
+  expect(frames.size).toBe(0);
+  view.rerender(<AnimatedMetric value={40} format={format} />);
+  act(() => useAppStore.setState({ paused: true }));
+  expect(view.container.textContent).toBe("40.0");
+  expect(frames.size).toBe(0);
+});
