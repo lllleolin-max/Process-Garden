@@ -18,21 +18,32 @@ export function useSystemFeed() {
   const inFlight = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
-    if (demoMode) useFeedHealth.setState({ failed: false, lastSuccess: null });
+    if (demoMode) useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: null });
     if (paused) return;
     let active = true;
     let sampling = false;
     let visibilityVersion = 0;
     let timer: number | undefined;
+    let watchdog: number | undefined;
     const interval = displayMode === "wallpaper" ? Math.max(2_000, samplingMs) : samplingMs;
+    const watchPending = () => {
+      window.clearTimeout(watchdog);
+      if (demoMode || !isTauriRuntime()) return;
+      watchdog = window.setTimeout(() => {
+        if (active && sampling && !document.hidden && !useAppStore.getState().paused) {
+          useFeedHealth.setState({ failed: true, stalled: true });
+        }
+      }, Math.max(5_000, interval * 3));
+    };
 
     const sample = async () => {
       if (!active || document.hidden || sampling) return;
       sampling = true;
+      watchPending();
       // A preference change can restart the effect while a native request is still
       // running. Wait for it to finish before starting the replacement request.
       if (inFlight.current) await inFlight.current;
-      if (!active || document.hidden) { sampling = false; return; }
+      if (!active || document.hidden) { sampling = false; window.clearTimeout(watchdog); return; }
       const startedAt = performance.now();
       const version = visibilityVersion;
       const canIngest = () => active && !document.hidden && version === visibilityVersion && !useAppStore.getState().paused;
@@ -45,13 +56,13 @@ export function useSystemFeed() {
             const snapshot = await invoke<SystemSnapshot>("sample_system");
             if (canIngest()) {
               ingestSnapshot(snapshot, "native");
-              useFeedHealth.setState({ failed: false, lastSuccess: snapshot.timestamp });
+              useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: snapshot.timestamp });
             }
             return;
           } catch {
             // A native collection failure must not replace real processes with
             // simulated ones. Keep the last observation and retry on schedule.
-            if (canIngest()) useFeedHealth.setState({ failed: true });
+            if (canIngest()) useFeedHealth.setState({ failed: true, stalled: false });
             return;
           }
         }
@@ -62,6 +73,7 @@ export function useSystemFeed() {
       try {
         await request;
       } finally {
+        window.clearTimeout(watchdog);
         if (inFlight.current === request) inFlight.current = null;
         sampling = false;
         if (active && !document.hidden) {
@@ -73,7 +85,11 @@ export function useSystemFeed() {
     const onVisibilityChange = () => {
       visibilityVersion += 1;
       window.clearTimeout(timer);
-      if (!document.hidden) void sample();
+      window.clearTimeout(watchdog);
+      if (!document.hidden) {
+        if (sampling) watchPending();
+        else void sample();
+      }
     };
 
     void sample();
@@ -81,6 +97,7 @@ export function useSystemFeed() {
     return () => {
       active = false;
       window.clearTimeout(timer);
+      window.clearTimeout(watchdog);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [demoMode, displayMode, ingestSnapshot, paused, samplingMs]);

@@ -6,9 +6,16 @@ import { FeedHealthNotice } from "./FeedHealthNotice";
 
 beforeEach(() => {
   useAppStore.setState({ locale: "en-US", paused: false, demoMode: false });
-  useFeedHealth.setState({ failed: false, lastSuccess: null });
+  useFeedHealth.setState({ failed: false, stalled: false, lastSuccess: null });
 });
 afterEach(cleanup);
+
+it("does not claim a retry is running while the original native call is pending", () => {
+  useFeedHealth.setState({ failed: true, stalled: true });
+  render(<FeedHealthNotice />);
+  expect(screen.getByRole("status")).toHaveTextContent("waiting for the pending request");
+  expect(screen.getByRole("status")).not.toHaveTextContent("retrying automatically");
+});
 
 it("shows initial native failure without claiming a last successful sample", () => {
   useFeedHealth.setState({ failed: true });
