@@ -1,6 +1,7 @@
 # Windows release preflight — 2026-09-16
 
-Source: isolated asset-motion worktree, code commit 66fd519.
+Latest executable source: isolated asset-motion worktree, code commit 49c1d81.
+Earlier verification records below are retained as historical evidence.
 Verdict: NOT READY for release or Task Manager replacement acceptance.
 
 ## Verified
@@ -19,6 +20,23 @@ Verdict: NOT READY for release or Task Manager replacement acceptance.
   GitHub release publication or shared-worktree modifications were performed.
 
 ## Required follow-up
+
+### Superseding disk-panel rebuild at 49c1d81
+
+Locked/offline `tauri build --no-bundle --ci` completed successfully, including
+frontend bundling; release compilation took 1m 30s. The executable includes the
+shared numeric frame scheduler, physical disk PDH reader, independent worker,
+sample_disks command and demand-driven DiskPanel together. Current EXE size:
+79,362,427 bytes. SHA256:
+`2609FCFB1D1970A8DD419D9BBA9FD81B210E58CDC2F66AA25C91D53F6A596071`.
+Signature inspection: NotSigned. Actual embedded manifest validation passes:
+single application manifest, asInvoker, longPathAware and Common Controls v6.
+No EXE execution, installation, signing or publication was performed. Old NSIS
+installers remain older artifacts; this rebuild only replaces the EXE above.
+Log: `%TEMP%/process-garden-disk-panel-native-build.log`.
+This does not include the shared worktree's uncommitted themes/termination/cpuModel
+changes. Actual desktop IPC, visuals, frame pacing and full release acceptance
+remain open. Subsequent test-only additions do not change this build's code scope.
 
 ### Superseding network + table-motion rebuild at 3623cfe
 

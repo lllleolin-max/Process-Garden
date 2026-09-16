@@ -128,3 +128,20 @@ Session and selection keys prevent cross-source chart interpolation. Failures
 clear history. Tests cover 60 reachable disks, stable selection/focus/chart nodes,
 zero/empty/baseline/error/partial states and cancellation across visibility changes.
 Actual Windows UI, contrast, typography, hardware pacing and manual AT remain open.
+
+### Combined-build and isolation follow-up
+
+The 49c1d81 Windows no-bundle executable builds the reader, worker, command and
+panel together; see ../design/qa-release-preflight-2026-09-16.md for its hash and
+manifest evidence. It was not executed or installed; UI IPC remains unverified.
+
+Rust library follow-up: 41 passed / 9 ignored. A controlled blocked fake disk
+source remains blocked while the real SystemCollector completes a CPU/memory
+sample, proving these code paths do not share the disk wait/lock. This is not a
+guarantee against arbitrary OS-wide contention or a measurement of total app cost.
+An explicitly executed read-only native continuity probe passed eight consecutive
+samples at 1.1-second spacing: debug response median 0.391ms, max 0.618ms. Session
+renewal also suppressed inherited rates. This short probe is not long-run/device
+replacement/sleep/permission validation. Logs:
+`%TEMP%/process-garden-disk-isolation-tests.log` and
+`%TEMP%/process-garden-disk-continuity-probe.log`.

@@ -284,6 +284,14 @@ handoff. No such action was performed during this audit.
 
 ### Latest network and motion-formatting handoff — 2026-09-16
 
+New overlap observed read-only in the shared worktree: collector.rs/models.rs and
+types/system.ts now add cpu_model/cpuModel (plus a native/model serialization test).
+Preserve that field alongside this branch's cpu_core_percents and network schema;
+do not overwrite these files wholesale with either branch's version. This branch
+has not copied, staged or committed the other task's CPU-model or new divine/minimal
+theme changes. The shared HEAD is still ee5dae4 with uncommitted work, so PR
+mergeability cannot prove those changes integrate. Combined-tree tests are required.
+
 Physical disk foundation: disk.rs and the Win32_System_Performance Cargo feature
 provide a local PDH reader with explicit unavailable values, bounded wildcard
 arrays and baseline handling. This is NOT wired to collector/UI yet. Preserve the
@@ -313,6 +321,13 @@ Only three selected-disk charts mount; existing shared motion and theme tokens
 are reused. Payload/history/continuity tests added (24); full verify 445 tests,
 typecheck/build passed. Browser service still unavailable, so native UI/IPC and
 visual/FPS acceptance remain open. No shared-worktree files were edited.
+
+49c1d81 no-bundle Windows build succeeded with the complete disk frontend/backend;
+embedded manifest guard passed and the EXE remains unsigned/unexecuted. Recorded
+hash in design/qa-release-preflight-2026-09-16.md. Follow-up tests: library 41 passed
+/ 9 ignored, plus explicit 8-sample native disk probe passed (debug median 0.391ms,
+max 0.618ms). A blocked fake disk provider does not prevent real system sampling.
+These are not desktop UI, long-run performance or combined-worktree acceptance.
 
 ProcessExplorer follow-up: explicit Keep row order control separates continuous
 measurement updates from automatic rank changes while a user inspects rows.

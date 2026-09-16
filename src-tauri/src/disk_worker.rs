@@ -338,6 +338,59 @@ mod tests {
     }
 
     #[test]
+    fn blocked_disk_provider_does_not_prevent_real_system_sampling() {
+        let (reader, entered, release, _, dropped, _) = fixture(Duration::from_secs(15));
+        let client = reader.clone();
+        let caller = std::thread::spawn(move || {
+            client.sample_timeout("blocked".into(), Duration::from_secs(10))
+        });
+        entered
+            .recv_timeout(Duration::from_secs(2))
+            .expect("disk provider entered and waiting on release");
+        let collector = crate::collector::SystemCollector::default();
+        let snapshot = crate::collector::sample(&collector)
+            .expect("system sample completes while disk provider is still blocked");
+        assert!(snapshot.memory_total_bytes > 0);
+        assert!(snapshot.logical_cpu_count > 0);
+        assert!(reader.busy.load(Ordering::Acquire));
+        release.send(()).unwrap();
+        assert!(caller.join().unwrap().unwrap().is_empty());
+        drop(reader);
+        dropped.recv_timeout(Duration::from_secs(2)).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    #[ignore = "explicit read-only multi-sample native disk continuity probe"]
+    fn native_disk_worker_continuity_probe() {
+        let reader = DiskReader::default();
+        let _ = reader.sample("continuity-probe".into());
+        let mut durations = Vec::new();
+        for _ in 0..8 {
+            std::thread::sleep(Duration::from_millis(1100));
+            let started = Instant::now();
+            let rows = reader
+                .sample("continuity-probe".into())
+                .expect("continuing native disk sample");
+            durations.push(started.elapsed().as_secs_f64() * 1000.0);
+            assert!(!rows.is_empty());
+            assert!(rows
+                .iter()
+                .any(|row| row.read_bytes_per_second.is_some()
+                    && row.write_bytes_per_second.is_some()));
+        }
+        // A new observation session must not reuse the old rate baseline.
+        if let Ok(rows) = reader.sample("new-session".into()) {
+            assert!(rows.iter().all(|row| row.read_bytes_per_second.is_none()
+                && row.write_bytes_per_second.is_none()
+                && row.active_percent.is_none()));
+        }
+        durations.sort_by(f64::total_cmp);
+        eprintln!("disk continuity probe: 8 consecutive samples, median {:.3}ms, max {:.3}ms (debug; short probe, not long-run acceptance)",
+            (durations[3] + durations[4]) / 2.0, durations[7]);
+    }
+
+    #[test]
     fn expired_queued_work_is_discarded_before_touching_the_source() {
         let (ready, begun) = mpsc::channel();
         let (release, released) = mpsc::channel();
