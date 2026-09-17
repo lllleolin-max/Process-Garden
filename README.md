@@ -2,13 +2,22 @@
 
 > Your computer is alive. / 你的电脑，正在生长。
 
-Process Garden turns local CPU, memory, process and parent–child activity into a living digital ecosystem. It is a bilingual, local-first Windows desktop application with seven built-in themes, fullscreen presentation and a true behind-the-icons wallpaper mode. Released under the [MIT License](LICENSE).
+Process Garden turns local CPU, memory, process and parent–child activity into a living digital ecosystem. It is a bilingual, local-first desktop application for Windows and macOS with seven built-in themes and fullscreen presentation. Windows also supports a true behind-the-icons wallpaper mode. Released under the [MIT License](LICENSE).
 
 ![Process Garden — Garden theme](docs/screenshots/garden-windowed.png)
 
-## Windows release
+## Download / 下载安装
 
-The current version is available as source; follow the build instructions below to run it on Windows. Published installers, when available, appear on [GitHub Releases](https://github.com/lllleolin-max/Process-Garden/releases). The files described in [release/README.md](release/README.md) are historical local build records, not downloads of the current source.
+Get the installers from [GitHub Releases](https://github.com/lllleolin-max/Process-Garden/releases).
+
+| Platform | Installer | Notes |
+| --- | --- | --- |
+| Windows x64 | `x64-setup.exe` (recommended) or `x64_en-US.msi` | WebView2 required; the installer can install it if missing. |
+| macOS 11+ | `universal.dmg` | Supports Apple Silicon and Intel. Drag the app to Applications. |
+
+SHA-256 checksums accompany the installers. Windows packages are unsigned; macOS uses an ad-hoc signature and is not Apple-notarized, so the operating system may warn or block opening. See [release notes and platform limitations](release/RELEASE-NOTES.md).
+
+macOS is an initial preview: live CPU, memory and processes, all themes, fullscreen and theme packages are supported. Native process termination, desktop wallpaper attachment, hardware power readings and native executable icons are Windows-only; macOS thread counts are currently unavailable and displayed as zero. The historical local builds documented in [release/README.md](release/README.md) predate this release.
 
 ## Why it is different
 
@@ -16,7 +25,7 @@ The current version is available as source; follow the build instructions below 
 - **Local power readings** — live watts and a recent trend appear in the sidebar and wallpaper HUD. On supported Windows hardware, the app reads battery discharge or the Intel driver's package energy counter. Each reading names its scope; package power is not total computer or wall-socket consumption. See [power sources and limitations](docs/power.md).
 - **Seven built-in themes** — Garden, Deep Sea Cthulhu, Neon Matrix, Crimson Gaze, Sacred Angel, Olympus and Minimal share process semantics while providing their own visual presentation. The Garden renderer includes 16 stable process specimens, four habitat types and four animated pollinators.
 - **Application-aware ecology** — browsers, editors, runtimes, databases, containers, media, system work and heavy compute resolve to stable organism families. Any application can be pinned to a user-selected family in Settings.
-- **True application identity** — every desktop process uses the icon embedded in its own executable across the Canvas, process dock and Inspector. A bundled offline catalog covers common demo applications; initials are the final fallback.
+- **True application identity on Windows** — desktop processes use the icon embedded in their executable across the Canvas, process dock and Inspector. A bundled offline catalog covers common applications and other platforms; initials are the final fallback.
 - **Refresh-matched motion** — global 30/60/120 Hz animation targets stay synchronized to the display while system sampling remains independently configurable.
 - **Flash-free sampling** — collector updates feed a persistent Canvas scene; CPU, memory, position and size interpolate between samples. Garden organisms grow/dissolve, while Eldritch births are expelled in slime and exits are spiralled into the central core's generated-art maw before a snapping bite and recoil.
 - **Agent lifecycle** — Claude, Codex, Trae, WorkBuddy and compatible Agent processes become theme-specific neural cores; direct child task processes grow around them as three-stage embryos.
@@ -36,6 +45,16 @@ npm ci
 npm run dev          # browser demo
 npm run tauri:dev    # native live collector
 ```
+
+On macOS, install Node.js, Rust and Xcode Command Line Tools, then use the cross-platform Tauri CLI directly:
+
+```sh
+npm ci
+npx tauri dev
+npx tauri build --bundles dmg
+```
+
+To build a universal Mac app, install both Rust targets with `rustup target add aarch64-apple-darwin x86_64-apple-darwin`, then run `npx tauri build --target universal-apple-darwin --bundles dmg`.
 
 The browser build deliberately starts in Demo mode. The Tauri desktop build starts with live local data; Demo mode remains available in Settings and from the top bar.
 

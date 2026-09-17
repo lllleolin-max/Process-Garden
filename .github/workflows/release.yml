@@ -27,7 +27,7 @@ jobs:
           - name: macOS Universal
             runner: macos-latest
             target: universal-apple-darwin
-            bundles: dmg
+            bundles: app,dmg
             artifact: macos-universal
     runs-on: ${{ matrix.runner }}
     steps:
@@ -43,6 +43,7 @@ jobs:
         with:
           workspaces: src-tauri -> target
           key: ${{ matrix.artifact }}
+          cache-on-failure: true
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
@@ -67,7 +68,7 @@ jobs:
         shell: bash
         run: |
           APP="src-tauri/target/universal-apple-darwin/release/bundle/macos/Process Garden.app"
-          lipo -verify_arch arm64 x86_64 "$APP/Contents/MacOS/process-garden"
+          lipo "$APP/Contents/MacOS/process-garden" -verify_arch arm64 x86_64
           codesign --verify --deep --strict "$APP"
           hdiutil verify src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
           "$APP/Contents/MacOS/process-garden" > /tmp/process-garden-smoke.log 2>&1 &
