@@ -48,8 +48,10 @@ async fn process_icons(
 #[cfg(not(test))]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_wallpaper::init())
+    let builder = tauri::Builder::default();
+    #[cfg(windows)]
+    let builder = builder.plugin(tauri_plugin_wallpaper::init());
+    builder
         .manage(SystemCollector::default())
         .manage(ProcessIconCache::default())
         .setup(|app| {
@@ -58,6 +60,7 @@ pub fn run() {
                 tray::TrayIconBuilder,
                 Emitter, Manager,
             };
+            #[cfg(windows)]
             use tauri_plugin_wallpaper::{DetachRequest, WallpaperExt};
 
             let restore = MenuItem::with_id(app, "restore", "打开 / Open Process Garden", true, None::<&str>)?;
@@ -68,6 +71,7 @@ pub fn run() {
                 .tooltip("Process Garden")
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     "restore" => {
+                        #[cfg(windows)]
                         let _ = app.wallpaper().detach(DetachRequest::new("main"));
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = window.set_fullscreen(false);

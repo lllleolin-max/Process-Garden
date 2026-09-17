@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "windows-wallpaper",
+  "description": "Windows-only desktop wallpaper integration",
+  "platforms": ["windows"],
+  "windows": ["main"],
+  "permissions": ["wallpaper:default"]
+}
