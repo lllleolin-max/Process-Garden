@@ -8,14 +8,14 @@ Process Garden turns local CPU, memory, process and parent–child activity into
 
 ## Download / 下载安装
 
-Get the installers from [GitHub Releases](https://github.com/lllleolin-max/Process-Garden/releases).
+**[Process Garden v0.1.0](https://github.com/lllleolin-max/Process-Garden/releases/tag/v0.1.0)** is available for Windows and macOS.
 
 | Platform | Installer | Notes |
 | --- | --- | --- |
-| Windows x64 | `x64-setup.exe` (recommended) or `x64_en-US.msi` | WebView2 required; the installer can install it if missing. |
-| macOS 11+ | `universal.dmg` | Supports Apple Silicon and Intel. Drag the app to Applications. |
+| Windows x64 | [EXE installer](https://github.com/lllleolin-max/Process-Garden/releases/download/v0.1.0/Process-Garden_0.1.0_x64-setup.exe) (recommended) · [MSI installer](https://github.com/lllleolin-max/Process-Garden/releases/download/v0.1.0/Process-Garden_0.1.0_x64_en-US.msi) | WebView2 required; the installer can install it if missing. |
+| macOS 11+ | [Universal DMG](https://github.com/lllleolin-max/Process-Garden/releases/download/v0.1.0/Process-Garden_0.1.0_universal.dmg) | Supports Apple Silicon and Intel. Drag the app to Applications. |
 
-SHA-256 checksums accompany the installers. Windows packages are unsigned; macOS uses an ad-hoc signature and is not Apple-notarized, so the operating system may warn or block opening. See [release notes and platform limitations](release/RELEASE-NOTES.md).
+[SHA-256 checksums](https://github.com/lllleolin-max/Process-Garden/releases/download/v0.1.0/SHA256SUMS.txt) accompany the installers. Windows packages are unsigned; macOS uses an ad-hoc signature and is not Apple-notarized, so the operating system may warn or block opening. See [release notes and platform limitations](release/RELEASE-NOTES.md).
 
 macOS is an initial preview: live CPU, memory and processes, all themes, fullscreen and theme packages are supported. Native process termination, desktop wallpaper attachment, hardware power readings and native executable icons are Windows-only; macOS thread counts are currently unavailable and displayed as zero. The historical local builds documented in [release/README.md](release/README.md) predate this release.
 
