@@ -1,0 +1,57 @@
+name: Assemble verified release
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run:
+        description: Successful installer workflow run ID
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify build provenance
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN: ${{ inputs.build_run }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN" > run.json
+          jq -e --arg repo "$GITHUB_REPOSITORY" '.status == "completed" and .conclusion == "success" and .name == "Release Windows and macOS installers" and .head_repository.full_name == $repo' run.json
+          echo "sha=$(jq -r .head_sha run.json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.build.outputs.sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.build_run }}
+          pattern: installers-*
+          path: artifacts
+          merge-multiple: true
+      - name: Assemble installers and checksums
+        run: |
+          mkdir release-assets
+          while IFS= read -r -d '' asset; do
+            name=$(basename "$asset" | tr ' ' '-')
+            cp "$asset" "release-assets/$name"
+          done < <(find artifacts -type f \( -name '*.exe' -o -name '*.msi' -o -name '*.dmg' \) -print0)
+          test "$(find release-assets -type f | wc -l)" -eq 3
+          cd release-assets
+          sha256sum * > SHA256SUMS.txt
+      - name: Create release draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_SHA: ${{ steps.build.outputs.sha }}
+          BUILD_RUN: ${{ inputs.build_run }}
+        run: |
+          VERSION=$(jq -r .version src-tauri/tauri.conf.json)
+          cp release/RELEASE-NOTES.md release-notes.md
+          printf '\nVerified build: https://github.com/%s/actions/runs/%s\nSource commit: `%s`\n' "$GITHUB_REPOSITORY" "$BUILD_RUN" "$BUILD_SHA" >> release-notes.md
+          gh release create "v$VERSION" release-assets/* --draft --target "$BUILD_SHA" --title "Process Garden v$VERSION" --notes-file release-notes.md
