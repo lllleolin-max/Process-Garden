@@ -4,7 +4,49 @@
 
 Process Garden turns local CPU, memory, process and parent–child activity into a living digital ecosystem. It is a bilingual, local-first desktop application for Windows and macOS with seven built-in themes and fullscreen presentation. Windows also supports a true behind-the-icons wallpaper mode. Released under the [MIT License](LICENSE).
 
-![Process Garden — Garden theme](docs/screenshots/garden-windowed.png)
+![Process Garden — Garden desktop demo](docs/screenshots/themes/garden.png)
+
+## Theme gallery / 主题实机演示
+
+Six screenshots of the running Windows desktop app, built from the current source. They use the app's built-in **Demo** data for comparison; these are actual rendered interfaces, not concept images. Click an image to view it at full size.
+
+以下为 Windows 桌面应用实际运行截图，统一使用内置**演示数据**展示六个主题。点击图片可查看原图。
+
+### Garden / 生态花园
+
+Living moss, luminous roots and miniature botanical organisms.
+
+![Garden / 生态花园](docs/screenshots/themes/garden.png)
+
+### Deep Sea Cthulhu / 深海克苏鲁
+
+A blue abyssal core with cyan light and vivid purple, green and amber creatures.
+
+![Deep Sea Cthulhu / 深海克苏鲁](docs/screenshots/themes/eldritch.png)
+
+### Neon Matrix / 霓虹矩阵
+
+Neon circuitry, mechanical organisms and a cybernetic core.
+
+![Neon Matrix / 霓虹矩阵](docs/screenshots/themes/cyberpunk.png)
+
+### Crimson Gaze / 猩红凝视
+
+A dark crimson eye surrounded by an uncanny living ecosystem.
+
+![Crimson Gaze / 猩红凝视](docs/screenshots/themes/crimson.png)
+
+### Sacred Angel / 神圣天使
+
+Luminous wings and celestial forms around a sacred central figure.
+
+![Sacred Angel / 神圣天使](docs/screenshots/themes/angel.png)
+
+### Olympus / 奥林匹斯
+
+Classical divine imagery, golden accents and an Olympian atmosphere.
+
+![Olympus / 奥林匹斯](docs/screenshots/themes/olympus.png)
 
 ## Download / 下载安装
 
@@ -33,8 +75,6 @@ macOS is an initial preview: live CPU, memory and processes, all themes, fullscr
 - **Theme authoring** — describe a theme, copy AI artwork prompts, upload custom PNG backgrounds and sprites, preview, save and export the complete theme. Partial replacements inherit built-in artwork; images stay local and survive restarts. `.pgtheme` files are validated ZIP containers and cannot execute code.
 - **English + 简体中文** — instant, persistent switching with fully bundled offline fonts, including complete Noto SC coverage.
 - **Private by design** — no account, telemetry, cloud, remote fonts, process memory reading or file-content reading.
-
-![Codex agent lifecycle in the Eldritch theme](docs/screenshots/agent-lifecycle.png)
 
 ## Quick start
 
