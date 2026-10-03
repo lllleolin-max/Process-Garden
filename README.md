@@ -4,9 +4,16 @@
 
 Process Garden turns local CPU, memory, process and parent–child activity into a living digital ecosystem. It is a bilingual, local-first desktop application for Windows and macOS with seven built-in themes and fullscreen presentation. Windows also supports a true behind-the-icons wallpaper mode. Released under the [MIT License](LICENSE).
 
+把 CPU、内存和进程活动变成可观察的桌面生态。适合希望直观看到电脑负载、识别活跃进程或使用动态桌面的用户；精确诊断仍应结合系统任务管理器或专用分析工具。
+
+**[Download / 下载安装](#download--下载安装)** · [Run from source](#quick-start) · [Controls](#controls) · [Privacy](#privacy)
+
 ![Process Garden — Garden desktop demo](docs/screenshots/themes/garden.png)
 
 ## Theme gallery / 主题实机演示
+
+<details>
+<summary>View six running-app screenshots / 展开六个主题截图</summary>
 
 Six screenshots of the running Windows desktop app, built from the current source. They use the app's built-in **Demo** data for comparison; these are actual rendered interfaces, not concept images. Click an image to view it at full size.
 
@@ -48,6 +55,8 @@ Classical divine imagery, golden accents and an Olympian atmosphere.
 
 ![Olympus / 奥林匹斯](docs/screenshots/themes/olympus.png)
 
+</details>
+
 ## Download / 下载安装
 
 **[Process Garden v0.1.0](https://github.com/lllleolin-max/Process-Garden/releases/tag/v0.1.0)** is available for Windows and macOS.
@@ -60,6 +69,10 @@ Classical divine imagery, golden accents and an Olympian atmosphere.
 [SHA-256 checksums](https://github.com/lllleolin-max/Process-Garden/releases/download/v0.1.0/SHA256SUMS.txt) accompany the installers. Windows packages are unsigned; macOS uses an ad-hoc signature and is not Apple-notarized, so the operating system may warn or block opening. See [release notes and platform limitations](release/RELEASE-NOTES.md).
 
 macOS is an initial preview: live CPU, memory and processes, all themes, fullscreen and theme packages are supported. Native process termination, desktop wallpaper attachment, hardware power readings and native executable icons are Windows-only; macOS thread counts are currently unavailable and displayed as zero. The historical local builds documented in [release/README.md](release/README.md) predate this release.
+
+After installing, open the app to see live local processes. Select an organism to inspect it, switch themes from the top bar, or enable **Demo** in Settings to explore simulated data. Missing or unavailable power means there is no current usable measurement: hardware may be unsupported, the collector may be waiting or have failed, or a sample may be stale. It is not a zero-watt measurement. Use the tray menu to return from wallpaper mode.
+
+安装后先查看实时进程，再尝试切换主题和选中生物查看详情。演示模式使用模拟数据；功耗读数是否可用取决于硬件。仅下载安装包无需 Node.js 或 Rust。
 
 ## Why it is different
 
@@ -78,13 +91,18 @@ macOS is an initial preview: live CPU, memory and processes, all themes, fullscr
 
 ## Quick start
 
-Requirements: Node.js 24+, Rust 1.93+, WebView2, and a Windows C/C++ toolchain. The checked-in PowerShell launcher also handles GNU Rust builds from Unicode project paths.
+For the browser demo, install Node.js 24+ and Git. Clone the repository and run:
 
 ```powershell
+git clone https://github.com/lllleolin-max/Process-Garden.git
+cd Process-Garden
 npm ci
 npm run dev          # browser demo
-npm run tauri:dev    # native live collector
 ```
+
+Open the local URL printed by Vite. This preview uses simulated processes and does not collect live system data. Stop it with `Ctrl+C`.
+
+For native Windows development, also install Rust 1.93+, WebView2 and a Windows C/C++ toolchain, then run `npm run tauri:dev`. The checked-in PowerShell launcher also handles GNU Rust builds from Unicode project paths.
 
 On macOS, install Node.js, Rust and Xcode Command Line Tools, then use the cross-platform Tauri CLI directly:
 
